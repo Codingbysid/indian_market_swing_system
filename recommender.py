@@ -138,6 +138,16 @@ class SwingRecommender:
                 stock_data["RSI"] = self.calculate_rsi(stock_data)
                 stock_data["ATR"] = self.calculate_atr(stock_data)
 
+                # Confidence intervals via Bollinger Bands (~95% ≈ ±2σ)
+                stock_data["SMA_20"] = stock_data["Close"].rolling(window=20).mean()
+                stock_data["Std_Dev"] = stock_data["Close"].rolling(window=20).std()
+                stock_data["Lower_Band"] = stock_data["SMA_20"] - (
+                    2 * stock_data["Std_Dev"]
+                )
+                stock_data["Upper_Band"] = stock_data["SMA_20"] + (
+                    2 * stock_data["Std_Dev"]
+                )
+
                 last_close = stock_data["Close"].iloc[-1].item()
                 prev_ema9 = stock_data["EMA_9"].iloc[-2].item()
                 prev_ema21 = stock_data["EMA_21"].iloc[-2].item()
@@ -145,11 +155,24 @@ class SwingRecommender:
                 curr_ema21 = stock_data["EMA_21"].iloc[-1].item()
                 curr_rsi = stock_data["RSI"].iloc[-1].item()
                 curr_atr = stock_data["ATR"].iloc[-1].item()
+                curr_lower_band = stock_data["Lower_Band"].iloc[-1].item()
+                curr_sma20 = stock_data["SMA_20"].iloc[-1].item()
+                curr_upper_band = stock_data["Upper_Band"].iloc[-1].item()
 
+                # 0 = at lower band, 1 = at upper band; prefer lower half of range
+                band_width = curr_upper_band - curr_lower_band
+                if band_width > 0:
+                    position_in_range = (last_close - curr_lower_band) / band_width
+                else:
+                    position_in_range = 1.0
+
+                # EMA crossover + RSI + statistical confidence filter
+                # Buy only when price is in the lower 60% of its ±2σ range
                 if (
                     (prev_ema9 <= prev_ema21)
                     and (curr_ema9 > curr_ema21)
                     and (40 <= curr_rsi <= 65)
+                    and (position_in_range < 0.60)
                 ):
                     trade_params = self.risk_manager.calculate_trade_parameters(
                         last_close, curr_atr
@@ -159,7 +182,10 @@ class SwingRecommender:
 
                     self.buy_signals.append(
                         f"🟢 BUY: {name} ({ticker})\n"
-                        f"Price: ₹{round(last_close, 2)} | RSI: {round(curr_rsi, 1)}\n"
+                        f"Price: ₹{round(last_close, 2)} | RSI: {round(curr_rsi, 1)} | "
+                        f"BB%: {round(position_in_range * 100, 1)}\n"
+                        f"SMA20: ₹{round(curr_sma20, 2)} | "
+                        f"Lower −2σ: ₹{round(curr_lower_band, 2)}\n"
                         f"Shares: {trade_params['shares']} | "
                         f"Capital Allocated: ₹{trade_params['investment']}\n"
                         f"🎯 Target (3 ATR): ₹{trade_params['take_profit']}\n"
