@@ -1,0 +1,7 @@
+xgboost>=2.0.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+numpy>=1.24.0
+tvDatafeed @ git+https://github.com/StreamAlpha/tvDatafeed.git
+python-dotenv>=1.0.0
+boto3>=1.34.0

@@ -78,6 +78,38 @@ class QuantRiskManager:
         }
 
 
+def get_market_regime() -> tuple:
+    """
+    Nifty 50 trend gate via yfinance ^NSEI.
+    RISK_ON if close > 50-day EMA, else RISK_OFF. Fail-open to RISK_ON.
+    """
+    try:
+        hist = yf.download("^NSEI", period="6mo", interval="1d", progress=False)
+        if hist is None or hist.empty or len(hist) < 50:
+            print("Regime fetch short/empty; fail-open RISK_ON.")
+            return "RISK_ON", "Regime: RISK_ON (Nifty data unavailable; fail-open)"
+
+        if isinstance(hist.columns, pd.MultiIndex):
+            hist.columns = hist.columns.get_level_values(0)
+
+        close = hist["Close"].astype(float)
+        ema50 = close.ewm(span=50, adjust=False).mean()
+        last_close = float(close.iloc[-1])
+        last_ema = float(ema50.iloc[-1])
+        if last_close > last_ema:
+            detail = (
+                f"Regime: RISK_ON (Nifty {last_close:.1f} above 50-EMA {last_ema:.1f})"
+            )
+            return "RISK_ON", detail
+        detail = (
+            f"Regime: RISK_OFF (Nifty {last_close:.1f} below 50-EMA {last_ema:.1f})"
+        )
+        return "RISK_OFF", detail
+    except Exception as exc:
+        print(f"Regime fetch failed ({exc}); fail-open RISK_ON.")
+        return "RISK_ON", "Regime: RISK_ON (Nifty fetch failed; fail-open)"
+
+
 class SwingRecommender:
     def __init__(self, budget, max_allocation=None):
         self.budget = budget
@@ -85,6 +117,8 @@ class SwingRecommender:
         self.risk_manager = QuantRiskManager(total_capital=budget)
         self.buy_signals = []
         self.tickers_scanned = 0
+        self.regime = "RISK_ON"
+        self.regime_detail = "Regime: RISK_ON (not evaluated)"
 
     def calculate_rsi(self, data, periods=14):
         delta = data["Close"].diff()
@@ -125,6 +159,13 @@ class SwingRecommender:
         df = df.dropna(subset=["Symbol"])
         self.tickers_scanned = len(df)
         print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
+
+        self.regime, self.regime_detail = get_market_regime()
+        print(self.regime_detail)
+        if self.regime == "RISK_OFF":
+            print("RISK_OFF: skipping long signal generation (index below 50-EMA).")
+            self.dispatch_alerts()
+            return
 
         for index, row in df.iterrows():
             raw_symbol = str(row["Symbol"]).strip()
@@ -219,7 +260,8 @@ class SwingRecommender:
         # 1. CREATE THE LOG ENTRY
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = (
-            f"[{timestamp}] Run Complete. Tickers Scanned: {self.tickers_scanned}. "
+            f"[{timestamp}] Run Complete. {self.regime_detail}. "
+            f"Tickers Scanned: {self.tickers_scanned}. "
             f"Signals found: {len(self.buy_signals)}.\n"
         )
 
@@ -232,22 +274,34 @@ class SwingRecommender:
             log_file.write("-" * 40 + "\n")
 
         # 2. PREPARE THE NOTIFICATION MESSAGE
+        regime_header = f"{self.regime_detail}\n\n"
         if not self.buy_signals:
-            message_body = (
-                "Market conditions did not trigger any new buy setups "
-                "based on the current quant criteria."
-            )
+            if self.regime == "RISK_OFF":
+                message_body = (
+                    regime_header
+                    + "No long setups generated: market regime is RISK_OFF "
+                    "(Nifty below 50-day EMA)."
+                )
+            else:
+                message_body = (
+                    regime_header
+                    + "Market conditions did not trigger any new buy setups "
+                    "based on the current quant criteria."
+                )
             title = "System Update (No Action)"  # No emoji in HTTP headers (latin-1)
             priority = "default"
             tags = "grey_question,chart_with_downwards_trend"
             email_subject = "Swing System Update (No Action)"
         else:
-            message_body = "ADVANCED SWING ALERTS:\n\n" + "\n".join(self.buy_signals)
+            message_body = (
+                regime_header
+                + "ADVANCED SWING ALERTS:\n\n"
+                + "\n".join(self.buy_signals)
+            )
             title = "Swing Trade Alert"  # No emoji in HTTP headers (latin-1)
             priority = "high"
             tags = "green_circle,chart_with_upwards_trend,moneybag"
             email_subject = "Stock Buy Alerts Triggered"
-
         print(message_body)
 
         # 3. SEND PUSH NOTIFICATION VIA NTFY

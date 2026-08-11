@@ -10,3 +10,6 @@ swing-deps-layer.zip
 *.egg-info/
 .pytest_cache/
 core
+backtest/data/
+backtest/artifacts/
+*.xgb.json

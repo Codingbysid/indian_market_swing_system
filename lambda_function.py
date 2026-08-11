@@ -8,6 +8,7 @@ EventBridge payloads:
 
 from __future__ import annotations
 
+import json
 import math
 import os
 import logging
@@ -84,10 +85,46 @@ def get_tv() -> TvDatafeed:
     return _tv
 
 
+def get_market_regime(tv: TvDatafeed) -> tuple[str, str]:
+    """
+    Nifty 50 trend gate: RISK_ON if close > 50-day EMA, else RISK_OFF.
+    Fail-open to RISK_ON if the index fetch fails.
+    """
+    try:
+        hist = tv.get_hist(
+            symbol="NIFTY",
+            exchange="NSE",
+            interval=Interval.in_daily,
+            n_bars=100,
+        )
+        if hist is None or hist.empty or len(hist) < 50:
+            print("Regime fetch short/empty; fail-open RISK_ON.")
+            return "RISK_ON", "Regime: RISK_ON (Nifty data unavailable; fail-open)"
+
+        close = hist["close"].astype(float)
+        ema50 = close.ewm(span=50, adjust=False).mean()
+        last_close = float(close.iloc[-1])
+        last_ema = float(ema50.iloc[-1])
+        if last_close > last_ema:
+            detail = (
+                f"Regime: RISK_ON (Nifty {last_close:.1f} above 50-EMA {last_ema:.1f})"
+            )
+            return "RISK_ON", detail
+        detail = (
+            f"Regime: RISK_OFF (Nifty {last_close:.1f} below 50-EMA {last_ema:.1f})"
+        )
+        return "RISK_OFF", detail
+    except Exception as exc:
+        print(f"Regime fetch failed ({exc}); fail-open RISK_ON.")
+        return "RISK_ON", "Regime: RISK_ON (Nifty fetch failed; fail-open)"
+
+
 # Your S3 bucket name
 BUCKET_NAME = os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
 NTFY_TOPIC = os.getenv("NTFY_TOPIC", "msu_swing_alerts_2026")
 TOTAL_CAPITAL = float(os.getenv("TOTAL_CAPITAL", "60000"))
+MIN_SIGNAL_PROB = float(os.getenv("MIN_SIGNAL_PROB", "0.55"))
+MODEL_S3_KEY = os.getenv("MODEL_S3_KEY", "models/model.json")
 
 SCREENS = {
     "piotroski_stocks.csv": "https://www.screener.in/screens/1698348/piotroski-scan/",
@@ -144,6 +181,140 @@ def append_log_to_s3(text: str, key: str = "execution_log.txt") -> None:
         Key=key,
         Body=(existing + text).encode("utf-8"),
     )
+
+
+FEATURE_NAMES = [
+    "rsi",
+    "rsi_slope",
+    "atr_pct",
+    "bb_position",
+    "dist_sma50",
+    "rel_volume",
+    "regime_on",
+]
+
+
+def _sigmoid(x: float) -> float:
+    if x >= 0:
+        z = math.exp(-x)
+        return 1.0 / (1.0 + z)
+    z = math.exp(x)
+    return z / (1.0 + z)
+
+
+def _score_xgb_tree(tree: dict, features: list[float]) -> float:
+    """Walk one XGBoost JSON tree (binary array layout)."""
+    left = tree["left_children"]
+    right = tree["right_children"]
+    split_idx = tree["split_indices"]
+    split_cond = tree["split_conditions"]
+    default_left = tree.get("default_left") or [True] * len(left)
+    base_weights = tree["base_weights"]
+
+    node = 0
+    while left[node] != -1:
+        fidx = split_idx[node]
+        fval = features[fidx]
+        if fval != fval:  # NaN
+            node = left[node] if default_left[node] else right[node]
+        elif fval < split_cond[node]:
+            node = left[node]
+        else:
+            node = right[node]
+    return float(base_weights[node])
+
+
+def load_signal_model() -> dict | None:
+    """Load XGBoost JSON model (+ feature list) from S3. Returns None if missing."""
+    try:
+        obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=MODEL_S3_KEY)
+        model = json.loads(obj["Body"].read().decode("utf-8"))
+        # Support either raw XGBoost dump or wrapped payload from train.py
+        if "learner" in model:
+            wrapped = {
+                "xgb_model": model,
+                "feature_names": FEATURE_NAMES,
+            }
+        else:
+            wrapped = model
+        print(f"Loaded signal model from s3://{BUCKET_NAME}/{MODEL_S3_KEY}")
+        return wrapped
+    except Exception as exc:
+        print(f"Signal model not loaded ({exc}); using rule-based alerts only.")
+        return None
+
+
+def extract_live_features(stock_data: pd.DataFrame, regime_on: float = 1.0) -> dict:
+    """Engineer the same features used by the offline labeler/trainer."""
+    close = stock_data["Close"]
+    rsi = stock_data["RSI"]
+    atr = stock_data["ATR"]
+    lower = stock_data["Lower_Band"]
+    upper = stock_data["Upper_Band"]
+    sma50 = stock_data["SMA_50"]
+    volume = stock_data["Volume"]
+    vol_ma = stock_data["Vol_MA20"]
+
+    last_close = float(close.iloc[-1])
+    curr_rsi = float(rsi.iloc[-1])
+    prev_rsi = float(rsi.iloc[-15]) if len(rsi) >= 15 else float(rsi.iloc[0])
+    curr_atr = float(atr.iloc[-1])
+    band_width = float(upper.iloc[-1] - lower.iloc[-1])
+    bb_pos = (
+        (last_close - float(lower.iloc[-1])) / band_width if band_width > 0 else 0.5
+    )
+    sma50_val = float(sma50.iloc[-1]) if not math.isnan(float(sma50.iloc[-1])) else last_close
+    dist_sma50 = (last_close - sma50_val) / last_close if last_close else 0.0
+    rel_vol = (
+        float(volume.iloc[-1]) / float(vol_ma.iloc[-1])
+        if float(vol_ma.iloc[-1]) > 0
+        else 1.0
+    )
+
+    return {
+        "rsi": curr_rsi,
+        "rsi_slope": curr_rsi - prev_rsi,
+        "atr_pct": curr_atr / last_close if last_close else 0.0,
+        "bb_position": bb_pos,
+        "dist_sma50": dist_sma50,
+        "rel_volume": rel_vol,
+        "regime_on": float(regime_on),
+    }
+
+
+def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float = 1.0):
+    """Return P(success) in [0, 1], or None if no model."""
+    if not model:
+        return None
+    try:
+        feats = extract_live_features(stock_data, regime_on=regime_on)
+        feature_names = model.get("feature_names", FEATURE_NAMES)
+        x = [float(feats[name]) for name in feature_names]
+
+        # Lightweight logistic fallback (coefficients from train.py)
+        if model.get("type") == "logistic":
+            intercept = float(model["intercept"])
+            coefs = model["coefficients"]
+            z = intercept + sum(c * v for c, v in zip(coefs, x))
+            return _sigmoid(z)
+
+        xgb_model = model.get("xgb_model", model)
+        learner = xgb_model["learner"]
+        trees = learner["gradient_booster"]["model"]["trees"]
+        base_score = float(learner["learner_model_param"].get("base_score", "0.5"))
+        # XGBoost stores base_score as probability for binary:logistic in recent versions;
+        # convert to margin via logit when in (0, 1).
+        if 0.0 < base_score < 1.0:
+            margin = math.log(base_score / (1.0 - base_score))
+        else:
+            margin = base_score
+        total = margin
+        for tree in trees:
+            total += _score_xgb_tree(tree, x)
+        return _sigmoid(total)
+    except Exception as exc:
+        print(f"Model scoring failed ({exc}); ignoring probability gate.")
+        return None
 
 
 class ScreenerScraper:
@@ -253,6 +424,9 @@ class SwingRecommender:
         self.risk_manager = QuantRiskManager(total_capital=budget)
         self.buy_signals = []
         self.tickers_scanned = 0
+        self.regime = "RISK_ON"
+        self.regime_detail = "Regime: RISK_ON (not evaluated)"
+        self.signal_model = None
 
     def calculate_rsi(self, data, periods=14):
         delta = data["Close"].diff()
@@ -294,6 +468,19 @@ class SwingRecommender:
         print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
 
         tv = get_tv()
+        self.regime, self.regime_detail = get_market_regime(tv)
+        print(self.regime_detail)
+
+        if self.regime == "RISK_OFF":
+            print("RISK_OFF: skipping long signal generation (index below 50-EMA).")
+            print(
+                f"Market data summary: ok=0 failed_or_short=0 "
+                f"(skipped ticker loop under {self.regime})"
+            )
+            self.dispatch_alerts()
+            return
+
+        self.signal_model = load_signal_model()
         failed_symbols = []
         successful_downloads = 0
 
@@ -345,6 +532,7 @@ class SwingRecommender:
                 stock_data["ATR"] = self.calculate_atr(stock_data)
 
                 stock_data["SMA_20"] = stock_data["Close"].rolling(window=20).mean()
+                stock_data["SMA_50"] = stock_data["Close"].rolling(window=50).mean()
                 stock_data["Std_Dev"] = stock_data["Close"].rolling(window=20).std()
                 stock_data["Lower_Band"] = stock_data["SMA_20"] - (
                     2 * stock_data["Std_Dev"]
@@ -352,6 +540,7 @@ class SwingRecommender:
                 stock_data["Upper_Band"] = stock_data["SMA_20"] + (
                     2 * stock_data["Std_Dev"]
                 )
+                stock_data["Vol_MA20"] = stock_data["Volume"].rolling(window=20).mean()
 
                 last_close = stock_data["Close"].iloc[-1].item()
                 prev_ema9 = stock_data["EMA_9"].iloc[-2].item()
@@ -382,10 +571,25 @@ class SwingRecommender:
                     if trade_params["shares"] <= 0:
                         continue
 
+                    # Optional ML probability gate (skipped if model missing)
+                    p_success = score_setup(self.signal_model, stock_data, regime_on=1.0)
+                    if p_success is not None and p_success < MIN_SIGNAL_PROB:
+                        print(
+                            f"Skip {ticker}: P(success)={p_success:.2f} "
+                            f"< MIN_SIGNAL_PROB={MIN_SIGNAL_PROB:.2f}"
+                        )
+                        continue
+
+                    prob_line = (
+                        f"P(success): {p_success:.2f}\n"
+                        if p_success is not None
+                        else ""
+                    )
                     self.buy_signals.append(
                         f"BUY: {name} ({ticker})\n"
                         f"Price: Rs {round(last_close, 2)} | RSI: {round(curr_rsi, 1)} | "
                         f"BB%: {round(position_in_range * 100, 1)}\n"
+                        f"{prob_line}"
                         f"SMA20: Rs {round(curr_sma20, 2)} | "
                         f"Lower -2s: Rs {round(curr_lower_band, 2)}\n"
                         f"Shares: {trade_params['shares']} | "
@@ -412,7 +616,8 @@ class SwingRecommender:
     def dispatch_alerts(self):
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
         log_entry = (
-            f"[{timestamp}] Run Complete. Tickers Scanned: {self.tickers_scanned}. "
+            f"[{timestamp}] Run Complete. {self.regime_detail}. "
+            f"Tickers Scanned: {self.tickers_scanned}. "
             f"Signals found: {len(self.buy_signals)}.\n"
         )
         log_chunk = log_entry
@@ -421,17 +626,30 @@ class SwingRecommender:
         log_chunk += "-" * 40 + "\n"
         append_log_to_s3(log_chunk)
 
+        regime_header = f"{self.regime_detail}\n\n"
         if not self.buy_signals:
-            message_body = (
-                "Market conditions did not trigger any new buy setups "
-                "based on the current quant criteria."
-            )
+            if self.regime == "RISK_OFF":
+                message_body = (
+                    regime_header
+                    + "No long setups generated: market regime is RISK_OFF "
+                    "(Nifty below 50-day EMA)."
+                )
+            else:
+                message_body = (
+                    regime_header
+                    + "Market conditions did not trigger any new buy setups "
+                    "based on the current quant criteria."
+                )
             title = "System Update (No Action)"  # No emoji in HTTP headers (latin-1)
             priority = "default"
             tags = "grey_question,chart_with_downwards_trend"
             email_subject = "Swing System Update (No Action)"
         else:
-            message_body = "ADVANCED SWING ALERTS:\n\n" + "\n".join(self.buy_signals)
+            message_body = (
+                regime_header
+                + "ADVANCED SWING ALERTS:\n\n"
+                + "\n".join(self.buy_signals)
+            )
             title = "Swing Trade Alert"  # No emoji in HTTP headers (latin-1)
             priority = "high"
             tags = "green_circle,chart_with_upwards_trend,moneybag"
