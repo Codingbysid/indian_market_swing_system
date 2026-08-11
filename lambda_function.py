@@ -12,6 +12,7 @@ import math
 import os
 import logging
 import smtplib
+import time
 from datetime import datetime
 from email.mime.text import MIMEText
 from io import StringIO
@@ -280,6 +281,9 @@ class SwingRecommender:
                     interval=Interval.in_daily,
                     n_bars=100,
                 )
+                # Tiny pause to stay under TradingView free-account rate limits
+                time.sleep(0.3)
+
                 if hist_data is None or len(hist_data) < 30:
                     failed_downloads += 1
                     continue
