@@ -31,6 +31,41 @@ tv_logger.propagate = False
 logging.getLogger("tvDatafeed.main").setLevel(logging.CRITICAL)
 logging.getLogger("tvDatafeed.main").propagate = False
 
+SYMBOL_MAP = {
+    # NSE Special Tickers (TV uses underscores instead of hyphens)
+    "BAJAJ-AUTO": "BAJAJ_AUTO",
+    "KLBRENG-B": "KLBRENG_B",
+    "SBIFUNDS": "SBIFUNDS",  # TV matches this exactly; keep exchange NSE
+
+    # BSE Numeric Codes -> BSE Scrip IDs (TradingView Tickers)
+    "544554": "KVSCAST",
+    "544434": "NEETUYOSHI",
+    "544669": "ADMACH",
+    "538787": "GBFL",
+    "526071": "STELLANT",
+    "538874": "NEXUS",
+    "506605": "POLYCHEM",
+    "541358": "UCIL",
+    "505685": "TAPARIATOOL",
+    "509953": "TRADWIN",
+    "538565": "VISTARAMAR",
+    "506180": "EMERGENT",
+    "501151": "KARTIKINV",
+    "539528": "AAYUSH",
+    "539196": "AMBA",
+    "540252": "VSL",
+    "530215": "KINGSINFA",
+    "512437": "APOLLOFIN",
+    "524632": "SHUKRAPHAR",
+    "514448": "JYOTIRES",
+    "543709": "GARGI",
+    "526935": "KALIND",
+    "542866": "COLAB",
+    "505358": "INTEGRAENG",
+    "513119": "ONIX",
+    "543931": "VEEFIN",
+}
+
 # Lazily initialized guest-mode TradingView client (once per container, outside ticker loop)
 _tv = None
 
@@ -265,14 +300,17 @@ class SwingRecommender:
         for _, row in df.iterrows():
             raw_symbol = str(row["Symbol"]).strip()
 
-            # Numeric Screener codes are BSE; alphabetic tickers are NSE
+            # 1. Determine exchange from Screener raw output (before alphabetic mapping)
             exchange = "BSE" if raw_symbol.isdigit() else "NSE"
-            ticker = f"{exchange}:{raw_symbol}"
+
+            # 2. Map Screener codes/special tickers to TradingView symbols
+            tv_symbol = SYMBOL_MAP.get(raw_symbol, raw_symbol)
+            ticker = f"{exchange}:{tv_symbol}"
             name = row["Name"]
 
             try:
                 hist_data = tv.get_hist(
-                    symbol=raw_symbol,
+                    symbol=tv_symbol,
                     exchange=exchange,
                     interval=Interval.in_daily,
                     n_bars=100,
@@ -281,7 +319,9 @@ class SwingRecommender:
                 time.sleep(0.3)
 
                 if hist_data is None or hist_data.empty or len(hist_data) < 20:
-                    failed_symbols.append(f"{exchange}:{raw_symbol}")
+                    failed_symbols.append(
+                        f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
+                    )
                     continue
 
                 successful_downloads += 1
@@ -355,7 +395,9 @@ class SwingRecommender:
                         f"Capital at Risk: Rs {trade_params['risk_amount']}\n"
                     )
             except Exception:
-                failed_symbols.append(f"{exchange}:{raw_symbol}")
+                failed_symbols.append(
+                    f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
+                )
 
         print(
             f"Market data summary: ok={successful_downloads} "
