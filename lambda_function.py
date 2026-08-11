@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 import os
+import logging
 import smtplib
 from datetime import datetime
 from email.mime.text import MIMEText
@@ -21,6 +22,13 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from tvDatafeed import Interval, TvDatafeed
+
+# Silence tvDatafeed timeout / "no data" spam in CloudWatch
+tv_logger = logging.getLogger("tvDatafeed")
+tv_logger.setLevel(logging.CRITICAL)
+tv_logger.propagate = False
+logging.getLogger("tvDatafeed.main").setLevel(logging.CRITICAL)
+logging.getLogger("tvDatafeed.main").propagate = False
 
 # Lazily initialized guest-mode TradingView client (once per container, outside ticker loop)
 _tv = None
