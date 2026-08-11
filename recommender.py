@@ -1,6 +1,7 @@
 import math
 import os
 import smtplib
+from datetime import datetime
 from email.mime.text import MIMEText
 from pathlib import Path
 
@@ -76,6 +77,7 @@ class SwingRecommender:
         self.max_allocation = max_allocation
         self.risk_manager = QuantRiskManager(total_capital=budget)
         self.buy_signals = []
+        self.tickers_scanned = 0
 
     def calculate_rsi(self, data, periods=14):
         delta = data["Close"].diff()
@@ -114,6 +116,7 @@ class SwingRecommender:
 
         df = pd.concat(df_list, ignore_index=True).drop_duplicates(subset=["Symbol"])
         df = df.dropna(subset=["Symbol"])
+        self.tickers_scanned = len(df)
         print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
 
         for index, row in df.iterrows():
@@ -199,14 +202,60 @@ class SwingRecommender:
         self.dispatch_alerts()
 
     def dispatch_alerts(self):
-        if not self.buy_signals:
-            print("No new buy signals triggered today.")
-            return
+        # 1. CREATE THE LOG ENTRY
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = (
+            f"[{timestamp}] Run Complete. Tickers Scanned: {self.tickers_scanned}. "
+            f"Signals found: {len(self.buy_signals)}.\n"
+        )
 
-        message_body = "📈 ADVANCED SWING ALERTS:\n\n" + "\n".join(self.buy_signals)
+        # Append to a local text file
+        with open("execution_log.txt", "a") as log_file:
+            log_file.write(log_entry)
+            # If there are signals, log them too
+            if self.buy_signals:
+                log_file.write("\n".join(self.buy_signals) + "\n")
+            log_file.write("-" * 40 + "\n")
+
+        # 2. PREPARE THE NOTIFICATION MESSAGE
+        if not self.buy_signals:
+            message_body = (
+                "📉 NO NEW SIGNALS\n"
+                "Market conditions did not trigger any new buy setups "
+                "based on the current quant criteria."
+            )
+            title = "⚪ System Update (No Action)"
+            priority = "default"
+            tags = "information_source"
+            email_subject = "Swing System Update (No Action)"
+        else:
+            message_body = "📈 ADVANCED SWING ALERTS:\n\n" + "\n".join(self.buy_signals)
+            title = "🟢 Swing Trade Alert"
+            priority = "high"
+            tags = "chart_with_upwards_trend,moneybag"
+            email_subject = "Stock Buy Alerts Triggered"
+
         print(message_body)
 
-        # --- SEND EMAIL ---
+        # 3. SEND PUSH NOTIFICATION VIA NTFY
+        try:
+            ntfy_topic = "msu_swing_alerts_2026"
+            response = requests.post(
+                f"https://ntfy.sh/{ntfy_topic}",
+                data=message_body.encode(encoding="utf-8"),
+                headers={
+                    "Title": title,
+                    "Priority": priority,
+                    "Tags": tags,
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            print("Push notification sent successfully to your phone.")
+        except Exception as e:
+            print(f"Failed to send push notification: {e}")
+
+        # 4. SEND EMAIL (buy alerts and no-action updates)
         try:
             sender_email = os.getenv("GMAIL_ADDRESS", "")
             sender_app_password = os.getenv("GMAIL_APP_PASSWORD", "").replace(" ", "")
@@ -223,7 +272,7 @@ class SwingRecommender:
                 )
             else:
                 msg = MIMEText(message_body)
-                msg["Subject"] = "Stock Buy Alerts Triggered"
+                msg["Subject"] = email_subject
                 msg["From"] = sender_email
                 msg["To"] = receiver_email
 
@@ -233,26 +282,6 @@ class SwingRecommender:
                 print("Email alert sent successfully.")
         except Exception as e:
             print(f"Failed to send email: {e}")
-
-        # --- SEND PUSH NOTIFICATION VIA NTFY (FREE) ---
-        try:
-            # Change this to the exact topic name you created in the ntfy phone app
-            ntfy_topic = "msu_swing_alerts_2026"
-
-            response = requests.post(
-                f"https://ntfy.sh/{ntfy_topic}",
-                data=message_body.encode(encoding="utf-8"),
-                headers={
-                    "Title": "🟢 Swing Trade Alert",
-                    "Priority": "high",
-                    "Tags": "chart_with_upwards_trend,moneybag",
-                },
-                timeout=30,
-            )
-            response.raise_for_status()
-            print("Push notification sent successfully to your phone.")
-        except Exception as e:
-            print(f"Failed to send push notification: {e}")
 
 
 # Execution Block

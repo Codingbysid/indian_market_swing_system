@@ -62,3 +62,12 @@ jobs:
       - name: Run Technical Recommender (Market Hours)
         if: github.event.schedule != '45 10 * * 1-5' || github.event_name == 'workflow_dispatch'
         run: python recommender.py
+
+      - name: Upload Execution Logs
+        uses: actions/upload-artifact@v4
+        # Always run this step, even if previous steps failed
+        if: always()
+        with:
+          name: daily-execution-logs
+          path: execution_log.txt
+          if-no-files-found: ignore
