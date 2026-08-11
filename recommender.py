@@ -8,8 +8,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import requests
+import logging
+
 import yfinance as yf
 from dotenv import load_dotenv
+
+# Mute yfinance logger to prevent CloudWatch [ERROR] spam for missing SME stocks
+yf_logger = logging.getLogger("yfinance")
+yf_logger.setLevel(logging.CRITICAL)
+yf_logger.propagate = False
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
