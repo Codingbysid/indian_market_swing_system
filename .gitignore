@@ -4,6 +4,8 @@ __pycache__/
 .env
 data/*.csv
 execution_log.txt
+.lambda_layer_build/
+swing-deps-layer.zip
 .DS_Store
 *.egg-info/
 .pytest_cache/
