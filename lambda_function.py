@@ -37,7 +37,14 @@ _tv = None
 def get_tv() -> TvDatafeed:
     global _tv
     if _tv is None:
-        _tv = TvDatafeed()
+        username = os.getenv("TV_USERNAME", "").strip()
+        password = os.getenv("TV_PASSWORD", "").strip()
+        if username and password:
+            print("Initializing TvDatafeed with TradingView login...")
+            _tv = TvDatafeed(username=username, password=password)
+        else:
+            print("TV_USERNAME/TV_PASSWORD missing; falling back to guest mode.")
+            _tv = TvDatafeed()
     return _tv
 
 
