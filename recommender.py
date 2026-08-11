@@ -120,7 +120,14 @@ class SwingRecommender:
         print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
 
         for index, row in df.iterrows():
-            ticker = f"{row['Symbol']}.NS"
+            raw_symbol = str(row["Symbol"]).strip()
+
+            # Numeric codes are BSE (.BO); alphabetic tickers are NSE (.NS)
+            if raw_symbol.isdigit():
+                ticker = f"{raw_symbol}.BO"
+            else:
+                ticker = f"{raw_symbol}.NS"
+
             name = row["Name"]
 
             try:
@@ -220,19 +227,18 @@ class SwingRecommender:
         # 2. PREPARE THE NOTIFICATION MESSAGE
         if not self.buy_signals:
             message_body = (
-                "📉 NO NEW SIGNALS\n"
                 "Market conditions did not trigger any new buy setups "
                 "based on the current quant criteria."
             )
-            title = "⚪ System Update (No Action)"
+            title = "System Update (No Action)"  # No emoji in HTTP headers (latin-1)
             priority = "default"
-            tags = "information_source"
+            tags = "grey_question,chart_with_downwards_trend"
             email_subject = "Swing System Update (No Action)"
         else:
-            message_body = "📈 ADVANCED SWING ALERTS:\n\n" + "\n".join(self.buy_signals)
-            title = "🟢 Swing Trade Alert"
+            message_body = "ADVANCED SWING ALERTS:\n\n" + "\n".join(self.buy_signals)
+            title = "Swing Trade Alert"  # No emoji in HTTP headers (latin-1)
             priority = "high"
-            tags = "chart_with_upwards_trend,moneybag"
+            tags = "green_circle,chart_with_upwards_trend,moneybag"
             email_subject = "Stock Buy Alerts Triggered"
 
         print(message_body)
