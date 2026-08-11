@@ -259,24 +259,20 @@ class SwingRecommender:
         print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
 
         tv = get_tv()
-        failed_downloads = 0
+        failed_symbols = []
         successful_downloads = 0
 
         for _, row in df.iterrows():
             raw_symbol = str(row["Symbol"]).strip()
 
             # Numeric Screener codes are BSE; alphabetic tickers are NSE
-            if raw_symbol.isdigit():
-                exchange = "BSE"
-            else:
-                exchange = "NSE"
-
+            exchange = "BSE" if raw_symbol.isdigit() else "NSE"
             ticker = f"{exchange}:{raw_symbol}"
             name = row["Name"]
 
             try:
                 hist_data = tv.get_hist(
-                    symbol=str(raw_symbol),
+                    symbol=raw_symbol,
                     exchange=exchange,
                     interval=Interval.in_daily,
                     n_bars=100,
@@ -284,8 +280,8 @@ class SwingRecommender:
                 # Tiny pause to stay under TradingView free-account rate limits
                 time.sleep(0.3)
 
-                if hist_data is None or len(hist_data) < 30:
-                    failed_downloads += 1
+                if hist_data is None or hist_data.empty or len(hist_data) < 20:
+                    failed_symbols.append(f"{exchange}:{raw_symbol}")
                     continue
 
                 successful_downloads += 1
@@ -359,12 +355,16 @@ class SwingRecommender:
                         f"Capital at Risk: Rs {trade_params['risk_amount']}\n"
                     )
             except Exception:
-                failed_downloads += 1
+                failed_symbols.append(f"{exchange}:{raw_symbol}")
 
         print(
             f"Market data summary: ok={successful_downloads} "
-            f"failed_or_short={failed_downloads}"
+            f"failed_or_short={len(failed_symbols)}"
         )
+        print("=" * 50)
+        print(f"UNRESOLVED SYMBOLS ({len(failed_symbols)} total):")
+        print(failed_symbols)
+        print("=" * 50)
         self.dispatch_alerts()
 
     def dispatch_alerts(self):
