@@ -3,6 +3,7 @@ import json
 import sys
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import NoCredentialsError
 
 # Set your AWS region (e.g., 'eu-north-1' from your screenshots)
@@ -14,7 +15,12 @@ FUNCTION_NAME = "indian-swing-bot"
 action = sys.argv[1] if len(sys.argv) > 1 else "recommender"
 payload = {"action": action}
 
-client = boto3.client("lambda", region_name=REGION)
+# Recommender scans ~90 tickers with TV rate-limit sleeps; allow up to 6 minutes.
+client = boto3.client(
+    "lambda",
+    region_name=REGION,
+    config=Config(read_timeout=360, connect_timeout=30, retries={"max_attempts": 0}),
+)
 
 print(f"🚀 Triggering AWS Lambda ({FUNCTION_NAME}) with action: {payload['action']}...\n")
 

@@ -202,13 +202,27 @@ def _sigmoid(x: float) -> float:
     return z / (1.0 + z)
 
 
+def _parse_xgb_base_score(raw) -> float:
+    """Parse learner base_score values like 0.5, '0.5', or '[5E-1]'."""
+    if isinstance(raw, (int, float)):
+        return float(raw)
+    text = str(raw).strip()
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1].strip()
+    if not text:
+        return 0.5
+    # Multi-class / multi-target dumps can be comma-separated; take first.
+    text = text.split(",")[0].strip()
+    return float(text)
+
+
 def _score_xgb_tree(tree: dict, features: list[float]) -> float:
     """Walk one XGBoost JSON tree (binary array layout)."""
     left = tree["left_children"]
     right = tree["right_children"]
     split_idx = tree["split_indices"]
     split_cond = tree["split_conditions"]
-    default_left = tree.get("default_left") or [True] * len(left)
+    default_left = tree.get("default_left") or [1] * len(left)
     base_weights = tree["base_weights"]
 
     node = 0
@@ -216,13 +230,11 @@ def _score_xgb_tree(tree: dict, features: list[float]) -> float:
         fidx = split_idx[node]
         fval = features[fidx]
         if fval != fval:  # NaN
-            node = left[node] if default_left[node] else right[node]
-        elif fval < split_cond[node]:
-            node = left[node]
+            go_left = bool(default_left[node])
         else:
-            node = right[node]
+            go_left = fval < split_cond[node]
+        node = left[node] if go_left else right[node]
     return float(base_weights[node])
-
 
 def load_signal_model() -> dict | None:
     """Load XGBoost JSON model (+ feature list) from S3. Returns None if missing."""
@@ -282,6 +294,27 @@ def extract_live_features(stock_data: pd.DataFrame, regime_on: float = 1.0) -> d
     }
 
 
+def _eval_dump_tree(node: dict, fmap: dict) -> float:
+    """Walk one tree from booster.get_dump(dump_format='json').
+
+    XGBoost performs split comparisons in float32 — cast both sides so
+    near-threshold values match the C++ booster exactly.
+    """
+    if "leaf" in node:
+        return float(node["leaf"])
+    fname = node["split"]
+    fval = np.float32(fmap[fname])
+    thresh = np.float32(node["split_condition"])
+    children = {c["nodeid"]: c for c in node["children"]}
+    if fval != fval:  # NaN
+        nid = int(node.get("missing", node["yes"]))
+    elif fval < thresh:
+        nid = int(node["yes"])
+    else:
+        nid = int(node["no"])
+    return _eval_dump_tree(children[nid], fmap)
+
+
 def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float = 1.0):
     """Return P(success) in [0, 1], or None if no model."""
     if not model:
@@ -290,6 +323,7 @@ def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float =
         feats = extract_live_features(stock_data, regime_on=regime_on)
         feature_names = model.get("feature_names", FEATURE_NAMES)
         x = [float(feats[name]) for name in feature_names]
+        fmap = {name: float(feats[name]) for name in feature_names}
 
         # Lightweight logistic fallback (coefficients from train.py)
         if model.get("type") == "logistic":
@@ -298,12 +332,26 @@ def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float =
             z = intercept + sum(c * v for c, v in zip(coefs, x))
             return _sigmoid(z)
 
+        # Preferred: high-precision dump trees from train.py
+        trees = model.get("trees")
+        if model.get("type") == "xgboost_dump" or (
+            isinstance(trees, list) and trees and "nodeid" in trees[0]
+        ):
+            base_score = _parse_xgb_base_score(model.get("base_score", 0.5))
+            if 0.0 < base_score < 1.0:
+                margin = math.log(base_score / (1.0 - base_score))
+            else:
+                margin = base_score
+            total = margin + sum(_eval_dump_tree(t, fmap) for t in trees)
+            return _sigmoid(total)
+
+        # Legacy: full XGBoost learner JSON (array layout; less precise thresholds)
         xgb_model = model.get("xgb_model", model)
         learner = xgb_model["learner"]
         trees = learner["gradient_booster"]["model"]["trees"]
-        base_score = float(learner["learner_model_param"].get("base_score", "0.5"))
-        # XGBoost stores base_score as probability for binary:logistic in recent versions;
-        # convert to margin via logit when in (0, 1).
+        base_score = _parse_xgb_base_score(
+            learner["learner_model_param"].get("base_score", "0.5")
+        )
         if 0.0 < base_score < 1.0:
             margin = math.log(base_score / (1.0 - base_score))
         else:
@@ -379,7 +427,8 @@ class QuantRiskManager:
         self,
         total_capital=60000,
         risk_per_trade_pct=0.025,
-        win_rate=0.50,
+        # Backtest labeler (1:2 R:R, 10d): resolved-only WR ≈ 0.36; use 0.35 not 0.50.
+        win_rate=0.35,
         payoff_ratio=2.0,
     ):
         self.total_capital = total_capital

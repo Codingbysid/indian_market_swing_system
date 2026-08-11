@@ -26,7 +26,8 @@ class QuantRiskManager:
         self,
         total_capital=60000,
         risk_per_trade_pct=0.025,
-        win_rate=0.50,
+        # Backtest labeler (1:2 R:R, 10d): resolved-only WR ≈ 0.36; use 0.35 not 0.50.
+        win_rate=0.35,
         payoff_ratio=2.0,
     ):
         self.total_capital = total_capital

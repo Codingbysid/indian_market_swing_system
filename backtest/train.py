@@ -97,20 +97,22 @@ def main() -> None:
     print(calib.to_string())
 
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
-    # Save native XGBoost JSON for pure-Python Lambda walker
+    # Save native booster + high-precision dump trees for pure-Python Lambda walker.
+    # (Array-layout model.json truncates split thresholds and can flip branches.)
     booster = model.get_booster()
     booster.save_model(str(MODEL_PATH.with_suffix(".xgb.json")))
-    xgb_raw = json.loads(MODEL_PATH.with_suffix(".xgb.json").read_text())
+    dump_trees = [json.loads(t) for t in booster.get_dump(dump_format="json")]
 
     # Also fit a tiny logistic fallback for environments without tree walker
     logit = LogisticRegression(max_iter=500)
     logit.fit(X_train, y_train)
 
     payload = {
-        "type": "xgboost",
+        "type": "xgboost_dump",
         "feature_names": FEATURE_NAMES,
         "threshold_default": 0.55,
-        "xgb_model": xgb_raw,
+        "base_score": 0.5,
+        "trees": dump_trees,
         "logistic": {
             "type": "logistic",
             "feature_names": FEATURE_NAMES,
