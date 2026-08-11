@@ -19,8 +19,15 @@ import boto3
 import numpy as np
 import pandas as pd
 import requests
+import logging
+
 import yfinance as yf
 from bs4 import BeautifulSoup
+
+# Mute yfinance logger to prevent CloudWatch [ERROR] spam for missing SME stocks
+yf_logger = logging.getLogger("yfinance")
+yf_logger.setLevel(logging.CRITICAL)
+yf_logger.propagate = False
 
 # Your S3 bucket name
 BUCKET_NAME = os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")

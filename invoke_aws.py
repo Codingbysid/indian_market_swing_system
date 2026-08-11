@@ -1,0 +1,50 @@
+import base64
+import json
+import sys
+
+import boto3
+from botocore.exceptions import NoCredentialsError
+
+# Set your AWS region (e.g., 'eu-north-1' from your screenshots)
+REGION = "eu-north-1"
+FUNCTION_NAME = "indian-swing-bot"
+
+# Change action to "scraper" or "recommender"
+# Or pass as CLI arg: python invoke_aws.py scraper
+action = sys.argv[1] if len(sys.argv) > 1 else "recommender"
+payload = {"action": action}
+
+client = boto3.client("lambda", region_name=REGION)
+
+print(f"🚀 Triggering AWS Lambda ({FUNCTION_NAME}) with action: {payload['action']}...\n")
+
+try:
+    response = client.invoke(
+        FunctionName=FUNCTION_NAME,
+        InvocationType="RequestResponse",
+        LogType="Tail",  # Captures the last 4KB of execution logs
+        Payload=json.dumps(payload),
+    )
+except NoCredentialsError:
+    print(
+        "AWS credentials not found.\n"
+        "Configure them first, then re-run:\n"
+        "  1) aws configure   OR\n"
+        "  2) export AWS_ACCESS_KEY_ID=...\n"
+        "     export AWS_SECRET_ACCESS_KEY=...\n"
+        "     export AWS_DEFAULT_REGION=eu-north-1"
+    )
+    sys.exit(1)
+
+print(f"Status Code: {response['StatusCode']}")
+
+# Print the exact execution log output (all print statements inside Lambda)
+if "LogResult" in response:
+    logs = base64.b64decode(response["LogResult"]).decode("utf-8", errors="ignore")
+    print("\n" + "=" * 30 + " AWS LAMBDA EXECUTION LOGS " + "=" * 30)
+    print(logs)
+    print("=" * 87 + "\n")
+
+# Print function response
+response_payload = json.loads(response["Payload"].read().decode("utf-8"))
+print(f"Lambda Output: {response_payload}")
