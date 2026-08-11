@@ -19,15 +19,19 @@ import boto3
 import numpy as np
 import pandas as pd
 import requests
-import logging
-
-import yfinance as yf
 from bs4 import BeautifulSoup
+from tvDatafeed import Interval, TvDatafeed
 
-# Mute yfinance logger to prevent CloudWatch [ERROR] spam for missing SME stocks
-yf_logger = logging.getLogger("yfinance")
-yf_logger.setLevel(logging.CRITICAL)
-yf_logger.propagate = False
+# Lazily initialized guest-mode TradingView client (once per container, outside ticker loop)
+_tv = None
+
+
+def get_tv() -> TvDatafeed:
+    global _tv
+    if _tv is None:
+        _tv = TvDatafeed()
+    return _tv
+
 
 # Your S3 bucket name
 BUCKET_NAME = os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
@@ -238,26 +242,45 @@ class SwingRecommender:
         self.tickers_scanned = len(df)
         print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
 
+        tv = get_tv()
+        failed_downloads = 0
+        successful_downloads = 0
+
         for _, row in df.iterrows():
             raw_symbol = str(row["Symbol"]).strip()
 
-            # Numeric codes are BSE (.BO); alphabetic tickers are NSE (.NS)
+            # Numeric Screener codes are BSE; alphabetic tickers are NSE
             if raw_symbol.isdigit():
-                ticker = f"{raw_symbol}.BO"
+                exchange = "BSE"
             else:
-                ticker = f"{raw_symbol}.NS"
+                exchange = "NSE"
 
+            ticker = f"{exchange}:{raw_symbol}"
             name = row["Name"]
 
             try:
-                stock_data = yf.download(
-                    ticker, period="6mo", interval="1d", progress=False
+                hist_data = tv.get_hist(
+                    symbol=str(raw_symbol),
+                    exchange=exchange,
+                    interval=Interval.in_daily,
+                    n_bars=100,
                 )
-                if len(stock_data) < 30:
+                if hist_data is None or len(hist_data) < 30:
+                    failed_downloads += 1
                     continue
 
-                if isinstance(stock_data.columns, pd.MultiIndex):
-                    stock_data.columns = stock_data.columns.get_level_values(0)
+                successful_downloads += 1
+
+                # tvDatafeed returns lowercase OHLCV — map to existing indicator schema
+                stock_data = hist_data.rename(
+                    columns={
+                        "open": "Open",
+                        "high": "High",
+                        "low": "Low",
+                        "close": "Close",
+                        "volume": "Volume",
+                    }
+                )
 
                 stock_data["EMA_9"] = stock_data["Close"].ewm(span=9, adjust=False).mean()
                 stock_data["EMA_21"] = (
@@ -305,20 +328,24 @@ class SwingRecommender:
                         continue
 
                     self.buy_signals.append(
-                        f"🟢 BUY: {name} ({ticker})\n"
-                        f"Price: ₹{round(last_close, 2)} | RSI: {round(curr_rsi, 1)} | "
+                        f"BUY: {name} ({ticker})\n"
+                        f"Price: Rs {round(last_close, 2)} | RSI: {round(curr_rsi, 1)} | "
                         f"BB%: {round(position_in_range * 100, 1)}\n"
-                        f"SMA20: ₹{round(curr_sma20, 2)} | "
-                        f"Lower −2σ: ₹{round(curr_lower_band, 2)}\n"
+                        f"SMA20: Rs {round(curr_sma20, 2)} | "
+                        f"Lower -2s: Rs {round(curr_lower_band, 2)}\n"
                         f"Shares: {trade_params['shares']} | "
-                        f"Capital Allocated: ₹{trade_params['investment']}\n"
-                        f"🎯 Target (3 ATR): ₹{trade_params['take_profit']}\n"
-                        f"🛑 Stop Loss (1.5 ATR): ₹{trade_params['stop_loss']}\n"
-                        f"⚠️ Capital at Risk: ₹{trade_params['risk_amount']}\n"
+                        f"Capital Allocated: Rs {trade_params['investment']}\n"
+                        f"Target (3 ATR): Rs {trade_params['take_profit']}\n"
+                        f"Stop Loss (1.5 ATR): Rs {trade_params['stop_loss']}\n"
+                        f"Capital at Risk: Rs {trade_params['risk_amount']}\n"
                     )
             except Exception:
-                pass
+                failed_downloads += 1
 
+        print(
+            f"Market data summary: ok={successful_downloads} "
+            f"failed_or_short={failed_downloads}"
+        )
         self.dispatch_alerts()
 
     def dispatch_alerts(self):
