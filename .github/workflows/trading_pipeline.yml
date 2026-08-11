@@ -5,6 +5,9 @@ on:
     # GitHub Actions uses UTC time.
     # IST is UTC+5:30.
 
+    # TEMPORARY TEST: 10:10 AM IST (04:40 UTC)
+    - cron: "40 04 * * *"
+
     # 9:25 AM IST (03:55 UTC) - Monday to Friday
     - cron: "55 03 * * 1-5"
 
