@@ -9,3 +9,4 @@ swing-deps-layer.zip
 .DS_Store
 *.egg-info/
 .pytest_cache/
+core
