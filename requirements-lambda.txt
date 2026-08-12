@@ -1,5 +1,5 @@
-# Dependencies for a custom AWS Lambda Layer (Python 3.10, manylinux).
-# Prefer AWS managed layer AWSSDKPandas-Python310 for pandas/numpy/pyarrow,
+# Dependencies for a custom AWS Lambda Layer (Python 3.12, manylinux).
+# Prefer AWS managed layer AWSSDKPandas-Python312 for pandas/numpy/pyarrow,
 # then attach a second custom layer built from this file.
 #
 # tvdatafeed is not reliably on PyPI — install from GitHub.

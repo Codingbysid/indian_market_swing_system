@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
-# Build a Lambda-compatible dependency layer zip for Python 3.10 (x86_64).
-# Pair with AWS managed layer AWSSDKPandas-Python310 for pandas/numpy.
+# Build a Lambda-compatible dependency layer zip for Python 3.12 (x86_64).
+# Pair with AWS managed layer AWSSDKPandas-Python312 for pandas/numpy.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$ROOT/.lambda_layer_build"
 OUT_ZIP="$ROOT/swing-deps-layer.zip"
 REQ_FILE="$ROOT/requirements-lambda.txt"
+PY_BIN="${PYTHON_BIN:-python3.12}"
+
+if ! command -v "$PY_BIN" >/dev/null 2>&1; then
+  echo "ERROR: $PY_BIN not found. Install Python 3.12 (e.g. brew install python@3.12)."
+  exit 1
+fi
 
 rm -rf "$BUILD_DIR" "$OUT_ZIP"
 mkdir -p "$BUILD_DIR/python"
@@ -19,27 +25,27 @@ trap 'rm -f "$BIN_REQ" "$GIT_REQ"' EXIT
 grep -v '^#' "$REQ_FILE" | grep -v '^$' | grep -v 'git+' > "$BIN_REQ" || true
 grep 'git+' "$REQ_FILE" > "$GIT_REQ" || true
 
-echo "Installing binary manylinux2014_x86_64 wheels for Python 3.10..."
+echo "Using $($PY_BIN --version)"
+echo "Installing binary manylinux2014_x86_64 wheels for Python 3.12..."
 if [ -s "$BIN_REQ" ]; then
-  python3 -m pip install \
+  "$PY_BIN" -m pip install \
     -r "$BIN_REQ" \
     -t "$BUILD_DIR/python" \
     --upgrade \
     --platform manylinux2014_x86_64 \
     --implementation cp \
-    --python-version 3.10 \
+    --python-version 3.12 \
     --only-binary=:all:
 fi
 
 echo "Installing git/source packages (tvdatafeed)..."
 if [ -s "$GIT_REQ" ]; then
   # Source packages are arch-independent; install without platform pins.
-  python3 -m pip install \
+  "$PY_BIN" -m pip install \
     -r "$GIT_REQ" \
     -t "$BUILD_DIR/python" \
     --upgrade \
     --no-deps
-  # Pull runtime deps of tvdatafeed that may be missing (websocket-client already in BIN_REQ)
 fi
 
 # Strip packages provided by the Lambda runtime / AWSSDKPandas managed layer
@@ -73,7 +79,7 @@ fi
 echo "Created $OUT_ZIP ($(du -h "$OUT_ZIP" | awk '{print $1}'))"
 echo
 echo "Upload this zip as a custom Lambda Layer, then attach:"
-echo "  1) AWSSDKPandas-Python310 (AWS managed)"
+echo "  1) AWSSDKPandas-Python312 (AWS managed)"
 echo "  2) your custom swing-deps-layer.zip"
 echo "Handler: lambda_function.lambda_handler"
-echo "Architecture: x86_64"
+echo "Runtime: python3.12 | Architecture: x86_64"
