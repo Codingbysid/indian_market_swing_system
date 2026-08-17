@@ -1,73 +1,29 @@
-name: Indian Swing Trading Pipeline
+# Production scheduling and notifications run only on AWS Lambda + EventBridge.
+# This GitHub Actions workflow is intentionally disabled so it does not send
+# duplicate ntfy/email alerts.
+#
+# To re-enable as an emergency fallback, restore schedule crons and the
+# scraper/recommender steps from git history — do not run both paths at once.
+
+name: Indian Swing Trading Pipeline (disabled)
 
 on:
-  schedule:
-    # GitHub Actions uses UTC time.
-    # IST is UTC+5:30.
-
-    # TEMPORARY TEST: 10:10 AM IST (04:40 UTC)
-    - cron: "40 04 * * *"
-
-    # 9:25 AM IST (03:55 UTC) - Monday to Friday
-    - cron: "55 03 * * 1-5"
-
-    # 12:00 PM IST (06:30 UTC) - Monday to Friday
-    - cron: "30 06 * * 1-5"
-
-    # 3:00 PM IST (09:30 UTC) - Monday to Friday
-    - cron: "30 09 * * 1-5"
-
-    # 4:15 PM IST (10:45 UTC) - Monday to Friday (Scraper)
-    - cron: "45 10 * * 1-5"
-
-  # Allows you to trigger the script manually from the GitHub interface
+  # No schedule — AWS owns live runs/notifications.
+  # Manual runs also disabled to avoid accidental duplicate alerts.
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type ENABLE only if you intentionally want a local GHA run"
+        required: true
+        default: ""
 
 jobs:
-  run-pipeline:
+  disabled:
+    if: github.event.inputs.confirm == 'ENABLE'
     runs-on: ubuntu-latest
-    env:
-      GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
-      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-          cache: "pip"
-
-      - name: Install Dependencies
-        run: pip install -r requirements.txt
-
-      - name: Restore scraped screen data
-        uses: actions/cache@v4
-        with:
-          path: data
-          key: swing-data-${{ github.run_id }}
-          restore-keys: |
-            swing-data-
-
-      - name: Ensure data directory exists
-        run: mkdir -p data
-
-      - name: Run Scraper (Only at 4:15 PM IST)
-        # 10 is the hour in UTC corresponding to 4:15 PM IST
-        if: github.event.schedule == '45 10 * * 1-5' || github.event_name == 'workflow_dispatch'
-        run: python screener_scraper.py
-
-      - name: Run Technical Recommender (Market Hours)
-        if: github.event.schedule != '45 10 * * 1-5' || github.event_name == 'workflow_dispatch'
-        run: python recommender.py
-
-      - name: Upload Execution Logs
-        uses: actions/upload-artifact@v4
-        # Always run this step, even if previous steps failed
-        if: always()
-        with:
-          name: daily-execution-logs
-          path: execution_log.txt
-          if-no-files-found: ignore
+      - name: Refuse by default
+        run: |
+          echo "GitHub Actions notifications are disabled."
+          echo "Use AWS Lambda (invoke_aws.py / EventBridge) for alerts."
+          exit 1
