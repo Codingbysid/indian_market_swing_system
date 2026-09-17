@@ -164,9 +164,9 @@ class SwingRecommender:
         self.regime, self.regime_detail = get_market_regime()
         print(self.regime_detail)
         if self.regime == "RISK_OFF":
-            print("RISK_OFF: skipping long signal generation (index below 50-EMA).")
-            self.dispatch_alerts()
-            return
+            print("RISK_OFF: Adjusting risk down (50% size) for dip-buying in a down market.")
+            self.risk_manager.risk_per_trade_pct /= 2.0
+            self.risk_manager.half_kelly /= 2.0
 
         for index, row in df.iterrows():
             raw_symbol = str(row["Symbol"]).strip()
@@ -354,7 +354,7 @@ class SwingRecommender:
 
 # Execution Block
 if __name__ == "__main__":
-    recommender = SwingRecommender(budget=60000)
+    recommender = SwingRecommender(budget=48000)
     print(
         f"Quant risk ready | Risk/trade: {recommender.risk_manager.risk_per_trade_pct:.1%} "
         f"(₹{recommender.budget * recommender.risk_manager.risk_per_trade_pct:,.0f}) | "
@@ -367,5 +367,6 @@ if __name__ == "__main__":
             "data/coffee_can.csv",
             "data/growth_no_dilution.csv",
             "data/rsi_oversold.csv",
+            "data/it_bluechips.csv",
         ]
     )

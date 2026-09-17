@@ -1,0 +1,12 @@
+{
+  "cash": 24000.0,
+  "holdings": [
+    {"symbol": "HAL", "qty": 12, "avg_cost": 5175.01, "sleeve": "legacy"},
+    {"symbol": "CDSL", "qty": 4, "avg_cost": 1425.0, "sleeve": "legacy"},
+    {"symbol": "BPCL", "qty": 6, "avg_cost": 318.65, "sleeve": "legacy"},
+    {"symbol": "TIMEX", "qty": 5, "avg_cost": 602.0, "sleeve": "legacy"},
+    {"symbol": "INFY", "qty": 5, "avg_cost": 1030.0, "sleeve": "legacy"}
+  ],
+  "closed_trades": [],
+  "updated": "2026-09-17T00:00:00+00:00"
+}

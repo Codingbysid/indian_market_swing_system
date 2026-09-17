@@ -10,10 +10,20 @@ from botocore.exceptions import NoCredentialsError
 REGION = "eu-north-1"
 FUNCTION_NAME = "indian-swing-bot"
 
-# Change action to "scraper" or "recommender"
-# Or pass as CLI arg: python invoke_aws.py scraper
-action = sys.argv[1] if len(sys.argv) > 1 else "recommender"
+# Change action to "scraper", "recommender", or "monitor"
+# Or pass as CLI arg: python invoke_aws.py monitor [--force]
+# --force bypasses the IST weekend gate (for verification only)
+args = [a for a in sys.argv[1:] if a]
+action = "recommender"
+force = False
+for a in args:
+    if a in ("--force", "--ignore-weekend"):
+        force = True
+    elif not a.startswith("-"):
+        action = a
 payload = {"action": action}
+if force:
+    payload["ignore_weekend"] = True
 
 # Recommender scans ~90 tickers with TV rate-limit sleeps; allow up to 6 minutes.
 client = boto3.client(

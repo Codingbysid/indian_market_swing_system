@@ -4,19 +4,22 @@ AWS Lambda entrypoint for the Indian swing trading pipeline.
 EventBridge payloads:
   {"action": "scraper"}      -> scrape Screener screens into S3
   {"action": "recommender"} -> analyze S3 CSVs and send ntfy/email alerts
+  {"action": "monitor"}     -> profit-only exit watch on current holdings
 """
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
 import logging
 import smtplib
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from io import StringIO
+from zoneinfo import ZoneInfo
 
 import boto3
 import numpy as np
@@ -37,6 +40,8 @@ SYMBOL_MAP = {
     "BAJAJ-AUTO": "BAJAJ_AUTO",
     "KLBRENG-B": "KLBRENG_B",
     "SBIFUNDS": "SBIFUNDS",  # TV matches this exactly; keep exchange NSE
+    # Zomato rebranded; TradingView NSE scrip is ETERNAL
+    "ZOMATO": "ETERNAL",
 
     # BSE Numeric Codes -> BSE Scrip IDs (TradingView Tickers)
     "544554": "KVSCAST",
@@ -122,9 +127,51 @@ def get_market_regime(tv: TvDatafeed) -> tuple[str, str]:
 # Your S3 bucket name
 BUCKET_NAME = os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
 NTFY_TOPIC = os.getenv("NTFY_TOPIC", "msu_swing_alerts_2026")
-TOTAL_CAPITAL = float(os.getenv("TOTAL_CAPITAL", "60000"))
-MIN_SIGNAL_PROB = float(os.getenv("MIN_SIGNAL_PROB", "0.55"))
 MODEL_S3_KEY = os.getenv("MODEL_S3_KEY", "models/model.json")
+PORTFOLIO_STATE_KEY = os.getenv("PORTFOLIO_STATE_KEY", "portfolio_state.json")
+HOLDINGS_LEVELS_KEY = os.getenv("HOLDINGS_LEVELS_KEY", "holdings_levels.json")
+EQUITY_CURVE_KEY = os.getenv("EQUITY_CURVE_KEY", "equity_curve.json")
+
+# Live-cash split: Core 2/3, Satellite 1/3 of deployable cash in portfolio_state.json
+CORE_CASH_FRACTION = float(os.getenv("CORE_CASH_FRACTION", str(2.0 / 3.0)))
+SATELLITE_CASH_FRACTION = float(os.getenv("SATELLITE_CASH_FRACTION", str(1.0 / 3.0)))
+
+CHECKPOINT_DATE = "2026-12-15"
+CHECKPOINT_EQUITY = float(os.getenv("CHECKPOINT_EQUITY", "135000"))
+LONG_HORIZON_EQUITY = float(os.getenv("LONG_HORIZON_EQUITY", "250000"))
+
+# Profit-only exit ladder (never sell a holding below true breakeven)
+BE_COST_MULT = 1.0025
+BE_FLAT_FEE = 18.0
+TRAIL_ATR_MULT = 1.5
+ATR_DRIFT_THRESHOLD = 0.15
+
+# Dual-portfolio architecture (single scan pass, independent sizing + ML gates).
+# CORE_CAPITAL / SATELLITE_CAPITAL are fallbacks when portfolio_state.json is missing.
+# Live runs size sleeves from deployable cash (2/3 Core, 1/3 Satellite).
+CORE_PORTFOLIO = {
+    "key": "core",
+    "name": "Core (Conservative)",
+    "capital": float(os.getenv("CORE_CAPITAL", "16000")),
+    "min_prob": float(os.getenv("CORE_MIN_PROB", "0.55")),
+    "kelly_fraction": float(os.getenv("CORE_KELLY_FRACTION", "0.25")),
+    "kelly_label": "Kelly cap",
+    "risk_per_trade_pct": 0.025,
+    "max_positions": int(os.getenv("CORE_MAX_POSITIONS", "4")),
+}
+
+SATELLITE_PORTFOLIO = {
+    "key": "satellite",
+    "name": "Satellite (Aggressive)",
+    "capital": float(os.getenv("SATELLITE_CAPITAL", "8000")),
+    "min_prob": float(os.getenv("SATELLITE_MIN_PROB", "0.50")),
+    "kelly_fraction": float(os.getenv("SATELLITE_KELLY_FRACTION", "0.50")),
+    "kelly_label": "Kelly cap",
+    "risk_per_trade_pct": 0.025,
+    "max_positions": int(os.getenv("SATELLITE_MAX_POSITIONS", "2")),
+}
+
+PORTFOLIOS = (CORE_PORTFOLIO, SATELLITE_PORTFOLIO)
 
 SCREENS = {
     "piotroski_stocks.csv": "https://www.screener.in/screens/1698348/piotroski-scan/",
@@ -133,6 +180,15 @@ SCREENS = {
     "growth_no_dilution.csv": "https://www.screener.in/screens/226712/growth-without-dilution/",
     "rsi_oversold.csv": "https://www.screener.in/screens/985942/rsi-oversold-stocks/",
 }
+
+# Static add-on universe (not overwritten by Screener scraper). High-beta NSE names
+# sized for the Satellite ₹1,800 allocation sleeve.
+EXTRA_UNIVERSE_CSVS = (
+    "satellite_high_beta.csv",
+    "it_bluechips.csv",
+)
+
+RECOMMENDER_CSV_KEYS = tuple(SCREENS.keys()) + EXTRA_UNIVERSE_CSVS
 
 s3_client = boto3.client("s3")
 
@@ -169,7 +225,7 @@ def read_df_from_s3(key: str) -> pd.DataFrame | None:
 
 
 def append_log_to_s3(text: str, key: str = "execution_log.txt") -> None:
-    """Append a log chunk to an S3 object (read-modify-write)."""
+    """Append a text log chunk to an S3 object (read-modify-write)."""
     existing = ""
     try:
         obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
@@ -181,6 +237,96 @@ def append_log_to_s3(text: str, key: str = "execution_log.txt") -> None:
         Key=key,
         Body=(existing + text).encode("utf-8"),
     )
+
+
+def write_execution_log_json(payload: dict, key: str = "execution_log.json") -> None:
+    """Overwrite the structured dual-portfolio execution log on S3."""
+    write_json_to_s3(payload, key)
+
+
+def read_json_from_s3(key: str) -> dict | None:
+    try:
+        obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
+        return json.loads(obj["Body"].read().decode("utf-8"))
+    except Exception as exc:
+        print(f"Could not read s3://{BUCKET_NAME}/{key}: {exc}")
+        return None
+
+
+def write_json_to_s3(payload: dict, key: str) -> None:
+    s3_client.put_object(
+        Bucket=BUCKET_NAME,
+        Key=key,
+        Body=json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"),
+        ContentType="application/json",
+    )
+
+
+def default_portfolio_state() -> dict:
+    return {
+        "cash": 24000.0,
+        "holdings": [],
+        "closed_trades": [],
+        "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00"),
+    }
+
+
+def load_portfolio_state() -> dict:
+    data = read_json_from_s3(PORTFOLIO_STATE_KEY)
+    if not data:
+        print(
+            f"{PORTFOLIO_STATE_KEY} missing; using CORE_CAPITAL/"
+            "SATELLITE_CAPITAL env fallbacks."
+        )
+        return default_portfolio_state()
+    data.setdefault("cash", 0.0)
+    data.setdefault("holdings", [])
+    data.setdefault("closed_trades", [])
+    return data
+
+
+def held_symbol_set(state: dict) -> set[str]:
+    out: set[str] = set()
+    for h in state.get("holdings") or []:
+        if int(h.get("qty", 0) or 0) <= 0:
+            continue
+        raw = str(h.get("symbol", "")).strip().upper()
+        if not raw:
+            continue
+        out.add(raw)
+        out.add(str(SYMBOL_MAP.get(raw, raw)).upper())
+    return out
+
+
+def sleeve_open_counts(state: dict) -> dict[str, int]:
+    counts = {"core": 0, "satellite": 0}
+    for h in state.get("holdings") or []:
+        if int(h.get("qty", 0) or 0) <= 0:
+            continue
+        sleeve = str(h.get("sleeve", "legacy")).strip().lower()
+        if sleeve in counts:
+            counts[sleeve] += 1
+    return counts
+
+
+def portfolios_from_state(state: dict | None) -> list[dict]:
+    """Core = 2/3 of live cash, Satellite = 1/3. Env capital is the fallback."""
+    core = copy.deepcopy(CORE_PORTFOLIO)
+    sat = copy.deepcopy(SATELLITE_PORTFOLIO)
+    cash = float((state or {}).get("cash") or 0.0)
+    if cash > 0:
+        core["capital"] = round(cash * CORE_CASH_FRACTION, 2)
+        sat["capital"] = round(cash * SATELLITE_CASH_FRACTION, 2)
+        print(
+            f"Sleeves from live cash Rs {cash:,.0f}: "
+            f"Core={core['capital']:,.0f} Sat={sat['capital']:,.0f}"
+        )
+    else:
+        print(
+            "Live cash is 0 or missing; using env CORE_CAPITAL/"
+            f"SATELLITE_CAPITAL ({core['capital']:,.0f}/{sat['capital']:,.0f})."
+        )
+    return [core, sat]
 
 
 FEATURE_NAMES = [
@@ -423,18 +569,22 @@ class ScreenerScraper:
 
 
 class QuantRiskManager:
+    """Position sizing for one portfolio sleeve (independent capital + Kelly cap)."""
+
     def __init__(
         self,
-        total_capital=60000,
-        risk_per_trade_pct=0.025,
-        # Backtest labeler (1:2 R:R, 10d): resolved-only WR ≈ 0.36; use 0.35 not 0.50.
-        win_rate=0.35,
-        payoff_ratio=2.0,
+        total_capital: float,
+        kelly_fraction: float,
+        risk_per_trade_pct: float = 0.025,
+        stop_atr_mult: float = 1.5,
+        target_atr_mult: float = 3.0,
     ):
-        self.total_capital = total_capital
-        self.risk_per_trade_pct = risk_per_trade_pct
-        full_kelly = win_rate - ((1 - win_rate) / payoff_ratio)
-        self.half_kelly = max(0.05, full_kelly / 2)
+        self.total_capital = float(total_capital)
+        self.kelly_fraction = float(kelly_fraction)
+        self.risk_per_trade_pct = float(risk_per_trade_pct)
+        self.stop_atr_mult = float(stop_atr_mult)
+        self.target_atr_mult = float(target_atr_mult)
+        self.allocation_cap = self.total_capital * self.kelly_fraction
 
     def calculate_trade_parameters(self, current_price, atr):
         if current_price <= 0 or atr <= 0:
@@ -444,19 +594,29 @@ class QuantRiskManager:
                 "stop_loss": 0.0,
                 "take_profit": 0.0,
                 "risk_amount": 0.0,
+                "allocation_cap": round(self.allocation_cap, 2),
+                "reason": "invalid_price_or_atr",
             }
 
-        max_rupee_risk = self.total_capital * self.risk_per_trade_pct
-        stop_loss_dist = atr * 1.5
+        stop_loss_dist = atr * self.stop_atr_mult
         stop_loss_price = current_price - stop_loss_dist
-        take_profit_price = current_price + (atr * 3.0)
+        take_profit_price = current_price + (atr * self.target_atr_mult)
 
-        shares_by_risk = math.floor(max_rupee_risk / stop_loss_dist)
-        max_capital_allowed = self.total_capital * self.half_kelly
-        shares_by_capital = math.floor(max_capital_allowed / current_price)
+        # Primary: Kelly allocation cap (user-specified integer share rounding)
+        capital_to_allocate = self.allocation_cap
+        shares_by_capital = int(capital_to_allocate / current_price)
 
-        final_shares = min(shares_by_risk, shares_by_capital)
+        # Secondary: hard rupee-risk ceiling (2.5% of sleeve capital)
+        max_rupee_risk = self.total_capital * self.risk_per_trade_pct
+        shares_by_risk = (
+            math.floor(max_rupee_risk / stop_loss_dist) if stop_loss_dist > 0 else 0
+        )
+
+        final_shares = min(shares_by_capital, shares_by_risk)
         actual_investment = final_shares * current_price
+        reason = "ok"
+        if final_shares <= 0:
+            reason = "price_exceeds_allocation_cap"
 
         return {
             "shares": final_shares,
@@ -464,18 +624,41 @@ class QuantRiskManager:
             "stop_loss": round(stop_loss_price, 2),
             "take_profit": round(take_profit_price, 2),
             "risk_amount": round(final_shares * stop_loss_dist, 2),
+            "allocation_cap": round(self.allocation_cap, 2),
+            "reason": reason,
         }
 
 
 class SwingRecommender:
-    def __init__(self, budget):
-        self.budget = budget
-        self.risk_manager = QuantRiskManager(total_capital=budget)
-        self.buy_signals = []
+    def __init__(self, portfolios=None, portfolio_state: dict | None = None):
+        self.portfolio_state = portfolio_state or default_portfolio_state()
+        self.portfolios = list(
+            portfolios if portfolios is not None else portfolios_from_state(self.portfolio_state)
+        )
+        self.risk_managers = {
+            p["key"]: QuantRiskManager(
+                total_capital=p["capital"],
+                kelly_fraction=p["kelly_fraction"],
+                risk_per_trade_pct=p.get("risk_per_trade_pct", 0.025),
+            )
+            for p in self.portfolios
+        }
+        # Per-portfolio signal lists
+        self.signals = {p["key"]: [] for p in self.portfolios}
         self.tickers_scanned = 0
         self.regime = "RISK_ON"
         self.regime_detail = "Regime: RISK_ON (not evaluated)"
         self.signal_model = None
+        self.held_symbols = held_symbol_set(self.portfolio_state)
+        self.open_counts = sleeve_open_counts(self.portfolio_state)
+        self.remaining_cash = float(self.portfolio_state.get("cash") or 0.0)
+        if self.held_symbols:
+            print(f"Held symbols (no add): {sorted(self.held_symbols)}")
+        print(
+            f"Free cash Rs {self.remaining_cash:,.0f} | "
+            f"open system positions core={self.open_counts['core']} "
+            f"satellite={self.open_counts['satellite']}"
+        )
 
     def calculate_rsi(self, data, periods=14):
         delta = data["Close"].diff()
@@ -492,8 +675,130 @@ class SwingRecommender:
         true_range = np.max(ranges, axis=1)
         return true_range.ewm(alpha=1 / periods, adjust=False).mean()
 
+    def _format_signal(
+        self,
+        portfolio: dict,
+        name: str,
+        ticker: str,
+        last_close: float,
+        curr_rsi: float,
+        position_in_range: float,
+        curr_sma20: float,
+        curr_lower_band: float,
+        trade_params: dict,
+        p_success,
+    ) -> dict:
+        """Structured setup used for JSON logs + alert bullets."""
+        return {
+            "portfolio": portfolio["key"],
+            "name": str(name),
+            "ticker": ticker,
+            "price": round(float(last_close), 2),
+            "rsi": round(float(curr_rsi), 1),
+            "bb_pct": round(float(position_in_range) * 100, 1),
+            "sma20": round(float(curr_sma20), 2),
+            "lower_band": round(float(curr_lower_band), 2),
+            "shares": int(trade_params["shares"]),
+            "investment": float(trade_params["investment"]),
+            "allocation_cap": float(trade_params["allocation_cap"]),
+            "take_profit": float(trade_params["take_profit"]),
+            "stop_loss": float(trade_params["stop_loss"]),
+            "risk_amount": float(trade_params["risk_amount"]),
+            "p_success": None if p_success is None else round(float(p_success), 4),
+        }
+
+    def _setup_bullet(self, setup: dict) -> str:
+        p = setup.get("p_success")
+        p_txt = f"{p:.2f}" if p is not None else "n/a"
+        return (
+            f"• {setup['name']} ({setup['ticker']}) | "
+            f"Price: ₹{setup['price']} | Shares: {setup['shares']} | "
+            f"Target: ₹{setup['take_profit']} | Stop: ₹{setup['stop_loss']} | "
+            f"P={p_txt}"
+        )
+
+    def _is_held(self, raw_symbol: str, tv_symbol: str) -> bool:
+        for candidate in (raw_symbol, tv_symbol):
+            if str(candidate).strip().upper() in self.held_symbols:
+                return True
+        return False
+
+    def _assign_to_portfolios(
+        self,
+        name: str,
+        ticker: str,
+        last_close: float,
+        curr_atr: float,
+        curr_rsi: float,
+        position_in_range: float,
+        curr_sma20: float,
+        curr_lower_band: float,
+        p_success,
+    ) -> None:
+        for portfolio in self.portfolios:
+            min_prob = float(portfolio["min_prob"])
+            # Fail-open into both sleeves if model is unavailable
+            if p_success is not None and p_success < min_prob:
+                print(
+                    f"Skip {ticker} for {portfolio['key']}: "
+                    f"P(success)={p_success:.2f} < min_prob={min_prob:.2f}"
+                )
+                continue
+
+            key = portfolio["key"]
+            max_pos = int(portfolio.get("max_positions") or 99)
+            already = self.open_counts.get(key, 0) + len(self.signals.get(key) or [])
+            if already >= max_pos:
+                print(
+                    f"Skip {ticker} for {key}: max_positions={max_pos} already filled"
+                )
+                continue
+
+            rm = self.risk_managers[key]
+            trade_params = rm.calculate_trade_parameters(last_close, curr_atr)
+            if trade_params["shares"] <= 0:
+                print(
+                    f"{portfolio['name']}: {ticker} price ₹{last_close:.2f} exceeds "
+                    f"single-trade allocation cap ₹{trade_params['allocation_cap']:.2f} "
+                    f"(shares=0)."
+                )
+                continue
+
+            investment = float(trade_params["investment"])
+            if investment > self.remaining_cash + 1e-6:
+                print(
+                    f"Skip {ticker} for {key}: lot Rs {investment:,.0f} exceeds "
+                    f"free cash Rs {self.remaining_cash:,.0f}"
+                )
+                continue
+
+            self.signals[key].append(
+                self._format_signal(
+                    portfolio,
+                    name,
+                    ticker,
+                    last_close,
+                    curr_rsi,
+                    position_in_range,
+                    curr_sma20,
+                    curr_lower_band,
+                    trade_params,
+                    p_success,
+                )
+            )
+            self.remaining_cash = round(self.remaining_cash - investment, 2)
+
     def analyze_stocks(self, csv_keys):
         print("Analyzing screens using advanced technical models...")
+        for p in self.portfolios:
+            rm = self.risk_managers[p["key"]]
+            print(
+                f"Portfolio ready | {p['name']} | capital=Rs {p['capital']:,.0f} | "
+                f"{p['kelly_label']}={p['kelly_fraction']:.1%} "
+                f"(max Rs {rm.allocation_cap:,.0f}/trade) | "
+                f"P>= {p['min_prob']:.2f} | max_pos={p.get('max_positions', '-')} | "
+            f"R:R 1:2 (1.5x/3.0x ATR)"
+            )
 
         df_list = []
         for key in csv_keys:
@@ -521,13 +826,11 @@ class SwingRecommender:
         print(self.regime_detail)
 
         if self.regime == "RISK_OFF":
-            print("RISK_OFF: skipping long signal generation (index below 50-EMA).")
-            print(
-                f"Market data summary: ok=0 failed_or_short=0 "
-                f"(skipped ticker loop under {self.regime})"
-            )
-            self.dispatch_alerts()
-            return
+            print("RISK_OFF: Adjusting risk down (50% size) for dip-buying in a down market.")
+            for p in self.portfolios:
+                rm = self.risk_managers[p["key"]]
+                rm.risk_per_trade_pct /= 2.0
+                rm.allocation_cap /= 2.0
 
         self.signal_model = load_signal_model()
         failed_symbols = []
@@ -543,6 +846,10 @@ class SwingRecommender:
             tv_symbol = SYMBOL_MAP.get(raw_symbol, raw_symbol)
             ticker = f"{exchange}:{tv_symbol}"
             name = row["Name"]
+
+            if self._is_held(raw_symbol, tv_symbol):
+                print(f"Skip {ticker}: already held (no averaging down).")
+                continue
 
             try:
                 hist_data = tv.get_hist(
@@ -614,38 +921,19 @@ class SwingRecommender:
                     and (40 <= curr_rsi <= 65)
                     and (position_in_range < 0.60)
                 ):
-                    trade_params = self.risk_manager.calculate_trade_parameters(
-                        last_close, curr_atr
+                    p_success = score_setup(
+                        self.signal_model, stock_data, regime_on=1.0
                     )
-                    if trade_params["shares"] <= 0:
-                        continue
-
-                    # Optional ML probability gate (skipped if model missing)
-                    p_success = score_setup(self.signal_model, stock_data, regime_on=1.0)
-                    if p_success is not None and p_success < MIN_SIGNAL_PROB:
-                        print(
-                            f"Skip {ticker}: P(success)={p_success:.2f} "
-                            f"< MIN_SIGNAL_PROB={MIN_SIGNAL_PROB:.2f}"
-                        )
-                        continue
-
-                    prob_line = (
-                        f"P(success): {p_success:.2f}\n"
-                        if p_success is not None
-                        else ""
-                    )
-                    self.buy_signals.append(
-                        f"BUY: {name} ({ticker})\n"
-                        f"Price: Rs {round(last_close, 2)} | RSI: {round(curr_rsi, 1)} | "
-                        f"BB%: {round(position_in_range * 100, 1)}\n"
-                        f"{prob_line}"
-                        f"SMA20: Rs {round(curr_sma20, 2)} | "
-                        f"Lower -2s: Rs {round(curr_lower_band, 2)}\n"
-                        f"Shares: {trade_params['shares']} | "
-                        f"Capital Allocated: Rs {trade_params['investment']}\n"
-                        f"Target (3 ATR): Rs {trade_params['take_profit']}\n"
-                        f"Stop Loss (1.5 ATR): Rs {trade_params['stop_loss']}\n"
-                        f"Capital at Risk: Rs {trade_params['risk_amount']}\n"
+                    self._assign_to_portfolios(
+                        name=name,
+                        ticker=ticker,
+                        last_close=last_close,
+                        curr_atr=curr_atr,
+                        curr_rsi=curr_rsi,
+                        position_in_range=position_in_range,
+                        curr_sma20=curr_sma20,
+                        curr_lower_band=curr_lower_band,
+                        p_success=p_success,
                     )
             except Exception:
                 failed_symbols.append(
@@ -660,90 +948,148 @@ class SwingRecommender:
         print(f"UNRESOLVED SYMBOLS ({len(failed_symbols)} total):")
         print(failed_symbols)
         print("=" * 50)
+        for p in self.portfolios:
+            print(
+                f"{p['name']}: {len(self.signals[p['key']])} signal(s) "
+                f"(P >= {p['min_prob']:.2f})"
+            )
         self.dispatch_alerts()
+
+    def _build_segmented_message(self) -> str:
+        """Exact dual-portfolio ntfy/email payload."""
+        lines = [self.regime_detail, ""]
+
+        # CORE / SATELLITE headers from live portfolio config (capital + gates)
+        by_key = {p["key"]: p for p in self.portfolios}
+        core_cfg = by_key.get("core", CORE_PORTFOLIO)
+        sat_cfg = by_key.get("satellite", SATELLITE_PORTFOLIO)
+        core_cap_pct = float(core_cfg["kelly_fraction"]) * 100
+        sat_cap_pct = float(sat_cfg["kelly_fraction"]) * 100
+
+        lines.append(
+            f"--- 🛡️ CORE (₹{float(core_cfg['capital']):,.0f} | "
+            f"{core_cap_pct:.2f}% Cap | P>={float(core_cfg['min_prob']):.2f}) ---"
+        )
+        core = self.signals.get("core") or []
+        if core:
+            for setup in core:
+                lines.append(self._setup_bullet(setup))
+        else:
+            lines.append("• No setups today")
+        lines.append("")
+
+        lines.append(
+            f"--- ⚡ SATELLITE (₹{float(sat_cfg['capital']):,.0f} | "
+            f"{sat_cap_pct:.2f}% Cap | P>={float(sat_cfg['min_prob']):.2f}) ---"
+        )
+        sat = self.signals.get("satellite") or []
+        if sat:
+            for setup in sat:
+                lines.append(self._setup_bullet(setup))
+        else:
+            lines.append("• No setups today")
+        lines.append("")
+
+        return "\n".join(lines).rstrip() + "\n"
 
     def dispatch_alerts(self):
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        log_entry = (
-            f"[{timestamp}] Run Complete. {self.regime_detail}. "
-            f"Tickers Scanned: {self.tickers_scanned}. "
-            f"Signals found: {len(self.buy_signals)}.\n"
-        )
-        log_chunk = log_entry
-        if self.buy_signals:
-            log_chunk += "\n".join(self.buy_signals) + "\n"
-        log_chunk += "-" * 40 + "\n"
-        append_log_to_s3(log_chunk)
+        core_setups = list(self.signals.get("core") or [])
+        satellite_setups = list(self.signals.get("satellite") or [])
+        core_n = len(core_setups)
+        sat_n = len(satellite_setups)
+        total_n = core_n + sat_n
 
-        regime_header = f"{self.regime_detail}\n\n"
-        if not self.buy_signals:
-            if self.regime == "RISK_OFF":
-                message_body = (
-                    regime_header
-                    + "No long setups generated: market regime is RISK_OFF "
-                    "(Nifty below 50-day EMA)."
-                )
-            else:
-                message_body = (
-                    regime_header
-                    + "Market conditions did not trigger any new buy setups "
-                    "based on the current quant criteria."
-                )
+        message_body = self._build_segmented_message()
+
+        # Structured S3 JSON log (nested dual-portfolio dictionary)
+        execution_payload = {
+            "timestamp_utc": timestamp,
+            "regime": self.regime,
+            "regime_detail": self.regime_detail,
+            "tickers_scanned": self.tickers_scanned,
+            "alert_text": message_body,
+            "core_setups": core_setups,
+            "satellite_setups": satellite_setups,
+            "counts": {"core": core_n, "satellite": sat_n, "total": total_n},
+        }
+        write_execution_log_json(execution_payload)
+
+        # Also append human-readable trail for continuity
+        append_log_to_s3(
+            f"[{timestamp}] dual-portfolio run | core={core_n} satellite={sat_n}\n"
+            f"{message_body}"
+            + ("-" * 40 + "\n")
+        )
+
+        if total_n == 0:
             title = "System Update (No Action)"  # No emoji in HTTP headers (latin-1)
             priority = "default"
             tags = "grey_question,chart_with_downwards_trend"
             email_subject = "Swing System Update (No Action)"
         else:
-            message_body = (
-                regime_header
-                + "ADVANCED SWING ALERTS:\n\n"
-                + "\n".join(self.buy_signals)
-            )
             title = "Swing Trade Alert"  # No emoji in HTTP headers (latin-1)
             priority = "high"
             tags = "green_circle,chart_with_upwards_trend,moneybag"
-            email_subject = "Stock Buy Alerts Triggered"
+            email_subject = (
+                f"Stock Buy Alerts Triggered (Core {core_n} / Satellite {sat_n})"
+            )
 
         print(message_body)
+        send_push_and_email(
+            title=title,
+            message_body=message_body,
+            email_subject=email_subject,
+            priority=priority,
+            tags=tags,
+        )
 
-        try:
-            response = requests.post(
-                f"https://ntfy.sh/{NTFY_TOPIC}",
-                data=message_body.encode(encoding="utf-8"),
-                headers={
-                    "Title": title,
-                    "Priority": priority,
-                    "Tags": tags,
-                },
-                timeout=30,
-            )
-            response.raise_for_status()
-            print("Push notification sent successfully to your phone.")
-        except Exception as e:
-            print(f"Failed to send push notification: {e}")
 
-        try:
-            sender_email = os.getenv("GMAIL_ADDRESS", "")
-            sender_app_password = os.getenv("GMAIL_APP_PASSWORD", "").replace(" ", "")
-            receiver_email = sender_email
+def send_push_and_email(
+    title: str,
+    message_body: str,
+    email_subject: str,
+    priority: str = "default",
+    tags: str = "grey_question",
+) -> None:
+    try:
+        response = requests.post(
+            f"https://ntfy.sh/{NTFY_TOPIC}",
+            data=message_body.encode(encoding="utf-8"),
+            headers={
+                "Title": title,
+                "Priority": priority,
+                "Tags": tags,
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+        print("Push notification sent successfully to your phone.")
+    except Exception as e:
+        print(f"Failed to send push notification: {e}")
 
-            if (
-                not sender_email
-                or sender_email.startswith("YOUR_")
-                or not sender_app_password
-            ):
-                print("Email skipped: set GMAIL_ADDRESS / GMAIL_APP_PASSWORD env vars.")
-            else:
-                msg = MIMEText(message_body)
-                msg["Subject"] = email_subject
-                msg["From"] = sender_email
-                msg["To"] = receiver_email
-                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-                    server.login(sender_email, sender_app_password)
-                    server.send_message(msg)
-                print("Email alert sent successfully.")
-        except Exception as e:
-            print(f"Failed to send email: {e}")
+    try:
+        sender_email = os.getenv("GMAIL_ADDRESS", "")
+        sender_app_password = os.getenv("GMAIL_APP_PASSWORD", "").replace(" ", "")
+        receiver_email = sender_email
+
+        if (
+            not sender_email
+            or sender_email.startswith("YOUR_")
+            or not sender_app_password
+        ):
+            print("Email skipped: set GMAIL_ADDRESS / GMAIL_APP_PASSWORD env vars.")
+        else:
+            msg = MIMEText(message_body, _charset="utf-8")
+            msg["Subject"] = email_subject
+            msg["From"] = sender_email
+            msg["To"] = receiver_email
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(sender_email, sender_app_password)
+                server.send_message(msg)
+            print("Email alert sent successfully.")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 
 def run_scraper():
@@ -766,14 +1112,340 @@ def run_scraper():
     print("Scraped data saved to S3.")
 
 
-def run_recommender():
-    print("Running recommender...")
-    recommender = SwingRecommender(budget=TOTAL_CAPITAL)
-    print(
-        f"Quant risk ready | Risk/trade: {recommender.risk_manager.risk_per_trade_pct:.1%} "
-        f"| R:R 1:2 (1.5x/3.0x ATR) | Half-Kelly cap: {recommender.risk_manager.half_kelly:.1%}"
+def true_breakeven(avg_cost: float, qty: int) -> float:
+    return float(avg_cost) * BE_COST_MULT + BE_FLAT_FEE / max(int(qty), 1)
+
+
+def split_exit_qty(qty: int) -> tuple[int, int, int]:
+    """~1/3 T1, ~1/3 T2, remainder runner. Qty 1 stays a runner."""
+    qty = int(qty)
+    if qty <= 1:
+        return 0, 0, qty
+    if qty == 2:
+        return 1, 0, 1
+    t1 = max(1, qty // 3)
+    t2 = max(1, qty // 3)
+    runner = qty - t1 - t2
+    if runner <= 0:
+        t2 -= 1
+        runner = 1
+    return t1, t2, runner
+
+
+def _prepare_ohlcv(hist: pd.DataFrame) -> pd.DataFrame:
+    return hist.rename(
+        columns={
+            "open": "Open",
+            "high": "High",
+            "low": "Low",
+            "close": "Close",
+            "volume": "Volume",
+        }
     )
-    recommender.analyze_stocks(list(SCREENS.keys()))
+
+
+def compute_holding_levels(
+    holding: dict,
+    stock: pd.DataFrame,
+    prev_row: dict | None,
+    rsi_fn,
+    atr_fn,
+) -> dict:
+    qty = int(holding.get("qty") or 0)
+    avg = float(holding.get("avg_cost") or 0)
+    symbol = str(holding.get("symbol", "")).strip().upper()
+    stock = stock.copy()
+    stock["ATR"] = atr_fn(stock)
+    stock["RSI"] = rsi_fn(stock)
+    stock["SMA_20"] = stock["Close"].rolling(20).mean()
+    stock["SMA_50"] = stock["Close"].rolling(50).mean()
+    stock["EMA_9"] = stock["Close"].ewm(span=9, adjust=False).mean()
+    stock["EMA_21"] = stock["Close"].ewm(span=21, adjust=False).mean()
+
+    ltp = float(stock["Close"].iloc[-1])
+    atr = float(stock["ATR"].iloc[-1])
+    rsi = float(stock["RSI"].iloc[-1])
+    sma50 = float(stock["SMA_50"].iloc[-1]) if len(stock) >= 50 else float("nan")
+    day_high = float(stock["High"].iloc[-1])
+    day_low = float(stock["Low"].iloc[-1])
+    hi20 = float(stock["High"].iloc[-20:].max())
+    hi60 = float(stock["High"].iloc[-min(60, len(stock)) :].max())
+    hi252 = float(stock["High"].max())
+    prev_ema9 = float(stock["EMA_9"].iloc[-2])
+    prev_ema21 = float(stock["EMA_21"].iloc[-2])
+    curr_ema9 = float(stock["EMA_9"].iloc[-1])
+    curr_ema21 = float(stock["EMA_21"].iloc[-1])
+
+    be = true_breakeven(avg, qty)
+    resistances = []
+    if sma50 == sma50 and sma50 > be:
+        resistances.append(sma50)
+    if hi20 > be:
+        resistances.append(hi20)
+    nearest_res = min(resistances) if resistances else None
+    t1 = max(be + atr, nearest_res) if nearest_res is not None else be + atr
+    t2 = avg + 3.0 * atr
+    if t2 < t1:
+        t2 = t1 + atr
+    t3 = max(hi60, hi252, t2)
+    t1_qty, t2_qty, runner_qty = split_exit_qty(qty)
+
+    prev_row = prev_row or {}
+    prev_hwm = float(prev_row.get("high_watermark") or 0.0)
+    hwm = max(prev_hwm, day_high, ltp)
+    trail_active = hwm > t1
+    trail = max(be, hwm - TRAIL_ATR_MULT * atr) if trail_active else None
+    trail_breached = bool(
+        trail is not None and ltp > be and (day_low <= trail or ltp <= trail)
+    )
+
+    bearish_cross = (prev_ema9 > prev_ema21) and (curr_ema9 <= curr_ema21)
+    weakness_exit = bool(bearish_cross and ltp > be)
+
+    prev_atr = prev_row.get("atr")
+    atr_drift = None
+    atr_drift_alert = False
+    if prev_atr:
+        prev_atr_f = float(prev_atr)
+        if prev_atr_f > 0:
+            atr_drift = abs(atr - prev_atr_f) / prev_atr_f
+            atr_drift_alert = atr_drift > ATR_DRIFT_THRESHOLD
+
+    events: list[str] = []
+    if day_high >= t1:
+        events.append(
+            f"day high >= T1 — confirm GTT fill or place sell {t1_qty or qty} @ {t1:.2f}"
+        )
+    if day_high >= t2:
+        events.append(
+            f"day high >= T2 — confirm GTT fill or place sell {t2_qty or qty} @ {t2:.2f}"
+        )
+    if trail_breached:
+        events.append(
+            f"trail {trail:.2f} breached above BE — sell remainder {runner_qty or qty}"
+        )
+    if weakness_exit:
+        events.append("EMA9 crossed below EMA21 above BE — sell remainder")
+    if atr_drift_alert:
+        events.append(
+            f"ATR drifted {atr_drift:.0%} — refresh GTT levels "
+            f"(T1 {t1:.2f} / T2 {t2:.2f})"
+        )
+
+    pnl_pct = ((ltp / avg) - 1.0) * 100.0 if avg else 0.0
+    return {
+        "symbol": symbol,
+        "qty": qty,
+        "avg_cost": round(avg, 2),
+        "sleeve": holding.get("sleeve", "legacy"),
+        "ltp": round(ltp, 2),
+        "atr": round(atr, 2),
+        "rsi": round(rsi, 1),
+        "pnl_pct": round(pnl_pct, 2),
+        "be": round(be, 2),
+        "t1": round(t1, 2),
+        "t2": round(t2, 2),
+        "t3": round(t3, 2),
+        "t1_qty": t1_qty,
+        "t2_qty": t2_qty,
+        "runner_qty": runner_qty,
+        "sma50": None if sma50 != sma50 else round(sma50, 2),
+        "hi20": round(hi20, 2),
+        "high_watermark": round(hwm, 2),
+        "trail": None if trail is None else round(trail, 2),
+        "trail_active": trail_active,
+        "ema_bull": curr_ema9 > curr_ema21,
+        "market_value": round(ltp * qty, 2),
+        "events": events,
+    }
+
+
+def run_monitor(ignore_weekend: bool = False):
+    weekend, ist_label = is_weekend_ist()
+    if weekend and not ignore_weekend:
+        print(f"Weekend gate: markets closed ({ist_label}). Skipping holdings monitor.")
+        return
+    if weekend and ignore_weekend:
+        print(f"Weekend gate bypassed for verification ({ist_label}).")
+
+    print("Running holdings exit monitor...")
+    state = load_portfolio_state()
+    holdings = [h for h in (state.get("holdings") or []) if int(h.get("qty") or 0) > 0]
+    prev_levels_doc = read_json_from_s3(HOLDINGS_LEVELS_KEY) or {}
+    prev_by_symbol = {
+        str(row.get("symbol", "")).upper(): row
+        for row in (prev_levels_doc.get("holdings") or [])
+    }
+
+    rec = SwingRecommender(portfolios=portfolios_from_state(state), portfolio_state=state)
+    tv = get_tv()
+    rows: list[dict] = []
+    events: list[str] = []
+    holdings_mv = 0.0
+
+    for h in holdings:
+        raw = str(h.get("symbol", "")).strip()
+        tv_symbol = SYMBOL_MAP.get(raw, raw)
+        try:
+            hist = tv.get_hist(
+                symbol=tv_symbol,
+                exchange="NSE" if not raw.isdigit() else "BSE",
+                interval=Interval.in_daily,
+                n_bars=260,
+            )
+            time.sleep(0.3)
+            if hist is None or hist.empty or len(hist) < 20:
+                print(f"Monitor skip {raw}: short/empty history")
+                continue
+            row = compute_holding_levels(
+                h,
+                _prepare_ohlcv(hist),
+                prev_by_symbol.get(raw.upper()),
+                rec.calculate_rsi,
+                rec.calculate_atr,
+            )
+            rows.append(row)
+            holdings_mv += float(row["market_value"])
+            print(
+                f"{row['symbol']} LTP={row['ltp']} BE={row['be']} "
+                f"T1={row['t1']} T2={row['t2']} T3={row['t3']} "
+                f"trail={row['trail']} events={row['events'] or 'none'}"
+            )
+            for ev in row["events"]:
+                events.append(f"{row['symbol']}: {ev}")
+        except Exception as exc:
+            print(f"Monitor failed {raw}: {exc}")
+
+    cash = float(state.get("cash") or 0.0)
+    equity = round(cash + holdings_mv, 2)
+    gap = round(equity - CHECKPOINT_EQUITY, 2)
+    today = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d")
+    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    levels_payload = {
+        "timestamp_utc": timestamp,
+        "date_ist": today,
+        "cash": cash,
+        "holdings_mv": round(holdings_mv, 2),
+        "equity": equity,
+        "checkpoint_date": CHECKPOINT_DATE,
+        "checkpoint_equity": CHECKPOINT_EQUITY,
+        "long_horizon_equity": LONG_HORIZON_EQUITY,
+        "holdings": rows,
+        "events": events,
+    }
+    write_json_to_s3(levels_payload, HOLDINGS_LEVELS_KEY)
+
+    curve = read_json_from_s3(EQUITY_CURVE_KEY) or {
+        "checkpoint_date": CHECKPOINT_DATE,
+        "checkpoint_target": CHECKPOINT_EQUITY,
+        "long_horizon_target": LONG_HORIZON_EQUITY,
+        "points": [],
+    }
+    points = [
+        p for p in (curve.get("points") or []) if p.get("date") != today
+    ]
+    points.append(
+        {
+            "date": today,
+            "cash": cash,
+            "holdings_mv": round(holdings_mv, 2),
+            "equity": equity,
+        }
+    )
+    curve["points"] = points
+    curve["checkpoint_date"] = CHECKPOINT_DATE
+    curve["checkpoint_target"] = CHECKPOINT_EQUITY
+    curve["long_horizon_target"] = LONG_HORIZON_EQUITY
+    write_json_to_s3(curve, EQUITY_CURVE_KEY)
+
+    header = (
+        f"Holdings Exit Watch | {today}\n"
+        f"Cash Rs {cash:,.0f} | Holdings Rs {holdings_mv:,.0f} | "
+        f"Equity Rs {equity:,.0f} vs {CHECKPOINT_DATE} checkpoint "
+        f"Rs {CHECKPOINT_EQUITY:,.0f} (gap {gap:+,.0f})\n"
+    )
+    table_lines = []
+    for row in rows:
+        table_lines.append(
+            f"{row['symbol']}  LTP {row['ltp']}  BE {row['be']}  "
+            f"T1 {row['t1']} ({row['t1_qty']}sh)  T2 {row['t2']} ({row['t2_qty']}sh)  "
+            f"T3 {row['t3']}  trail {row['trail'] if row['trail'] is not None else 'n/a'}  "
+            f"P&L {row['pnl_pct']:+.1f}%"
+        )
+    if events:
+        body = (
+            header
+            + "\n".join(table_lines)
+            + "\n\nEVENTS:\n"
+            + "\n".join(f"• {e}" for e in events)
+            + "\n"
+        )
+        send_push_and_email(
+            title="Holdings Exit Watch",
+            message_body=body,
+            email_subject="Holdings Exit Watch (action required)",
+            priority="high",
+            tags="orange_circle,chart_with_upwards_trend",
+        )
+    else:
+        body = (
+            header
+            + ( "\n".join(table_lines) + "\n\n" if table_lines else "" )
+            + f"No exit events. {len(rows)} holdings tracked.\n"
+        )
+        print(body)
+        append_log_to_s3(f"[{timestamp}] monitor | events=0 equity={equity}\n" + body)
+        return
+
+    print(body)
+    append_log_to_s3(
+        f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body
+    )
+
+
+def is_weekend_ist() -> tuple[bool, str]:
+    """NSE/BSE are closed Sat/Sun — evaluate in Asia/Kolkata."""
+    now_ist = datetime.now(ZoneInfo("Asia/Kolkata"))
+    # Monday=0 ... Sunday=6
+    weekend = now_ist.weekday() >= 5
+    label = now_ist.strftime("%A %Y-%m-%d %H:%M IST")
+    return weekend, label
+
+
+def run_recommender(ignore_weekend: bool = False):
+    weekend, ist_label = is_weekend_ist()
+    if weekend and not ignore_weekend:
+        print(f"Weekend gate: markets closed ({ist_label}). Skipping signals/alerts.")
+        write_execution_log_json(
+            {
+                "timestamp_utc": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+                "regime": "WEEKEND",
+                "regime_detail": f"Weekend skip ({ist_label})",
+                "tickers_scanned": 0,
+                "alert_text": f"Weekend skip — no signals ({ist_label})\n",
+                "core_setups": [],
+                "satellite_setups": [],
+                "counts": {"core": 0, "satellite": 0, "total": 0},
+            }
+        )
+        append_log_to_s3(
+            f"[{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}] "
+            f"Weekend skip — no signals ({ist_label})\n"
+            + ("-" * 40 + "\n")
+        )
+        return
+
+    if weekend and ignore_weekend:
+        print(f"Weekend gate bypassed for verification ({ist_label}).")
+
+    print("Running recommender (dual-portfolio single pass)...")
+    state = load_portfolio_state()
+    recommender = SwingRecommender(
+        portfolios=portfolios_from_state(state),
+        portfolio_state=state,
+    )
+    recommender.analyze_stocks(list(RECOMMENDER_CSV_KEYS))
 
 
 # ==========================================
@@ -792,12 +1464,25 @@ def lambda_handler(event, context):
         run_scraper()
         return {"statusCode": 200, "body": "Scraper executed successfully"}
     if action == "recommender":
-        run_recommender()
+        ignore_weekend = bool(
+            event.get("ignore_weekend")
+            or event.get("force")
+            or event.get("force_weekend")
+        )
+        run_recommender(ignore_weekend=ignore_weekend)
         return {"statusCode": 200, "body": "Recommender executed successfully"}
+    if action == "monitor":
+        ignore_weekend = bool(
+            event.get("ignore_weekend")
+            or event.get("force")
+            or event.get("force_weekend")
+        )
+        run_monitor(ignore_weekend=ignore_weekend)
+        return {"statusCode": 200, "body": "Holdings monitor executed successfully"}
 
     return {
         "statusCode": 400,
-        "body": f"Unknown action: {action}. Use 'scraper' or 'recommender'.",
+        "body": f"Unknown action: {action}. Use 'scraper', 'recommender', or 'monitor'.",
     }
 
 
@@ -806,4 +1491,5 @@ if __name__ == "__main__":
     import sys
 
     chosen = sys.argv[1] if len(sys.argv) > 1 else "recommender"
-    print(lambda_handler({"action": chosen}, None))
+    force = "--force" in sys.argv or "--ignore-weekend" in sys.argv
+    print(lambda_handler({"action": chosen, "ignore_weekend": force}, None))
