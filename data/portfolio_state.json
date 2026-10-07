@@ -1,12 +1,98 @@
 {
-  "cash": 24000.0,
+  "cash": 15255.50,
+  "last_marked_equity": 121733.40,
+  "broker_snapshot": {
+    "date": "2026-10-07",
+    "invested": 112312.00,
+    "holdings_mv": 106477.90,
+    "unrealized_pnl": -5834.10,
+    "available_cash": 15255.50,
+    "source": "zerodha_screenshot"
+  },
+  "policy_version": "live_v2_weekly_repair",
   "holdings": [
-    {"symbol": "HAL", "qty": 12, "avg_cost": 5175.01, "sleeve": "legacy"},
-    {"symbol": "CDSL", "qty": 4, "avg_cost": 1425.0, "sleeve": "legacy"},
-    {"symbol": "BPCL", "qty": 6, "avg_cost": 318.65, "sleeve": "legacy"},
-    {"symbol": "TIMEX", "qty": 5, "avg_cost": 602.0, "sleeve": "legacy"},
-    {"symbol": "INFY", "qty": 5, "avg_cost": 1030.0, "sleeve": "legacy"}
+    {
+      "symbol": "HAL",
+      "qty": 16,
+      "avg_cost": 5040.63,
+      "sleeve": "legacy",
+      "classification": "legacy_profit_only",
+      "tags": ["defence", "psu"],
+      "t1_qty_plan": 5,
+      "t2_qty_plan": 5,
+      "runner_qty_plan": 6,
+      "t1_filled_qty": 0,
+      "t2_filled_qty": 0,
+      "high_watermark": 0.0
+    },
+    {
+      "symbol": "ZENTEC",
+      "qty": 8,
+      "avg_cost": 1711.25,
+      "sleeve": "legacy",
+      "classification": "legacy_profit_only",
+      "tags": ["defence"],
+      "t1_qty_plan": 3,
+      "t2_qty_plan": 3,
+      "runner_qty_plan": 2,
+      "t1_filled_qty": 0,
+      "t2_filled_qty": 0,
+      "high_watermark": 0.0
+    },
+    {
+      "symbol": "CDSL",
+      "qty": 8,
+      "avg_cost": 1363.75,
+      "sleeve": "legacy",
+      "classification": "legacy_profit_only",
+      "tags": ["financials"],
+      "t1_qty_plan": 3,
+      "t2_qty_plan": 3,
+      "runner_qty_plan": 2,
+      "t1_filled_qty": 0,
+      "t2_filled_qty": 0,
+      "high_watermark": 0.0
+    },
+    {
+      "symbol": "INFY",
+      "qty": 5,
+      "avg_cost": 1030.00,
+      "sleeve": "legacy",
+      "classification": "legacy_profit_only",
+      "tags": ["it"],
+      "t1_qty_plan": 2,
+      "t2_qty_plan": 1,
+      "runner_qty_plan": 2,
+      "t1_filled_qty": 0,
+      "t2_filled_qty": 0,
+      "high_watermark": 0.0
+    },
+    {
+      "symbol": "BPCL",
+      "qty": 6,
+      "avg_cost": 318.65,
+      "sleeve": "legacy",
+      "classification": "legacy_profit_only",
+      "tags": ["psu", "energy"],
+      "t1_qty_plan": 2,
+      "t2_qty_plan": 2,
+      "runner_qty_plan": 2,
+      "t1_filled_qty": 0,
+      "t2_filled_qty": 0,
+      "high_watermark": 0.0
+    }
   ],
-  "closed_trades": [],
-  "updated": "2026-09-17T00:00:00+00:00"
+  "closed_trades": [
+    {
+      "symbol": "TIMEX",
+      "qty": 5,
+      "avg_cost": 602.0,
+      "exit_price": 712.0,
+      "pnl": 550.0,
+      "closed_at": "2026-09-21T06:50:07+00:00",
+      "sleeve": "legacy"
+    }
+  ],
+  "reservations": [],
+  "updated": "2026-10-07T06:09:00+00:00"
 }

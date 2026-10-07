@@ -3,9 +3,17 @@
 from __future__ import annotations
 
 import math
+import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from swing_core.indicators import calculate_atr, calculate_rsi, enrich_ohlcv
 
 FEATURE_NAMES = [
     "rsi",
@@ -18,36 +26,8 @@ FEATURE_NAMES = [
 ]
 
 
-def calculate_rsi(close: pd.Series, periods: int = 14) -> pd.Series:
-    delta = close.diff()
-    gain = delta.clip(lower=0).ewm(alpha=1 / periods, adjust=False).mean()
-    loss = (-delta.clip(upper=0)).ewm(alpha=1 / periods, adjust=False).mean()
-    rs = gain / loss.replace(0, np.nan)
-    return 100 - (100 / (1 + rs))
-
-
-def calculate_atr(df: pd.DataFrame, periods: int = 14) -> pd.Series:
-    high_low = df["High"] - df["Low"]
-    high_close = (df["High"] - df["Close"].shift()).abs()
-    low_close = (df["Low"] - df["Close"].shift()).abs()
-    ranges = pd.concat([high_low, high_close, low_close], axis=1)
-    true_range = ranges.max(axis=1)
-    return true_range.ewm(alpha=1 / periods, adjust=False).mean()
-
-
 def enrich_indicators(df: pd.DataFrame) -> pd.DataFrame:
-    out = df.copy()
-    out["EMA_9"] = out["Close"].ewm(span=9, adjust=False).mean()
-    out["EMA_21"] = out["Close"].ewm(span=21, adjust=False).mean()
-    out["RSI"] = calculate_rsi(out["Close"])
-    out["ATR"] = calculate_atr(out)
-    out["SMA_20"] = out["Close"].rolling(20).mean()
-    out["SMA_50"] = out["Close"].rolling(50).mean()
-    out["Std_Dev"] = out["Close"].rolling(20).std()
-    out["Lower_Band"] = out["SMA_20"] - 2 * out["Std_Dev"]
-    out["Upper_Band"] = out["SMA_20"] + 2 * out["Std_Dev"]
-    out["Vol_MA20"] = out["Volume"].rolling(20).mean()
-    return out
+    return enrich_ohlcv(df)
 
 
 def bb_position(close: float, lower: float, upper: float) -> float:

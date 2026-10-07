@@ -27,6 +27,22 @@ FEATURE_LIST_PATH = ARTIFACTS / "feature_names.json"
 METRICS_PATH = ARTIFACTS / "metrics.json"
 
 
+def _fitted_base_score(booster) -> float:
+    """Export the fitted intercept, not a hard-coded 0.5."""
+    try:
+        cfg = json.loads(booster.save_config())
+        raw = (
+            cfg.get("learner", {})
+            .get("learner_model_param", {})
+            .get("base_score", 0.5)
+        )
+        if isinstance(raw, str) and raw.startswith("["):
+            raw = raw.strip("[]").split(",")[0]
+        return float(raw)
+    except Exception:
+        return 0.5
+
+
 def walk_forward_split(df: pd.DataFrame, test_frac: float = 0.25):
     df = df.sort_values("date").reset_index(drop=True)
     cut = int(len(df) * (1.0 - test_frac))
@@ -111,7 +127,7 @@ def main() -> None:
         "type": "xgboost_dump",
         "feature_names": FEATURE_NAMES,
         "threshold_default": 0.55,
-        "base_score": 0.5,
+        "base_score": _fitted_base_score(booster),
         "trees": dump_trees,
         "logistic": {
             "type": "logistic",

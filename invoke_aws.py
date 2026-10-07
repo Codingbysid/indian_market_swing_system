@@ -16,14 +16,20 @@ FUNCTION_NAME = "indian-swing-bot"
 args = [a for a in sys.argv[1:] if a]
 action = "recommender"
 force = False
+dry_run = False
 for a in args:
     if a in ("--force", "--ignore-weekend"):
         force = True
+    elif a in ("--dry-run", "--suppress-alerts"):
+        dry_run = True
     elif not a.startswith("-"):
         action = a
 payload = {"action": action}
 if force:
     payload["ignore_weekend"] = True
+if dry_run:
+    payload["suppress_alerts"] = True
+    payload["dry_run"] = True
 
 # Recommender scans ~90 tickers with TV rate-limit sleeps; allow up to 6 minutes.
 client = boto3.client(
@@ -52,6 +58,8 @@ except NoCredentialsError:
     )
     sys.exit(1)
 
+if response.get("FunctionError"):
+    print(f"FunctionError: {response['FunctionError']}")
 print(f"Status Code: {response['StatusCode']}")
 
 # Print the exact execution log output (all print statements inside Lambda)
@@ -64,3 +72,7 @@ if "LogResult" in response:
 # Print function response
 response_payload = json.loads(response["Payload"].read().decode("utf-8"))
 print(f"Lambda Output: {response_payload}")
+if response.get("FunctionError"):
+    sys.exit(1)
+if isinstance(response_payload, dict) and int(response_payload.get("statusCode") or 200) >= 400:
+    sys.exit(1)

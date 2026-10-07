@@ -16,13 +16,12 @@ from tvDatafeed import Interval, TvDatafeed
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-
-from lambda_function import SYMBOL_MAP  # noqa: E402
-
 load_dotenv(ROOT / ".env")
 
+from swing_core.symbols import SYMBOL_MAP  # noqa: E402
+
 DATA_DIR = Path(__file__).resolve().parent / "data"
-N_BARS = 750
+N_BARS = 2000
 SLEEP_SEC = 0.35
 
 

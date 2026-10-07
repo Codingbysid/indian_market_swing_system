@@ -28,49 +28,26 @@ import requests
 from bs4 import BeautifulSoup
 from tvDatafeed import Interval, TvDatafeed
 
+from swing_core.calendar_nse import completed_bar_iloc, now_ist
+from swing_core.costs import true_breakeven as sc_true_breakeven
+from swing_core.indicators import calculate_atr as sc_atr
+from swing_core.indicators import calculate_rsi as sc_rsi
+from swing_core.indicators import enrich_ohlcv
+from swing_core.policy import (
+    LivePolicy,
+    admission_limits,
+    blocks_concentration,
+)
+from swing_core.scoring import admit_buy, finite_probability
+from swing_core.setups import detect_setups
+from swing_core.symbols import SYMBOL_MAP
+
 # Silence tvDatafeed timeout / "no data" spam in CloudWatch
 tv_logger = logging.getLogger("tvDatafeed")
 tv_logger.setLevel(logging.CRITICAL)
 tv_logger.propagate = False
 logging.getLogger("tvDatafeed.main").setLevel(logging.CRITICAL)
 logging.getLogger("tvDatafeed.main").propagate = False
-
-SYMBOL_MAP = {
-    # NSE Special Tickers (TV uses underscores instead of hyphens)
-    "BAJAJ-AUTO": "BAJAJ_AUTO",
-    "KLBRENG-B": "KLBRENG_B",
-    "SBIFUNDS": "SBIFUNDS",  # TV matches this exactly; keep exchange NSE
-    # Zomato rebranded; TradingView NSE scrip is ETERNAL
-    "ZOMATO": "ETERNAL",
-
-    # BSE Numeric Codes -> BSE Scrip IDs (TradingView Tickers)
-    "544554": "KVSCAST",
-    "544434": "NEETUYOSHI",
-    "544669": "ADMACH",
-    "538787": "GBFL",
-    "526071": "STELLANT",
-    "538874": "NEXUS",
-    "506605": "POLYCHEM",
-    "541358": "UCIL",
-    "505685": "TAPARIATOOL",
-    "509953": "TRADWIN",
-    "538565": "VISTARAMAR",
-    "506180": "EMERGENT",
-    "501151": "KARTIKINV",
-    "539528": "AAYUSH",
-    "539196": "AMBA",
-    "540252": "VSL",
-    "530215": "KINGSINFA",
-    "512437": "APOLLOFIN",
-    "524632": "SHUKRAPHAR",
-    "514448": "JYOTIRES",
-    "543709": "GARGI",
-    "526935": "KALIND",
-    "542866": "COLAB",
-    "505358": "INTEGRAENG",
-    "513119": "ONIX",
-    "543931": "VEEFIN",
-}
 
 # Lazily initialized guest-mode TradingView client (once per container, outside ticker loop)
 _tv = None
@@ -90,21 +67,33 @@ def get_tv() -> TvDatafeed:
     return _tv
 
 
+def slice_completed(hist: pd.DataFrame | None) -> pd.DataFrame | None:
+    """Drop the still-forming cash session so features use a completed bar."""
+    if hist is None or hist.empty:
+        return None
+    loc = completed_bar_iloc(hist.index)
+    if loc is None:
+        return None
+    if loc == -2:
+        if len(hist) < 2:
+            return None
+        return hist.iloc[:-1].copy()
+    return hist
+
+
 def get_market_regime(tv: TvDatafeed) -> tuple[str, str]:
-    """
-    Nifty 50 trend gate: RISK_ON if close > 50-day EMA, else RISK_OFF.
-    Fail-open to RISK_ON if the index fetch fails.
-    """
+    """Nifty vs 50-EMA on the last COMPLETED session. Missing data = DATA_INVALID."""
     try:
         hist = tv.get_hist(
             symbol="NIFTY",
             exchange="NSE",
             interval=Interval.in_daily,
-            n_bars=100,
+            n_bars=120,
         )
+        hist = slice_completed(hist)
         if hist is None or hist.empty or len(hist) < 50:
-            print("Regime fetch short/empty; fail-open RISK_ON.")
-            return "RISK_ON", "Regime: RISK_ON (Nifty data unavailable; fail-open)"
+            print("Regime fetch short/empty; DATA_INVALID (no new buys).")
+            return "DATA_INVALID", "Regime: DATA_INVALID (Nifty completed bars unavailable)"
 
         close = hist["close"].astype(float)
         ema50 = close.ewm(span=50, adjust=False).mean()
@@ -119,9 +108,9 @@ def get_market_regime(tv: TvDatafeed) -> tuple[str, str]:
             f"Regime: RISK_OFF (Nifty {last_close:.1f} below 50-EMA {last_ema:.1f})"
         )
         return "RISK_OFF", detail
-    except Exception as exc:
-        print(f"Regime fetch failed ({exc}); fail-open RISK_ON.")
-        return "RISK_ON", "Regime: RISK_ON (Nifty fetch failed; fail-open)"
+    except Exception as extra:
+        print(f"Regime fetch failed ({extra}); DATA_INVALID (no new buys).")
+        return "DATA_INVALID", "Regime: DATA_INVALID (Nifty fetch failed)"
 
 
 # Your S3 bucket name
@@ -181,9 +170,9 @@ SCREENS = {
     "rsi_oversold.csv": "https://www.screener.in/screens/985942/rsi-oversold-stocks/",
 }
 
-# Static add-on universe (not overwritten by Screener scraper). High-beta NSE names
-# sized for the Satellite ₹1,800 allocation sleeve.
+# Static add-on universe (not overwritten by Screener scraper).
 EXTRA_UNIVERSE_CSVS = (
+    "nifty_200.csv",
     "satellite_high_beta.csv",
     "it_bluechips.csv",
 )
@@ -468,6 +457,11 @@ def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float =
     try:
         feats = extract_live_features(stock_data, regime_on=regime_on)
         feature_names = model.get("feature_names", FEATURE_NAMES)
+        for name in feature_names:
+            val = feats.get(name)
+            if val is None or not math.isfinite(float(val)):
+                print(f"Model scoring fail-closed: non-finite feature {name}")
+                return None
         x = [float(feats[name]) for name in feature_names]
         fmap = {name: float(feats[name]) for name in feature_names}
 
@@ -507,7 +501,7 @@ def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float =
             total += _score_xgb_tree(tree, x)
         return _sigmoid(total)
     except Exception as exc:
-        print(f"Model scoring failed ({exc}); ignoring probability gate.")
+        print(f"Model scoring failed ({exc}); fail-closed (no BUY).")
         return None
 
 
@@ -659,21 +653,43 @@ class SwingRecommender:
             f"open system positions core={self.open_counts['core']} "
             f"satellite={self.open_counts['satellite']}"
         )
+        self.policy = LivePolicy()
+        equity = float(self.portfolio_state.get("last_marked_equity") or 0.0)
+        if equity <= 0:
+            equity = self.remaining_cash + sum(
+                int(h.get("qty") or 0) * float(h.get("avg_cost") or 0)
+                for h in (self.portfolio_state.get("holdings") or [])
+            )
+        self.limits = admission_limits(self.remaining_cash, equity, self.policy)
+        self.watch = []
+        self.suppress_alerts = False
+        print(
+            f"Live policy {self.policy.policy_version if hasattr(self.policy,'policy_version') else 'v2'} | "
+            f"max_ticket=Rs {self.limits['max_ticket']:,.0f} | reserve=Rs {self.limits['reserve']:,.0f} | "
+            f"satellite_parked={self.limits['park_satellite']} | max_new_core={self.limits['max_new_core']}"
+        )
+        self.remaining_cash = float(self.limits["deployable"])
+        for ptf in self.portfolios:
+            if ptf["key"] == "core":
+                ptf["max_positions"] = int(self.policy.max_new_core)
+            elif ptf["key"] == "satellite":
+                ptf["max_positions"] = int(self.policy.max_new_satellite)
+        for key, rm in self.risk_managers.items():
+            rm.allocation_cap = min(rm.allocation_cap, float(self.limits["max_ticket"]))
+            if key == "satellite" and self.policy.park_satellite:
+                rm.allocation_cap = 0.0
+            env = "core_envelope" if key == "core" else "satellite_envelope"
+            rm.total_capital = float(self.limits[env])
+            if rm.total_capital > 0:
+                rm.risk_per_trade_pct = (
+                    float(self.limits["risk_per_trade"]) / rm.total_capital
+                )
 
     def calculate_rsi(self, data, periods=14):
-        delta = data["Close"].diff()
-        gain = (delta.where(delta > 0, 0)).ewm(alpha=1 / periods, adjust=False).mean()
-        loss = (-delta.where(delta < 0, 0)).ewm(alpha=1 / periods, adjust=False).mean()
-        rs = gain / loss
-        return 100 - (100 / (1 + rs))
+        return sc_rsi(data["Close"], periods=periods)
 
     def calculate_atr(self, data, periods=14):
-        high_low = data["High"] - data["Low"]
-        high_close = np.abs(data["High"] - data["Close"].shift())
-        low_close = np.abs(data["Low"] - data["Close"].shift())
-        ranges = pd.concat([high_low, high_close, low_close], axis=1)
-        true_range = np.max(ranges, axis=1)
-        return true_range.ewm(alpha=1 / periods, adjust=False).mean()
+        return sc_atr(data, periods=periods)
 
     def _format_signal(
         self,
@@ -736,13 +752,12 @@ class SwingRecommender:
         p_success,
     ) -> None:
         for portfolio in self.portfolios:
+            if getattr(self, "policy", LivePolicy()).park_satellite and portfolio["key"] == "satellite":
+                continue
             min_prob = float(portfolio["min_prob"])
-            # Fail-open into both sleeves if model is unavailable
-            if p_success is not None and p_success < min_prob:
-                print(
-                    f"Skip {ticker} for {portfolio['key']}: "
-                    f"P(success)={p_success:.2f} < min_prob={min_prob:.2f}"
-                )
+            ok, reason = admit_buy(p_success, min_prob)
+            if not ok:
+                print(f"Skip {ticker} for {portfolio['key']}: {reason}")
                 continue
 
             key = portfolio["key"]
@@ -825,12 +840,11 @@ class SwingRecommender:
         self.regime, self.regime_detail = get_market_regime(tv)
         print(self.regime_detail)
 
-        if self.regime == "RISK_OFF":
-            print("RISK_OFF: Adjusting risk down (50% size) for dip-buying in a down market.")
-            for p in self.portfolios:
-                rm = self.risk_managers[p["key"]]
-                rm.risk_per_trade_pct /= 2.0
-                rm.allocation_cap /= 2.0
+        if self.regime in ("RISK_OFF", "DATA_INVALID"):
+            print(
+                f"{self.regime}: new B/C/A entries are WATCH-only "
+                "(skip new actionable longs until RISK_ON + valid data)."
+            )
 
         self.signal_model = load_signal_model()
         failed_symbols = []
@@ -856,7 +870,7 @@ class SwingRecommender:
                     symbol=tv_symbol,
                     exchange=exchange,
                     interval=Interval.in_daily,
-                    n_bars=100,
+                    n_bars=120,
                 )
                 # Tiny pause to stay under TradingView free-account rate limits
                 time.sleep(0.3)
@@ -880,61 +894,76 @@ class SwingRecommender:
                     }
                 )
 
-                stock_data["EMA_9"] = stock_data["Close"].ewm(span=9, adjust=False).mean()
-                stock_data["EMA_21"] = (
-                    stock_data["Close"].ewm(span=21, adjust=False).mean()
-                )
-                stock_data["RSI"] = self.calculate_rsi(stock_data)
-                stock_data["ATR"] = self.calculate_atr(stock_data)
-
-                stock_data["SMA_20"] = stock_data["Close"].rolling(window=20).mean()
-                stock_data["SMA_50"] = stock_data["Close"].rolling(window=50).mean()
-                stock_data["Std_Dev"] = stock_data["Close"].rolling(window=20).std()
-                stock_data["Lower_Band"] = stock_data["SMA_20"] - (
-                    2 * stock_data["Std_Dev"]
-                )
-                stock_data["Upper_Band"] = stock_data["SMA_20"] + (
-                    2 * stock_data["Std_Dev"]
-                )
-                stock_data["Vol_MA20"] = stock_data["Volume"].rolling(window=20).mean()
-
-                last_close = stock_data["Close"].iloc[-1].item()
-                prev_ema9 = stock_data["EMA_9"].iloc[-2].item()
-                prev_ema21 = stock_data["EMA_21"].iloc[-2].item()
-                curr_ema9 = stock_data["EMA_9"].iloc[-1].item()
-                curr_ema21 = stock_data["EMA_21"].iloc[-1].item()
-                curr_rsi = stock_data["RSI"].iloc[-1].item()
-                curr_atr = stock_data["ATR"].iloc[-1].item()
-                curr_lower_band = stock_data["Lower_Band"].iloc[-1].item()
-                curr_sma20 = stock_data["SMA_20"].iloc[-1].item()
-                curr_upper_band = stock_data["Upper_Band"].iloc[-1].item()
-
+                stock_data = slice_completed(stock_data)
+                if stock_data is None or len(stock_data) < 55:
+                    failed_symbols.append(
+                        f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
+                    )
+                    continue
+                stock_data = enrich_ohlcv(stock_data)
+                i = len(stock_data) - 1
+                setups = detect_setups(stock_data, i)
+                last_close = float(stock_data["Close"].iloc[i])
+                curr_rsi = float(stock_data["RSI"].iloc[i])
+                curr_atr = float(stock_data["ATR"].iloc[i])
+                curr_lower_band = float(stock_data["Lower_Band"].iloc[i])
+                curr_sma20 = float(stock_data["SMA_20"].iloc[i])
+                curr_upper_band = float(stock_data["Upper_Band"].iloc[i])
                 band_width = curr_upper_band - curr_lower_band
-                if band_width > 0:
-                    position_in_range = (last_close - curr_lower_band) / band_width
-                else:
-                    position_in_range = 1.0
-
-                if (
-                    (prev_ema9 <= prev_ema21)
-                    and (curr_ema9 > curr_ema21)
-                    and (40 <= curr_rsi <= 65)
-                    and (position_in_range < 0.60)
-                ):
-                    p_success = score_setup(
-                        self.signal_model, stock_data, regime_on=1.0
+                position_in_range = (
+                    (last_close - curr_lower_band) / band_width if band_width > 0 else 1.0
+                )
+                if not setups:
+                    continue
+                conc = blocks_concentration(
+                    tv_symbol,
+                    self.portfolio_state.get("holdings") or [],
+                    {},
+                    self.policy,
+                )
+                watch_item = {
+                    "ticker": ticker,
+                    "name": str(name),
+                    "setups": setups,
+                    "price": round(last_close, 2),
+                    "rsi": round(curr_rsi, 1),
+                    "bb_pct": round(position_in_range * 100, 1),
+                }
+                if conc:
+                    watch_item["status"] = conc
+                    self.watch.append(watch_item)
+                    print(f"WATCH {ticker}: {conc} setups={setups}")
+                    continue
+                actionable = [s for s in setups if s in self.policy.actionable_setups]
+                if self.regime != "RISK_ON" or not actionable:
+                    watch_item["status"] = (
+                        f"WATCH regime={self.regime} setups={setups}"
                     )
-                    self._assign_to_portfolios(
-                        name=name,
-                        ticker=ticker,
-                        last_close=last_close,
-                        curr_atr=curr_atr,
-                        curr_rsi=curr_rsi,
-                        position_in_range=position_in_range,
-                        curr_sma20=curr_sma20,
-                        curr_lower_band=curr_lower_band,
-                        p_success=p_success,
-                    )
+                    self.watch.append(watch_item)
+                    print(f"WATCH {ticker}: {watch_item['status']}")
+                    continue
+                p_success = score_setup(
+                    self.signal_model,
+                    stock_data,
+                    regime_on=float(self.regime == "RISK_ON"),
+                )
+                ok, reason = admit_buy(p_success, float(CORE_PORTFOLIO["min_prob"]))
+                if not ok:
+                    watch_item["status"] = reason
+                    self.watch.append(watch_item)
+                    print(f"WATCH {ticker}: {reason} setups={setups}")
+                    continue
+                self._assign_to_portfolios(
+                    name=name,
+                    ticker=ticker,
+                    last_close=last_close,
+                    curr_atr=curr_atr,
+                    curr_rsi=curr_rsi,
+                    position_in_range=position_in_range,
+                    curr_sma20=curr_sma20,
+                    curr_lower_band=curr_lower_band,
+                    p_success=p_success,
+                )
             except Exception:
                 failed_symbols.append(
                     f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
@@ -990,6 +1019,26 @@ class SwingRecommender:
             lines.append("• No setups today")
         lines.append("")
 
+        lines.append("--- WATCH (not a BUY) ---")
+        watches = list(getattr(self, "watch", []) or [])
+        if watches:
+            for w in watches[:15]:
+                lines.append(
+                    f"• {w.get('name')} ({w.get('ticker')}) | "
+                    f"{w.get('setups')} | {w.get('status')} | Px ₹{w.get('price')}"
+                )
+            if len(watches) > 15:
+                lines.append(f"• … {len(watches)-15} more WATCH names")
+        else:
+            lines.append("• No watch setups")
+        lines.append("")
+        lines.append(
+            f"Policy: satellite parked, max {self.limits.get('max_new_core', 2)} new Core, "
+            f"ticket≤₹{self.limits.get('max_ticket', 0):,.0f}, 20% cash reserve. "
+            f"B/C setups stay WATCH until v2 model is promoted."
+        )
+        lines.append("")
+
         return "\n".join(lines).rstrip() + "\n"
 
     def dispatch_alerts(self):
@@ -1036,13 +1085,16 @@ class SwingRecommender:
             )
 
         print(message_body)
-        send_push_and_email(
-            title=title,
-            message_body=message_body,
-            email_subject=email_subject,
-            priority=priority,
-            tags=tags,
-        )
+        if getattr(self, "suppress_alerts", False):
+            print("Notifications suppressed (dry-run).")
+        else:
+            send_push_and_email(
+                title=title,
+                message_body=message_body,
+                email_subject=email_subject,
+                priority=priority,
+                tags=tags,
+            )
 
 
 def send_push_and_email(
@@ -1116,13 +1168,27 @@ def true_breakeven(avg_cost: float, qty: int) -> float:
     return float(avg_cost) * BE_COST_MULT + BE_FLAT_FEE / max(int(qty), 1)
 
 
-def split_exit_qty(qty: int) -> tuple[int, int, int]:
-    """~1/3 T1, ~1/3 T2, remainder runner. Qty 1 stays a runner."""
+def split_exit_qty(qty: int, holding: dict | None = None) -> tuple[int, int, int]:
+    """Use persisted tranche plan when present; else ~1/3 / 1/3 / remainder."""
     qty = int(qty)
+    if holding:
+        t1 = int(holding.get("t1_qty_plan") or 0)
+        t2 = int(holding.get("t2_qty_plan") or 0)
+        runner = int(holding.get("runner_qty_plan") or 0)
+        if t1 + t2 + runner == qty:
+            t1 = max(0, t1 - int(holding.get("t1_filled_qty") or 0))
+            t2 = max(0, t2 - int(holding.get("t2_filled_qty") or 0))
+            return t1, t2, runner
     if qty <= 1:
         return 0, 0, qty
     if qty == 2:
         return 1, 0, 1
+    if qty == 5:
+        return 2, 1, 2
+    if qty == 8:
+        return 3, 3, 2
+    if qty == 16:
+        return 5, 5, 6
     t1 = max(1, qty // 3)
     t2 = max(1, qty // 3)
     runner = qty - t1 - t2
@@ -1188,7 +1254,7 @@ def compute_holding_levels(
     if t2 < t1:
         t2 = t1 + atr
     t3 = max(hi60, hi252, t2)
-    t1_qty, t2_qty, runner_qty = split_exit_qty(qty)
+    t1_qty, t2_qty, runner_qty = split_exit_qty(qty, holding)
 
     prev_row = prev_row or {}
     prev_hwm = float(prev_row.get("high_watermark") or 0.0)
@@ -1260,7 +1326,7 @@ def compute_holding_levels(
     }
 
 
-def run_monitor(ignore_weekend: bool = False):
+def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
     weekend, ist_label = is_weekend_ist()
     if weekend and not ignore_weekend:
         print(f"Weekend gate: markets closed ({ist_label}). Skipping holdings monitor.")
@@ -1319,8 +1385,11 @@ def run_monitor(ignore_weekend: bool = False):
     cash = float(state.get("cash") or 0.0)
     equity = round(cash + holdings_mv, 2)
     gap = round(equity - CHECKPOINT_EQUITY, 2)
-    today = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%Y-%m-%d")
+    today_dt = datetime.now(ZoneInfo("Asia/Kolkata"))
+    today = today_dt.strftime("%Y-%m-%d")
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    state["last_marked_equity"] = equity
+    write_json_to_s3(state, PORTFOLIO_STATE_KEY)
 
     levels_payload = {
         "timestamp_utc": timestamp,
@@ -1373,26 +1442,41 @@ def run_monitor(ignore_weekend: bool = False):
             f"T3 {row['t3']}  trail {row['trail'] if row['trail'] is not None else 'n/a'}  "
             f"P&L {row['pnl_pct']:+.1f}%"
         )
+    digest = ""
+    if today_dt.weekday() == 4:
+        below_be = sum(1 for r in rows if r["ltp"] < r["be"])
+        digest = (
+            f"\n--- Friday weekly digest (intraday, not EOD labels) ---\n"
+            f"Legacy names below BE: {below_be}/{len(rows)} "
+            f"(no profit-only sale while below BE).\n"
+            f"New-trade engine: satellite parked; max 2 Core; B/C WATCH until v2 model.\n"
+            f"Do not treat this 15:05 candle as a completed session.\n"
+        )
     if events:
         body = (
             header
             + "\n".join(table_lines)
             + "\n\nEVENTS:\n"
             + "\n".join(f"• {e}" for e in events)
+            + digest
             + "\n"
         )
-        send_push_and_email(
-            title="Holdings Exit Watch",
-            message_body=body,
-            email_subject="Holdings Exit Watch (action required)",
-            priority="high",
-            tags="orange_circle,chart_with_upwards_trend",
-        )
+        if suppress_alerts:
+            print("Notifications suppressed (dry-run).")
+        else:
+            send_push_and_email(
+                title="Holdings Exit Watch",
+                message_body=body,
+                email_subject="Holdings Exit Watch (action required)",
+                priority="high",
+                tags="orange_circle,chart_with_upwards_trend",
+            )
     else:
         body = (
             header
-            + ( "\n".join(table_lines) + "\n\n" if table_lines else "" )
+            + ("\n".join(table_lines) + "\n\n" if table_lines else "")
             + f"No exit events. {len(rows)} holdings tracked.\n"
+            + digest
         )
         print(body)
         append_log_to_s3(f"[{timestamp}] monitor | events=0 equity={equity}\n" + body)
@@ -1413,7 +1497,7 @@ def is_weekend_ist() -> tuple[bool, str]:
     return weekend, label
 
 
-def run_recommender(ignore_weekend: bool = False):
+def run_recommender(ignore_weekend: bool = False, suppress_alerts: bool = False):
     weekend, ist_label = is_weekend_ist()
     if weekend and not ignore_weekend:
         print(f"Weekend gate: markets closed ({ist_label}). Skipping signals/alerts.")
@@ -1441,10 +1525,13 @@ def run_recommender(ignore_weekend: bool = False):
 
     print("Running recommender (dual-portfolio single pass)...")
     state = load_portfolio_state()
+    if float(state.get("cash") or 0) <= 0:
+        print("Unknown/zero cash blocks actionable sizing. No fallback to a stale cash figure.")
     recommender = SwingRecommender(
         portfolios=portfolios_from_state(state),
         portfolio_state=state,
     )
+    recommender.suppress_alerts = suppress_alerts
     recommender.analyze_stocks(list(RECOMMENDER_CSV_KEYS))
 
 
@@ -1469,7 +1556,10 @@ def lambda_handler(event, context):
             or event.get("force")
             or event.get("force_weekend")
         )
-        run_recommender(ignore_weekend=ignore_weekend)
+        run_recommender(
+            ignore_weekend=ignore_weekend,
+            suppress_alerts=bool(event.get("suppress_alerts") or event.get("dry_run")),
+        )
         return {"statusCode": 200, "body": "Recommender executed successfully"}
     if action == "monitor":
         ignore_weekend = bool(
@@ -1477,7 +1567,10 @@ def lambda_handler(event, context):
             or event.get("force")
             or event.get("force_weekend")
         )
-        run_monitor(ignore_weekend=ignore_weekend)
+        run_monitor(
+            ignore_weekend=ignore_weekend,
+            suppress_alerts=bool(event.get("suppress_alerts") or event.get("dry_run")),
+        )
         return {"statusCode": 200, "body": "Holdings monitor executed successfully"}
 
     return {

@@ -9,10 +9,17 @@ Also reports rule-only win rate / payoff for Kelly assumption validation.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+if str(Path(__file__).resolve().parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from features import (
     FEATURE_NAMES,
@@ -20,6 +27,7 @@ from features import (
     enrich_indicators,
     features_at_index,
 )
+from swing_core.labels import label_triple_barrier
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 ARTIFACTS = Path(__file__).resolve().parent / "artifacts"
@@ -109,11 +117,10 @@ def process_file(path: Path, regime: pd.Series | None) -> list[dict]:
     for i in range(55, len(df) - 1):
         if not is_entry(df, i):
             continue
-        label, reason, r_mult = label_outcome(df, i)
-        # Skip entries without a full forward window for clean labels
-        if i + HORIZON >= len(df) and reason == "timeout":
-            # still keep — timeout on available bars
-            pass
+        barrier = label_triple_barrier(df, i, qty=1, horizon=HORIZON)
+        if barrier.label is None:
+            continue  # censored / incomplete / unfilled
+        label, reason, r_mult = barrier.label, barrier.reason, barrier.net_r
         date = df["Date"].iloc[i] if "Date" in df.columns else i
         reg = regime_at(regime, date)
         feats = features_at_index(df, i, regime_on=reg)
