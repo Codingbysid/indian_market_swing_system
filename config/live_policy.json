@@ -6,7 +6,7 @@
   "cash_reserve_pct": 0.20,
   "skip_new_in_risk_off": true,
   "shadow_unvalidated_setups": true,
-  "actionable_setups": ["cross"],
+  "actionable_setups": ["ema_cross"],
   "block_defence": true,
   "block_psu": true,
   "notes": "B/C setups emit WATCH until a v2 model with setup indicators is promoted. Satellite cash is parked during HAL/ZENTEC concentration repair."

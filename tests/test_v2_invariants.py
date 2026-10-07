@@ -67,19 +67,17 @@ def test_breakout_allows_bb_above_60():
     _ = setup_breakout(df, i)
 
 
-def test_gap_stop_can_lose_more_than_one_r():
+def test_gap_before_entry_is_unfilled_not_a_loss():
     rows = []
     px = 100.0
     for i in range(40):
         rows.append({"Open": px, "High": px + 1, "Low": px - 1, "Close": px, "Volume": 1000})
         px += 0.2
-    # Signal close 100-ish; next open gaps to 90
     rows.append({"Open": 90.0, "High": 92.0, "Low": 89.0, "Close": 91.0, "Volume": 1000})
     df = enrich_ohlcv(pd.DataFrame(rows))
-    i = len(df) - 2
-    res = label_triple_barrier(df, i, qty=1)
-    assert res.reason == "stop_gap"
-    assert res.net_r < -1.0 or res.gross_r < -1.0
+    res = label_triple_barrier(df, len(df) - 2, qty=1)
+    assert res.reason == "unfilled"
+    assert res.label is None
 
 
 def test_profitable_timeout_can_be_positive_label():

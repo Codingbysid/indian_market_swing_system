@@ -110,12 +110,17 @@ def setup_breakout(df: pd.DataFrame, i: int) -> bool:
 def detect_setups(
     df: pd.DataFrame, i: int, nifty: pd.DataFrame | None = None
 ) -> list[str]:
-    """Return qualifying family ids for a completed-bar index."""
-    found: list[str] = []
-    if setup_cross(df, i):
-        found.append("cross")
-    if setup_pullback(df, i, nifty=nifty):
-        found.append("pullback")
-    if setup_breakout(df, i):
-        found.append("breakout")
-    return found
+    """Registry ids. Nifty relative return is date-aligned when a Date column exists."""
+    from .strategies import detect
+
+    nifty_ret = None
+    if nifty is not None and "Date" in df.columns and "Date" in nifty.columns and i >= 20:
+        day = pd.Timestamp(df["Date"].iloc[i]).normalize()
+        prior = pd.Timestamp(df["Date"].iloc[i - 20]).normalize()
+        indexed = nifty.copy()
+        indexed["Date"] = pd.to_datetime(indexed["Date"]).dt.normalize()
+        now = indexed.loc[indexed["Date"] == day, "Close"]
+        then = indexed.loc[indexed["Date"] == prior, "Close"]
+        if len(now) and len(then) and float(then.iloc[-1]) > 0:
+            nifty_ret = float(now.iloc[-1]) / float(then.iloc[-1]) - 1.0
+    return detect(df, i, nifty_ret20=nifty_ret)

@@ -251,27 +251,16 @@ def write_json_to_s3(payload: dict, key: str) -> None:
     )
 
 
-def default_portfolio_state() -> dict:
-    return {
-        "cash": 24000.0,
-        "holdings": [],
-        "closed_trades": [],
-        "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00"),
-    }
-
-
 def load_portfolio_state() -> dict:
+    """Strict load. Missing or invalid state cannot invent cash or emit BUYs."""
+    from swing_core.state import PortfolioInvalid, validate_state
+
     data = read_json_from_s3(PORTFOLIO_STATE_KEY)
-    if not data:
-        print(
-            f"{PORTFOLIO_STATE_KEY} missing; using CORE_CAPITAL/"
-            "SATELLITE_CAPITAL env fallbacks."
-        )
-        return default_portfolio_state()
-    data.setdefault("cash", 0.0)
-    data.setdefault("holdings", [])
-    data.setdefault("closed_trades", [])
-    return data
+    try:
+        return validate_state(data)
+    except PortfolioInvalid as exc:
+        print(f"PORTFOLIO_INVALID: {exc.reason}. No BUY and no state mutation.")
+        return {"status": "PORTFOLIO_INVALID", "reason": exc.reason, "cash": None, "holdings": []}
 
 
 def held_symbol_set(state: dict) -> set[str]:
@@ -299,22 +288,21 @@ def sleeve_open_counts(state: dict) -> dict[str, int]:
 
 
 def portfolios_from_state(state: dict | None) -> list[dict]:
-    """Core = 2/3 of live cash, Satellite = 1/3. Env capital is the fallback."""
+    """Core = 2/3 of validated cash. Invalid state does not fall back to env capital."""
     core = copy.deepcopy(CORE_PORTFOLIO)
     sat = copy.deepcopy(SATELLITE_PORTFOLIO)
-    cash = float((state or {}).get("cash") or 0.0)
-    if cash > 0:
-        core["capital"] = round(cash * CORE_CASH_FRACTION, 2)
-        sat["capital"] = round(cash * SATELLITE_CASH_FRACTION, 2)
-        print(
-            f"Sleeves from live cash Rs {cash:,.0f}: "
-            f"Core={core['capital']:,.0f} Sat={sat['capital']:,.0f}"
-        )
-    else:
-        print(
-            "Live cash is 0 or missing; using env CORE_CAPITAL/"
-            f"SATELLITE_CAPITAL ({core['capital']:,.0f}/{sat['capital']:,.0f})."
-        )
+    if not state or state.get("status") == "PORTFOLIO_INVALID" or state.get("cash") is None:
+        core["capital"] = 0.0
+        sat["capital"] = 0.0
+        print("PORTFOLIO_INVALID: sleeves set to 0. No env-capital fallback.")
+        return [core, sat]
+    cash = float(state["cash"])
+    core["capital"] = round(cash * CORE_CASH_FRACTION, 2)
+    sat["capital"] = round(cash * SATELLITE_CASH_FRACTION, 2)
+    print(
+        f"Sleeves from live cash Rs {cash:,.0f}: "
+        f"Core={core['capital']:,.0f} Sat={sat['capital']:,.0f}"
+    )
     return [core, sat]
 
 
@@ -625,7 +613,12 @@ class QuantRiskManager:
 
 class SwingRecommender:
     def __init__(self, portfolios=None, portfolio_state: dict | None = None):
-        self.portfolio_state = portfolio_state or default_portfolio_state()
+        self.portfolio_state = portfolio_state or {
+            "status": "PORTFOLIO_INVALID",
+            "reason": "state_not_provided",
+            "cash": None,
+            "holdings": [],
+        }
         self.portfolios = list(
             portfolios if portfolios is not None else portfolios_from_state(self.portfolio_state)
         )
@@ -645,7 +638,9 @@ class SwingRecommender:
         self.signal_model = None
         self.held_symbols = held_symbol_set(self.portfolio_state)
         self.open_counts = sleeve_open_counts(self.portfolio_state)
-        self.remaining_cash = float(self.portfolio_state.get("cash") or 0.0)
+        raw_cash = self.portfolio_state.get("cash")
+        self.state_ok = self.portfolio_state.get("status") != "PORTFOLIO_INVALID" and raw_cash is not None
+        self.remaining_cash = float(raw_cash or 0.0) if self.state_ok else 0.0
         if self.held_symbols:
             print(f"Held symbols (no add): {sorted(self.held_symbols)}")
         print(
@@ -675,7 +670,8 @@ class SwingRecommender:
             elif ptf["key"] == "satellite":
                 ptf["max_positions"] = int(self.policy.max_new_satellite)
         for key, rm in self.risk_managers.items():
-            rm.allocation_cap = min(rm.allocation_cap, float(self.limits["max_ticket"]))
+            # Repair ticket ceiling replaces the old Kelly notional cap.
+            rm.allocation_cap = float(self.limits["max_ticket"])
             if key == "satellite" and self.policy.park_satellite:
                 rm.allocation_cap = 0.0
             env = "core_envelope" if key == "core" else "satellite_envelope"
@@ -805,6 +801,13 @@ class SwingRecommender:
 
     def analyze_stocks(self, csv_keys):
         print("Analyzing screens using advanced technical models...")
+        if not getattr(self, "state_ok", False):
+            print("PORTFOLIO_INVALID: scan aborted. No BUY.")
+            self.regime = "PORTFOLIO_INVALID"
+            self.regime_detail = "PORTFOLIO_INVALID"
+            if not self.suppress_alerts:
+                self.dispatch_alerts()
+            return
         for p in self.portfolios:
             rm = self.risk_managers[p["key"]]
             print(
@@ -1062,14 +1065,13 @@ class SwingRecommender:
             "satellite_setups": satellite_setups,
             "counts": {"core": core_n, "satellite": sat_n, "total": total_n},
         }
-        write_execution_log_json(execution_payload)
-
-        # Also append human-readable trail for continuity
-        append_log_to_s3(
-            f"[{timestamp}] dual-portfolio run | core={core_n} satellite={sat_n}\n"
-            f"{message_body}"
-            + ("-" * 40 + "\n")
-        )
+        if not getattr(self, "suppress_alerts", False):
+            write_execution_log_json(execution_payload)
+            append_log_to_s3(
+                f"[{timestamp}] dual-portfolio run | core={core_n} satellite={sat_n}\n"
+                f"{message_body}"
+                + ("-" * 40 + "\n")
+            )
 
         if total_n == 0:
             title = "System Update (No Action)"  # No emoji in HTTP headers (latin-1)
@@ -1257,13 +1259,20 @@ def compute_holding_levels(
     t1_qty, t2_qty, runner_qty = split_exit_qty(qty, holding)
 
     prev_row = prev_row or {}
-    prev_hwm = float(prev_row.get("high_watermark") or 0.0)
-    hwm = max(prev_hwm, day_high, ltp)
-    trail_active = hwm > t1
-    trail = max(be, hwm - TRAIL_ATR_MULT * atr) if trail_active else None
-    trail_breached = bool(
-        trail is not None and ltp > be and (day_low <= trail or ltp <= trail)
+    from swing_core.exits import update_trail
+
+    trail_state = update_trail(
+        float(prev_row.get("high_watermark") or 0.0),
+        bool(prev_row.get("trail_active")),
+        day_low,
+        day_high,
+        t1,
+        be,
+        atr,
     )
+    hwm = trail_state["high_watermark"]
+    trail = trail_state["trail"]
+    trail_breached = trail_state["breached_prior_trail"] and ltp > be
 
     bearish_cross = (prev_ema9 > prev_ema21) and (curr_ema9 <= curr_ema21)
     weakness_exit = bool(bearish_cross and ltp > be)
@@ -1278,13 +1287,13 @@ def compute_holding_levels(
             atr_drift_alert = atr_drift > ATR_DRIFT_THRESHOLD
 
     events: list[str] = []
-    if day_high >= t1:
+    if day_high >= t1 and t1_qty > 0 and ltp > be:
         events.append(
-            f"day high >= T1 — confirm GTT fill or place sell {t1_qty or qty} @ {t1:.2f}"
+            f"day high >= T1 — confirm fill or place sell {t1_qty} @ {t1:.2f} (not a fill)"
         )
-    if day_high >= t2:
+    if day_high >= t2 and t2_qty > 0 and ltp > be:
         events.append(
-            f"day high >= T2 — confirm GTT fill or place sell {t2_qty or qty} @ {t2:.2f}"
+            f"day high >= T2 — confirm fill or place sell {t2_qty} @ {t2:.2f} (not a fill)"
         )
     if trail_breached:
         events.append(
@@ -1388,8 +1397,14 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
     today_dt = datetime.now(ZoneInfo("Asia/Kolkata"))
     today = today_dt.strftime("%Y-%m-%d")
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    state["last_marked_equity"] = equity
-    write_json_to_s3(state, PORTFOLIO_STATE_KEY)
+    complete_marks = len(rows) == len(holdings) and len(holdings) > 0
+    if suppress_alerts:
+        print("Dry run: no production writes.")
+    elif not complete_marks:
+        print("Incomplete marks: refusing to replace last_marked_equity.")
+    else:
+        state["last_marked_equity"] = equity
+        write_json_to_s3(state, PORTFOLIO_STATE_KEY)
 
     levels_payload = {
         "timestamp_utc": timestamp,
@@ -1403,7 +1418,8 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         "holdings": rows,
         "events": events,
     }
-    write_json_to_s3(levels_payload, HOLDINGS_LEVELS_KEY)
+    if not suppress_alerts and complete_marks:
+        write_json_to_s3(levels_payload, HOLDINGS_LEVELS_KEY)
 
     curve = read_json_from_s3(EQUITY_CURVE_KEY) or {
         "checkpoint_date": CHECKPOINT_DATE,
@@ -1426,7 +1442,8 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
     curve["checkpoint_date"] = CHECKPOINT_DATE
     curve["checkpoint_target"] = CHECKPOINT_EQUITY
     curve["long_horizon_target"] = LONG_HORIZON_EQUITY
-    write_json_to_s3(curve, EQUITY_CURVE_KEY)
+    if not suppress_alerts and complete_marks:
+        write_json_to_s3(curve, EQUITY_CURVE_KEY)
 
     header = (
         f"Holdings Exit Watch | {today}\n"

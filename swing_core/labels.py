@@ -51,31 +51,12 @@ def label_triple_barrier(
     if nxt_open <= 0:
         return BarrierResult(None, "unfilled", 0.0, 0.0, None, 0)
 
-    planned_stop = signal_close - SL_MULT * atr
-    # Gap through the signal-time stop: fill at the obtainable open (can be worse than -1R).
-    if nxt_open <= planned_stop:
-        entry = signal_close
-        stop = planned_stop
-        target = signal_close + TP_MULT * atr
-        def _gap_econ():
-            gross = qty * (nxt_open - entry)
-            charges = round_trip_charges(entry, nxt_open, qty, sleeve=sleeve)
-            net = gross - charges
-            risk = qty * SL_MULT * atr
-            return BarrierResult(
-                0,
-                "stop_gap",
-                float(net / risk) if risk else 0.0,
-                float((nxt_open - entry) / (SL_MULT * atr)),
-                nxt_open,
-                1,
-            )
-        return _gap_econ()
+    # No fill, and no loss, if the next open is outside the entry band.
+    # A gap through the planned stop before entry is UNFILLED, not a phantom trade.
+    if abs(nxt_open - signal_close) > 0.5 * atr:
+        return BarrierResult(None, "unfilled", 0.0, 0.0, None, 0)
 
     entry = nxt_open
-    # Skip if the open chased more than 0.5 ATR from the signal close.
-    if abs(entry - signal_close) > 0.5 * atr:
-        return BarrierResult(None, "unfilled_gap_chase", 0.0, 0.0, None, 0)
 
     stop = entry - SL_MULT * atr
     target = entry + TP_MULT * atr

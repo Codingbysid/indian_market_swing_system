@@ -26,7 +26,7 @@ class LivePolicy:
     block_defence: bool = True
     block_psu: bool = True
     freeze_held_symbols: bool = True
-    actionable_setups: tuple[str, ...] = ("cross",)
+    actionable_setups: tuple[str, ...] = ("ema_cross",)
 
 
 def admission_limits(cash: float, equity: float, policy: LivePolicy | None = None) -> dict:

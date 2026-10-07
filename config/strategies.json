@@ -1,0 +1,12 @@
+{
+  "version": "strategies_v3",
+  "families": {
+    "ema_cross": {"status": "promoted", "regimes": ["RISK_ON"]},
+    "trend_pullback": {"status": "shadow", "regimes": ["RISK_ON"]},
+    "range_breakout": {"status": "shadow", "regimes": ["RISK_ON"]},
+    "relative_strength_momentum": {"status": "shadow", "regimes": ["RISK_ON"]},
+    "failed_breakdown_reclaim": {"status": "shadow", "regimes": ["RISK_ON"]},
+    "residual_shock_reversion": {"status": "research", "regimes": ["RISK_ON", "RISK_OFF"]}
+  },
+  "notes": "Only ema_cross may become BUY. Others are WATCH until a promotion record exists. residual_shock_reversion cannot bypass RISK_OFF."
+}
