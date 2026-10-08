@@ -58,11 +58,22 @@ def system_exit_intent(holding: dict, ltp: float, *, sessions_held: int | None =
     stop = float(holding["stop"])
     target = float(holding["target"])
     qty = int(holding["qty"])
+    protective = str(holding.get("protective_order_status") or "not_placed")
+    common = {
+        "qty": qty,
+        "protective_order_status": protective,
+        "fill_status": "unconfirmed",
+    }
     if ltp <= stop:
-        return {"kind": "system_stop", "qty": qty, "limit": round(stop, 2)}
+        return {**common, "kind": "system_stop", "limit": round(stop, 2), "order_status": "stop_trigger_not_a_fill"}
     if ltp >= target:
-        return {"kind": "system_target", "qty": qty, "limit": round(target, 2)}
+        return {**common, "kind": "system_target", "limit": round(target, 2), "order_status": "target_trigger_not_a_fill"}
     expiry = int(holding.get("max_sessions") or 10)
     if sessions_held is not None and sessions_held >= expiry:
-        return {"kind": "system_vertical", "qty": qty, "limit": round(ltp, 2)}
+        return {
+            **common,
+            "kind": "system_vertical",
+            "limit": round(ltp, 2),
+            "order_status": "session_expiry_instruction",
+        }
     return None

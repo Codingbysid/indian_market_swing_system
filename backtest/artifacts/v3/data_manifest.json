@@ -1,0 +1,1428 @@
+{
+  "fetched_at_utc": "2026-10-08T05:55:58Z",
+  "universe_file": "universes/nifty_200.csv",
+  "universe_sha256": "0d30384fbbbdf1a88460203e6479a8605c719fccda4e30b7a497df2242496e72",
+  "price_source": "tvDatafeed",
+  "price_source_note": "tvDatafeed",
+  "adjustment_mode": "tvdatafeed_as_returned",
+  "requested_bars": 2000,
+  "requested_symbols": 200,
+  "successful_symbols": 200,
+  "failed": [],
+  "bar_count_min": 81,
+  "bar_count_median": 2000.0,
+  "histories": {
+    "360ONE": {
+      "bars": 1750,
+      "first": "2019-09-19",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 99
+    },
+    "ABB": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "APLAPOLLO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "AUBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ADANIENSOL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ADANIENT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ADANIGREEN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ADANIPORTS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ADANIPOWER": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ATGL": {
+      "bars": 1964,
+      "first": "2018-11-05",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 113
+    },
+    "ABCAPITAL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "AMBUJACEM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "APARINDS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "APOLLOHOSP": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ASHOKLEY": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ASIANPAINT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ASTRAL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "AUROPHARMA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "DMART": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "AXISBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BSE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BAJAJ_AUTO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BAJFINANCE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BAJAJFINSV": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BAJAJHLDNG": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BANKBARODA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BANKINDIA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MAHABANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BDL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BEL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BHARATFORG": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BHEL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BPCL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BHARTIARTL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GROWW": {
+      "bars": 225,
+      "first": "2025-11-12",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 13
+    },
+    "BIOCON": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BLUESTARCO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BOSCHLTD": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "BRITANNIA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "CGPOWER": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "CANBK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "CHOLAFIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "CIPLA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "COALINDIA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "COCHINSHIP": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "COFORGE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "COLPAL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "CONCOR": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "CUMMINSIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "DLF": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "DABUR": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "DIVISLAB": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "DIXON": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "DRREDDY": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "EICHERMOT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ETERNAL": {
+      "bars": 1293,
+      "first": "2021-07-23",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 73
+    },
+    "EXIDEIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NYKAA": {
+      "bars": 1219,
+      "first": "2021-11-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 69
+    },
+    "FEDERALBNK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "FORTIS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GAIL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GVT&D": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GMRAIRPORT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GLENMARK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GODFRYPHLP": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GODREJCP": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GODREJPROP": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "GRASIM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HCLTECH": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HDFCAMC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HDFCBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HDFCLIFE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HAVELLS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HEROMOTOCO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HINDALCO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HAL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HINDCOPPER": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HINDPETRO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HINDUNILVR": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "HINDZINC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "POWERINDIA": {
+      "bars": 1620,
+      "first": "2020-03-30",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 91
+    },
+    "HYUNDAI": {
+      "bars": 487,
+      "first": "2024-10-22",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 28
+    },
+    "ICICIBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ICICIGI": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ICICIAMC": {
+      "bars": 198,
+      "first": "2025-12-19",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 13
+    },
+    "IDFCFIRSTB": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ITC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "INDIANB": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "INDHOTEL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "IOC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "IRCTC": {
+      "bars": 1735,
+      "first": "2019-10-14",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 97
+    },
+    "IRFC": {
+      "bars": 1411,
+      "first": "2021-01-29",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 80
+    },
+    "IREDA": {
+      "bars": 710,
+      "first": "2023-11-29",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 42
+    },
+    "INDUSTOWER": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "INDUSINDBK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NAUKRI": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "INFY": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "INDIGO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "JSWENERGY": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "JSWSTEEL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "JINDALSTEL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "JIOFIN": {
+      "bars": 778,
+      "first": "2023-08-21",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 47
+    },
+    "JUBLFOOD": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "KEI": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "KALYANKJIL": {
+      "bars": 1372,
+      "first": "2021-03-26",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 79
+    },
+    "KOTAKBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "LTF": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "LGEINDIA": {
+      "bars": 244,
+      "first": "2025-10-14",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 15
+    },
+    "LICHSGFIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "LTM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "LT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "LAURUSLABS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "LENSKART": {
+      "bars": 228,
+      "first": "2025-11-07",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 13
+    },
+    "LICI": {
+      "bars": 1092,
+      "first": "2022-05-17",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 62
+    },
+    "LODHA": {
+      "bars": 1359,
+      "first": "2021-04-19",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 76
+    },
+    "LUPIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MRF": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "M&MFIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "M&M": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MANKIND": {
+      "bars": 850,
+      "first": "2023-05-09",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 49
+    },
+    "MARICO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MARUTI": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MFSL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MAXHEALTH": {
+      "bars": 1522,
+      "first": "2020-08-21",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 85
+    },
+    "MAZDOCK": {
+      "bars": 1487,
+      "first": "2020-10-12",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 84
+    },
+    "MEESHO": {
+      "bars": 205,
+      "first": "2025-12-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 13
+    },
+    "MOTILALOFS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MPHASIS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MCX": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MUTHOOTFIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NHPC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NLCINDIA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NMDC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NTPC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NATIONALUM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "NESTLEIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "OBEROIRLTY": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ONGC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "OIL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PAYTM": {
+      "bars": 1213,
+      "first": "2021-11-18",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 69
+    },
+    "OFSS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "POLICYBZR": {
+      "bars": 1216,
+      "first": "2021-11-15",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 69
+    },
+    "PIIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PAGEIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PATANJALI": {
+      "bars": 1664,
+      "first": "2020-01-27",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 93
+    },
+    "PERSISTENT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PHOENIXLTD": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PIDILITIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "POLYCAB": {
+      "bars": 1853,
+      "first": "2019-04-16",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 108
+    },
+    "PFC": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "POWERGRID": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PREMIERENE": {
+      "bars": 521,
+      "first": "2024-09-03",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 29
+    },
+    "PRESTIGE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "PNB": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "RECLTD": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "RADICO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "RVNL": {
+      "bars": 1856,
+      "first": "2019-04-11",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 108
+    },
+    "RELIANCE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SBICARD": {
+      "bars": 1630,
+      "first": "2020-03-16",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 91
+    },
+    "SBILIFE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "MOTHERSON": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SHRIRAMFIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ENRIN": {
+      "bars": 324,
+      "first": "2025-06-19",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 18
+    },
+    "SIEMENS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SOLARINDS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SBIN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SAIL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SUNPHARMA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SUPREMEIND": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SUZLON": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SWIGGY": {
+      "bars": 471,
+      "first": "2024-11-13",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 28
+    },
+    "TVSMOTOR": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TATACAP": {
+      "bars": 246,
+      "first": "2025-10-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 15
+    },
+    "TATACOMM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TCS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TATACONSUM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TMCV": {
+      "bars": 225,
+      "first": "2025-11-12",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 13
+    },
+    "TMPV": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TATAPOWER": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TATASTEEL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TECHM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TITAN": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TORNTPHARM": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TRENT": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "TIINDIA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "UPL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ULTRACEMCO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "UNIONBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "UNITDSPR": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "VBL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "VAML": {
+      "bars": 81,
+      "first": "2026-06-15",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 3
+    },
+    "VEDL": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "VMM": {
+      "bars": 448,
+      "first": "2024-12-18",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 26
+    },
+    "VOLTAS": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "WAAREEENER": {
+      "bars": 483,
+      "first": "2024-10-28",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 28
+    },
+    "WIPRO": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "YESBANK": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "ZYDUSLIFE": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "SRF": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    },
+    "IDEA": {
+      "bars": 2000,
+      "first": "2018-09-10",
+      "last": "2026-10-08",
+      "duplicate_dates": 0,
+      "missing_weekdays": 117
+    }
+  },
+  "nifty": {
+    "bars": 2000,
+    "first": "2018-09-11",
+    "last": "2026-10-08",
+    "duplicate_dates": 0,
+    "missing_weekdays": 117
+  },
+  "freshness_note": "last session is the newest cached daily bar, not an intraday quote",
+  "survivorship": "current index membership; not point-in-time constituent history",
+  "holiday_calendar": "weekday gaps only; NSE holidays are not in this manifest",
+  "market_cap_filter": "unavailable_no_timestamped_source",
+  "retry_note": "SRF and IDEA were empty on the first pass and succeeded on one retry."
+}

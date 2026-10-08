@@ -77,23 +77,23 @@ def features_at(
         g = (float(df["Close"].iloc[k - 1]) - float(df["Open"].iloc[k])) / max(float(df["ATR"].iloc[k - 1]), 1e-9)
         adverse.append(max(0.0, g))
     down = float(np.percentile(adverse, 90)) if len(adverse) >= 30 else float("nan")
-    beta = 1.0
-    resid = 0.0
-    nifty_dist = 0.0
+    beta = float("nan")
+    resid = float("nan")
+    nifty_dist = float("nan")
     if nifty is not None and len(nifty) > i:
-        # Caller must pass a date-aligned frame of equal length.
+        # Caller must pass a date-aligned frame of equal length. No beta is invented.
         s = np.log(df["Close"].astype(float)).diff().iloc[i - 59 : i + 1]
         n = np.log(nifty["Close"].astype(float)).diff().iloc[i - 59 : i + 1]
-        if len(s) == len(n) and float(n.var()) > 0:
-            beta = float(np.cov(s.fillna(0), n.fillna(0))[0, 1] / n.var())
-            beta = 0.5 * beta + 0.5 * 1.0
-        stock_r = close / float(df["Close"].iloc[i - 20]) - 1.0
-        nifty_r = float(nifty["Close"].iloc[i]) / float(nifty["Close"].iloc[i - 20]) - 1.0
-        resid = stock_r - beta * nifty_r
+        if len(s) == len(n) and float(np.nanvar(n.to_numpy())) > 0 and s.notna().all() and n.notna().all():
+            beta = float(np.cov(s.to_numpy(), n.to_numpy())[0, 1] / np.var(n.to_numpy()))
+            stock_r = close / float(df["Close"].iloc[i - 20]) - 1.0
+            nifty_r = float(nifty["Close"].iloc[i]) / float(nifty["Close"].iloc[i - 20]) - 1.0
+            resid = stock_r - beta * nifty_r
         if "EMA_50" in nifty.columns or "SMA_50" in nifty.columns:
             ema = float((nifty["EMA_50"] if "EMA_50" in nifty.columns else nifty["SMA_50"]).iloc[i])
             natr = float(nifty["ATR"].iloc[i]) if "ATR" in nifty.columns else atr
-            nifty_dist = (float(nifty["Close"].iloc[i]) - ema) / natr if natr else float("nan")
+            if math.isfinite(ema) and natr and math.isfinite(natr) and math.isfinite(float(nifty["Close"].iloc[i])):
+                nifty_dist = (float(nifty["Close"].iloc[i]) - ema) / natr
     raw = {
         "rsi14": rsi,
         "rsi_change3": rsi - rsi_prev,

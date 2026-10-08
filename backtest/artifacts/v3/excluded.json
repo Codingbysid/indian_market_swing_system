@@ -1,0 +1,46 @@
+[
+  {
+    "symbol": "BAJAJ-AUTO",
+    "reason": "missing_history"
+  },
+  {
+    "symbol": "GROWW",
+    "reason": "insufficient_history",
+    "bars": 224
+  },
+  {
+    "symbol": "ICICIAMC",
+    "reason": "insufficient_history",
+    "bars": 197
+  },
+  {
+    "symbol": "LGEINDIA",
+    "reason": "insufficient_history",
+    "bars": 243
+  },
+  {
+    "symbol": "LENSKART",
+    "reason": "insufficient_history",
+    "bars": 227
+  },
+  {
+    "symbol": "MEESHO",
+    "reason": "insufficient_history",
+    "bars": 204
+  },
+  {
+    "symbol": "TATACAP",
+    "reason": "insufficient_history",
+    "bars": 245
+  },
+  {
+    "symbol": "TMCV",
+    "reason": "insufficient_history",
+    "bars": 224
+  },
+  {
+    "symbol": "VAML",
+    "reason": "insufficient_history",
+    "bars": 80
+  }
+]

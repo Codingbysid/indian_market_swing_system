@@ -1,0 +1,14 @@
+{
+  "local_completed_bar_scan": {
+    "symbols_scanned": 199,
+    "cpu_seconds": 1.13,
+    "symbols_with_any_family_on_last_bar": 5
+  },
+  "history_fetch_wall_seconds": 230.2,
+  "history_fetch_bars": 2000,
+  "history_fetch_symbols_ok": 200,
+  "lambda_timeout_seconds": 300,
+  "lambda_memory_mb": 1024,
+  "complete_lambda_scan_measured": false,
+  "note": "CPU scoring of cached 300-bar windows is about 1 second. The 2000-bar TradingView refresh took 230 seconds and is not the live scan. A full Nifty 200 Lambda fetch-plus-rank was not run, so remaining Lambda time is not claimed."
+}

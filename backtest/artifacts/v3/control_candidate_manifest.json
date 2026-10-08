@@ -1,0 +1,83 @@
+{
+  "deployed": false,
+  "contains_sklearn": false,
+  "contains_xgboost": false,
+  "files": [
+    {
+      "path": "lambda_function.py",
+      "sha256": "81d9ce823610290cd0110248b07d0df6cd1ca7ef9c569510e61a7442e29721b6"
+    },
+    {
+      "path": "swing_core/__init__.py",
+      "sha256": "0bec46fe0ffa07740187732425ac70a88a3a2338a73ae59527f1a72392bd0fcd"
+    },
+    {
+      "path": "swing_core/allocation.py",
+      "sha256": "c41edf8fcbb55d3bd27c7780cb6e409308b6078af9832835d73db8bc7cd375c0"
+    },
+    {
+      "path": "swing_core/calendar_nse.py",
+      "sha256": "55c7c662ad4d990a46f13c98f9c9f5c0adcb00d55f51f2a0179341b1259665b3"
+    },
+    {
+      "path": "swing_core/costs.py",
+      "sha256": "9b9f256a5dfed2337bb450cfa527d3dd54ae22ce7b1843b3054fd6e3026abe8e"
+    },
+    {
+      "path": "swing_core/exits.py",
+      "sha256": "495493c555d26aa282f0c3419a95d76201e79c980ab22177d1b652bd1e7943a4"
+    },
+    {
+      "path": "swing_core/features.py",
+      "sha256": "d091354c524bf553139fc4ce99ecb3f2bd9bd6170a4dab37f52675cf7330116f"
+    },
+    {
+      "path": "swing_core/indicators.py",
+      "sha256": "465e137d399721598da40a2afdcf58d2333b2bc8bcf3de0d6e1937281a9aeed1"
+    },
+    {
+      "path": "swing_core/labels.py",
+      "sha256": "a9aedb76f3ea411258719d1656e026270fe3c3b3ad284e14f9bb986facc80667"
+    },
+    {
+      "path": "swing_core/migration.py",
+      "sha256": "c49a4cc9105ad7cf4ec173d1fec37344c1f3e18ffc0e68a482fba9226f852623"
+    },
+    {
+      "path": "swing_core/policy.py",
+      "sha256": "31407b9b0862206c84a8e4630b12b91212ae83c8d373662672c409cecdb80863"
+    },
+    {
+      "path": "swing_core/residuals.py",
+      "sha256": "9245e943a8f3b80cafc7054150d6a2964f8e3d1ea6105159f4efeaf936902c48"
+    },
+    {
+      "path": "swing_core/scoring.py",
+      "sha256": "b82e4352808b169f0075fa51546e56e2bc253b51949898bdd7e1559477e4a8f7"
+    },
+    {
+      "path": "swing_core/setups.py",
+      "sha256": "f88d585d8ecae0539e81e5f30668ff6fddd3e777d62eacce82bed052fa1ed79f"
+    },
+    {
+      "path": "swing_core/state.py",
+      "sha256": "b60af043f8e23d9eaa9c184ba7576cec052f4ea6e67f32bfda6e9f6d256db41f"
+    },
+    {
+      "path": "swing_core/strategies.py",
+      "sha256": "fb0912593f3ce7da0679c8f0e6e77dd5059595a2feb808fcdc406e7b5499d9a5"
+    },
+    {
+      "path": "swing_core/symbols.py",
+      "sha256": "092b8dd469f4ef309f25aa982b515223f0848dda5d587302d52403b683ee5279"
+    },
+    {
+      "path": "swing_core/tags.py",
+      "sha256": "41d887fa404554650791345fff16c28acae8ab6c794752be9377453b954577c8"
+    }
+  ],
+  "zip_sha256": "0645ed22d909a9cd96ffee70eeacfee67f38930e9d91581822505038dfb50820",
+  "rollback_code_sha256": "TOeunud6CMQm+iDnmWNa0FH30+gp5RedddyS8JPxgJg=",
+  "rollback_model_sha256": "fac68a53e0776ac1be739d2c08d5c15981a04150d73c0bfa5fdcbfa09dab1cb9",
+  "notes": "Local candidate only. Production Lambda and S3 portfolio_state were not changed."
+}

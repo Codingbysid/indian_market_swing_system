@@ -29,6 +29,21 @@ def is_session_complete(now: datetime | None = None) -> bool:
     )
 
 
+def is_fresh_bar(bar_date, as_of, *, max_session_gap: int = 1) -> bool:
+    """A candle is fresh only if it is the as-of session or the previous one.
+
+    Weekends do not count. A date that is merely earlier than today is not fresh.
+    NSE holidays are not bundled; a holiday therefore fails closed by looking one
+    session older than the exchange calendar.
+    """
+    bar = pd.Timestamp(bar_date).tz_localize(None).normalize()
+    today = pd.Timestamp(as_of).tz_localize(None).normalize()
+    if bar > today:
+        return False
+    sessions = pd.bdate_range(bar, today)
+    return len(sessions) - 1 <= max_session_gap
+
+
 def completed_bar_iloc(index, now: datetime | None = None) -> int | None:
     """Return iloc of the last COMPLETED exchange session, or None.
 

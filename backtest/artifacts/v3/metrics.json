@@ -1,0 +1,195 @@
+{
+  "status": "evaluated",
+  "promoted": false,
+  "promotion_decision": "watch",
+  "failed_gates": [
+    "block_bootstrap_uncertainty",
+    "no_improvement_vs_rules_baseline",
+    "family_support"
+  ],
+  "survivorship": "current_nifty_200_membership_not_point_in_time",
+  "execution_proxy": "next_session_open_not_an_observed_0925_fill",
+  "october_book_applied_to_history": false,
+  "replay_initial_cash": 100000.0,
+  "event_rows": 51660,
+  "event_status_counts": {
+    "filled": 39859,
+    "unaffordable": 8601,
+    "unfilled": 3164,
+    "censored": 36
+  },
+  "unique_oos_fills": 3728,
+  "names": 173,
+  "positive": 1534,
+  "negative": 2194,
+  "folds_with_predictions": 6,
+  "mean_net_r_all_scored": -0.1638800852338877,
+  "calibration": {
+    "rules": {
+      "brier": 0.24264464403484987,
+      "log_loss": 0.6783850855775672
+    },
+    "logistic": {
+      "brier": 0.24545891668565586,
+      "log_loss": 0.6850028415350401
+    },
+    "xgboost": {
+      "brier": 0.24383256303612005,
+      "log_loss": 0.6810135730833923
+    },
+    "chosen": {
+      "brier": 0.24422935135611448,
+      "log_loss": 0.6818379755411599
+    },
+    "base_rate": {
+      "brier": 0.24216433117206057,
+      "log_loss": 0.6773929353900574,
+      "rate": 0.411480686695279
+    }
+  },
+  "portfolio": {
+    "rules": {
+      "final_equity": 99731.26,
+      "fills": 13,
+      "mean_net_r": -0.3013607018706918,
+      "profit_factor": 0.5868466705088458,
+      "drawdown": -0.00449990701929015,
+      "rejections": {
+        "nonpositive_expected_net_r": 3604,
+        "risk_or_ticket": 106,
+        "slots_full": 5
+      }
+    },
+    "logistic": {
+      "final_equity": 99881.98,
+      "fills": 3,
+      "mean_net_r": -0.3972651752544369,
+      "profit_factor": 0.43076499053307765,
+      "drawdown": -0.0020686999999999234,
+      "rejections": {
+        "nonpositive_expected_net_r": 3617,
+        "risk_or_ticket": 107,
+        "slots_full": 1
+      }
+    },
+    "xgboost": {
+      "final_equity": 99626.07,
+      "fills": 4,
+      "mean_net_r": -1.0104816603855398,
+      "profit_factor": 0.0,
+      "drawdown": -0.00373929999999989,
+      "rejections": {
+        "nonpositive_expected_net_r": 3665,
+        "risk_or_ticket": 55,
+        "slots_full": 4
+      }
+    }
+  },
+  "chosen_portfolio_model": "xgboost",
+  "chosen_mean_net_r": -1.0104816603855398,
+  "rules_mean_net_r": -0.3013607018706918,
+  "drawdown": -0.00373929999999989,
+  "uncertainty": {
+    "weeks": 3,
+    "p05": null,
+    "p50": null,
+    "p95": null,
+    "reason": "fewer_than_8_week_blocks"
+  },
+  "weekly": {
+    "weeks": 157,
+    "zero_trade_weeks": 154,
+    "zero_trade_week_fraction": 0.9808917197452229,
+    "median_fills": 0.0,
+    "lower_quartile_fills": 0.0
+  },
+  "families": {
+    "ema_cross": {
+      "unique_fills": 210,
+      "names": 121,
+      "positive": 101,
+      "negative": 109,
+      "folds": 6,
+      "mean_net_r": 0.054281832035248286,
+      "profit_factor": 1.099824750532139,
+      "mean_hold_sessions": null,
+      "status": "watch",
+      "failed_gates": []
+    },
+    "failed_breakdown_reclaim": {
+      "unique_fills": 253,
+      "names": 139,
+      "positive": 110,
+      "negative": 143,
+      "folds": 6,
+      "mean_net_r": -0.09223734904881482,
+      "profit_factor": 0.8371809977899052,
+      "mean_hold_sessions": null,
+      "status": "watch",
+      "failed_gates": [
+        "family_fold_stability"
+      ]
+    },
+    "range_breakout": {
+      "unique_fills": 1166,
+      "names": 166,
+      "positive": 469,
+      "negative": 697,
+      "folds": 6,
+      "mean_net_r": -0.20541052971955467,
+      "profit_factor": 0.6859398161847331,
+      "mean_hold_sessions": null,
+      "status": "watch",
+      "failed_gates": [
+        "family_fold_stability"
+      ]
+    },
+    "relative_strength_momentum": {
+      "unique_fills": 495,
+      "names": 152,
+      "positive": 214,
+      "negative": 281,
+      "folds": 6,
+      "mean_net_r": -0.12730687840318275,
+      "profit_factor": 0.7837143301695881,
+      "mean_hold_sessions": null,
+      "status": "watch",
+      "failed_gates": [
+        "family_fold_stability"
+      ]
+    },
+    "residual_shock_reversion": {
+      "unique_fills": 212,
+      "names": 117,
+      "positive": 84,
+      "negative": 128,
+      "folds": 6,
+      "mean_net_r": -0.1637876637302687,
+      "profit_factor": 0.711007810215779,
+      "mean_hold_sessions": null,
+      "status": "watch",
+      "failed_gates": [
+        "family_fold_stability"
+      ]
+    },
+    "trend_pullback": {
+      "unique_fills": 1392,
+      "names": 170,
+      "positive": 556,
+      "negative": 836,
+      "folds": 6,
+      "mean_net_r": -0.18804563649180464,
+      "profit_factor": 0.706785026356307,
+      "mean_hold_sessions": null,
+      "status": "watch",
+      "failed_gates": [
+        "family_fold_stability"
+      ]
+    }
+  },
+  "sector_net_inr": {
+    "unknown": -373.93437906912675
+  },
+  "adverse_gap_loss_count": 125,
+  "holding_sessions_median": 8.0
+}

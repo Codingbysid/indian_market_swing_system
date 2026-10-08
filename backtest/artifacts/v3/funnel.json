@@ -1,0 +1,452 @@
+{
+  "bars_passing_each_condition": {
+    "ema_cross": {
+      "history": 278166,
+      "fresh_cross": 5773,
+      "rsi_band": 186946,
+      "bb_below_60": 149544
+    },
+    "trend_pullback": {
+      "history": 278166,
+      "rising_sma50": 135082,
+      "ema_stacked": 160200,
+      "controlled_touch": 77523,
+      "reclaim": 57942,
+      "not_extended": 227920,
+      "relative_strength": 144357
+    },
+    "range_breakout": {
+      "history": 278166,
+      "prior_high_break": 18866,
+      "rising_sma50": 135082,
+      "volume": 83310,
+      "not_extended": 270951
+    },
+    "relative_strength_momentum": {
+      "history": 278166,
+      "ranks": 277709,
+      "entered_top_quintile": 6119,
+      "positive_residual": 145996,
+      "rising_sma50": 135082,
+      "not_extended": 270951
+    },
+    "failed_breakdown_reclaim": {
+      "history": 278166,
+      "undercut": 24825,
+      "reclaim": 140681,
+      "rising_sma50": 135082,
+      "volume": 134872,
+      "range_limit": 267744
+    },
+    "residual_shock_reversion": {
+      "history": 278166,
+      "z_finite": 278166,
+      "z_below_minus_2": 7269,
+      "reclaim_prior_high": 65767,
+      "above_sma200": 183395
+    }
+  },
+  "raw_family_hits_before_dedup": {
+    "ema_cross": 688,
+    "trend_pullback": 6307,
+    "range_breakout": 6863,
+    "relative_strength_momentum": 4666,
+    "failed_breakdown_reclaim": 873,
+    "residual_shock_reversion": 627
+  },
+  "primary_family_hits_before_cooldown": {
+    "range_breakout": 6663,
+    "trend_pullback": 6252,
+    "relative_strength_momentum": 3151,
+    "failed_breakdown_reclaim": 789,
+    "ema_cross": 688,
+    "residual_shock_reversion": 506
+  },
+  "primary_family_hits_after_cooldown": {
+    "range_breakout": 6663,
+    "trend_pullback": 6252,
+    "relative_strength_momentum": 2322,
+    "failed_breakdown_reclaim": 789,
+    "ema_cross": 688,
+    "residual_shock_reversion": 506
+  },
+  "examples": {
+    "ema_cross": [
+      {
+        "symbol": "360ONE",
+        "date": "2024-11-06"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2025-05-13"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2026-07-17"
+      },
+      {
+        "symbol": "ABB",
+        "date": "2022-06-30"
+      },
+      {
+        "symbol": "APLAPOLLO",
+        "date": "2021-04-23"
+      }
+    ],
+    "trend_pullback": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-22"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-01-08"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-01-10"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-03-11"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-05-03"
+      }
+    ],
+    "range_breakout": [
+      {
+        "symbol": "360ONE",
+        "date": "2024-02-13"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-02-14"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-02-26"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-06-19"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-06-26"
+      }
+    ],
+    "relative_strength_momentum": [
+      {
+        "symbol": "360ONE",
+        "date": "2024-02-26"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-04-23"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-06-26"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-07-16"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-07-29"
+      }
+    ],
+    "failed_breakdown_reclaim": [
+      {
+        "symbol": "360ONE",
+        "date": "2024-03-11"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-09-09"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2026-06-02"
+      },
+      {
+        "symbol": "ABB",
+        "date": "2021-07-09"
+      },
+      {
+        "symbol": "ABB",
+        "date": "2022-06-13"
+      }
+    ],
+    "residual_shock_reversion": [
+      {
+        "symbol": "360ONE",
+        "date": "2024-01-05"
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2026-02-09"
+      },
+      {
+        "symbol": "ABB",
+        "date": "2023-07-18"
+      },
+      {
+        "symbol": "ABB",
+        "date": "2023-07-24"
+      },
+      {
+        "symbol": "ABB",
+        "date": "2024-01-16"
+      }
+    ]
+  },
+  "near_misses": {
+    "ema_cross": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-18",
+        "failed": [
+          "fresh_cross"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-20",
+        "failed": [
+          "fresh_cross"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-21",
+        "failed": [
+          "fresh_cross"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-25",
+        "failed": [
+          "fresh_cross"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-26",
+        "failed": [
+          "fresh_cross"
+        ]
+      }
+    ],
+    "trend_pullback": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-06-30",
+        "failed": [
+          "reclaim"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-22",
+        "failed": [
+          "reclaim"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-10-23",
+        "failed": [
+          "reclaim"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-26",
+        "failed": [
+          "reclaim"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-27",
+        "failed": [
+          "not_extended"
+        ]
+      }
+    ],
+    "range_breakout": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-06-14",
+        "failed": [
+          "rising_sma50"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-15",
+        "failed": [
+          "prior_high_break"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-22",
+        "failed": [
+          "prior_high_break"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-13",
+        "failed": [
+          "not_extended"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-14",
+        "failed": [
+          "not_extended"
+        ]
+      }
+    ],
+    "relative_strength_momentum": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-06-26",
+        "failed": [
+          "entered_top_quintile"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-06-27",
+        "failed": [
+          "entered_top_quintile"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-06-28",
+        "failed": [
+          "entered_top_quintile"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-06-30",
+        "failed": [
+          "entered_top_quintile"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-22",
+        "failed": [
+          "entered_top_quintile"
+        ]
+      }
+    ],
+    "failed_breakdown_reclaim": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-22",
+        "failed": [
+          "undercut"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-22",
+        "failed": [
+          "undercut"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-28",
+        "failed": [
+          "undercut"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-01-05",
+        "failed": [
+          "undercut"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2024-01-08",
+        "failed": [
+          "undercut"
+        ]
+      }
+    ],
+    "residual_shock_reversion": [
+      {
+        "symbol": "360ONE",
+        "date": "2023-09-18",
+        "failed": [
+          "reclaim_prior_high"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-10-06",
+        "failed": [
+          "z_below_minus_2"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-10-09",
+        "failed": [
+          "z_below_minus_2"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-13",
+        "failed": [
+          "z_below_minus_2"
+        ]
+      },
+      {
+        "symbol": "360ONE",
+        "date": "2023-12-14",
+        "failed": [
+          "z_below_minus_2"
+        ]
+      }
+    ]
+  },
+  "symbol_dates_with_two_or_more_families": 1921,
+  "family_pair_overlap": {
+    "range_breakout|relative_strength_momentum": 959,
+    "failed_breakdown_reclaim|trend_pullback": 43,
+    "relative_strength_momentum|trend_pullback": 572,
+    "failed_breakdown_reclaim|relative_strength_momentum": 45,
+    "range_breakout|trend_pullback": 200,
+    "ema_cross|trend_pullback": 55,
+    "ema_cross|residual_shock_reversion": 7,
+    "residual_shock_reversion|trend_pullback": 77,
+    "ema_cross|relative_strength_momentum": 12,
+    "relative_strength_momentum|residual_shock_reversion": 38,
+    "failed_breakdown_reclaim|residual_shock_reversion": 6,
+    "ema_cross|failed_breakdown_reclaim": 1,
+    "range_breakout|residual_shock_reversion": 15
+  },
+  "survivorship": "current_nifty_200_membership_not_point_in_time",
+  "warmup_bars": 300,
+  "liquidity_rupees": 200000000.0,
+  "names_with_history": 191,
+  "names_excluded": 9
+}

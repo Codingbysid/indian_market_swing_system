@@ -444,7 +444,10 @@ def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float =
         return None
     try:
         feats = extract_live_features(stock_data, regime_on=regime_on)
-        feature_names = model.get("feature_names", FEATURE_NAMES)
+        feature_names = list(model.get("feature_names", FEATURE_NAMES))
+        if feature_names != FEATURE_NAMES or model.get("schema_id") == "features_v3_20":
+            print("Incompatible model schema for the live 7-feature contract. No BUY.")
+            return None
         for name in feature_names:
             val = feats.get(name)
             if val is None or not math.isfinite(float(val)):
@@ -1496,13 +1499,15 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
             + digest
         )
         print(body)
-        append_log_to_s3(f"[{timestamp}] monitor | events=0 equity={equity}\n" + body)
+        if not suppress_alerts:
+            append_log_to_s3(f"[{timestamp}] monitor | events=0 equity={equity}\n" + body)
         return
 
     print(body)
-    append_log_to_s3(
-        f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body
-    )
+    if not suppress_alerts:
+        append_log_to_s3(
+            f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body
+        )
 
 
 def is_weekend_ist() -> tuple[bool, str]:
@@ -1518,6 +1523,9 @@ def run_recommender(ignore_weekend: bool = False, suppress_alerts: bool = False)
     weekend, ist_label = is_weekend_ist()
     if weekend and not ignore_weekend:
         print(f"Weekend gate: markets closed ({ist_label}). Skipping signals/alerts.")
+        if suppress_alerts:
+            print("Dry run: weekend skip makes no production writes.")
+            return
         write_execution_log_json(
             {
                 "timestamp_utc": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -1561,8 +1569,12 @@ def lambda_handler(event, context):
     We use this to decide whether to scrape or analyze.
     """
     event = event or {}
+    from swing_core.scoring import output_policy
+
+    policy = output_policy(event)
+    event = {**event, "suppress_alerts": not policy["emit_alerts"], "dry_run": not policy["write_state"]}
     action = event.get("action", "recommender")  # Default to recommender
-    print(f"lambda_handler action={action} bucket={BUCKET_NAME}")
+    print(f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}")
 
     if action == "scraper":
         run_scraper()

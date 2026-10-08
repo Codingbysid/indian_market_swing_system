@@ -11,5 +11,9 @@ swing-deps-layer.zip
 .pytest_cache/
 core
 backtest/data/
-backtest/artifacts/
+backtest/artifacts/*
+!backtest/artifacts/v3/
+backtest/artifacts/v3/events.csv
 *.xgb.json
+!backtest/artifacts/v3/model.candidate.xgb.json
+dist/

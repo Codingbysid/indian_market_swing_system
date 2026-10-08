@@ -34,6 +34,7 @@ def enrich_ohlcv(df: pd.DataFrame) -> pd.DataFrame:
     out["ATR"] = calculate_atr(out)
     out["SMA_20"] = close.rolling(20).mean()
     out["SMA_50"] = close.rolling(50).mean()
+    out["SMA_200"] = close.rolling(200).mean()
     out["Std_Dev"] = close.rolling(20).std()
     out["Lower_Band"] = out["SMA_20"] - 2 * out["Std_Dev"]
     out["Upper_Band"] = out["SMA_20"] + 2 * out["Std_Dev"]

@@ -162,3 +162,36 @@ def apply_fill(state: dict, fill: dict) -> dict:
     state["holdings"] = holdings
     state.setdefault("fills", []).append({"fill_id": fid, "symbol": sym, "side": side, "qty": qty})
     return validate_state(state)
+
+
+class StaleWrite(Exception):
+    pass
+
+
+class VersionedStore:
+    """Separate documents so a mark snapshot cannot overwrite the fill ledger."""
+
+    def __init__(self):
+        self.docs: dict[str, dict] = {}
+
+    def put(self, key: str, body: dict, *, expected_version: int | None) -> int:
+        current = self.docs.get(key)
+        current_version = None if current is None else int(current["version"])
+        if expected_version != current_version:
+            raise StaleWrite(f"{key}:{current_version}")
+        version = 1 if current is None else current_version + 1
+        self.docs[key] = {"version": version, "body": dict(body)}
+        return version
+
+
+def apply_mark_snapshot(state: dict, prices: dict, required_symbols: list[str]) -> dict:
+    """Keep the last complete equity mark when any required price is missing."""
+    out = dict(state)
+    missing = [s for s in required_symbols if prices.get(s) in (None, "")]
+    if missing:
+        out["marks_status"] = "stale"
+        out["missing_marks"] = missing
+        return out
+    out["marks_status"] = "ok"
+    out["marks"] = {s: float(prices[s]) for s in required_symbols}
+    return out

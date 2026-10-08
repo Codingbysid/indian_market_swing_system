@@ -17,6 +17,17 @@ SLIPPAGE_CORE = 0.001  # 10 bps/side
 SLIPPAGE_SAT = 0.002
 
 
+def entry_charges(price: float, qty: int, *, sleeve: str = "core") -> float:
+    """Buy-side fees and slippage. DP is a sell-side charge and is not included."""
+    qty = max(int(qty), 0)
+    notional = max(float(price), 0.0) * qty
+    if notional <= 0:
+        return 0.0
+    exch = EXCHANGE_TXN * notional
+    slip = (SLIPPAGE_CORE if sleeve != "satellite" else SLIPPAGE_SAT) * notional
+    return STT_BUY * notional + exch + GST_ON_EXCHANGE * exch + SEBI * notional + STAMP_BUY * notional + slip
+
+
 def true_breakeven(avg_cost: float, qty: int) -> float:
     return float(avg_cost) * BE_COST_MULT + BE_FLAT_FEE / max(int(qty), 1)
 

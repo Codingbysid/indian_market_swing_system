@@ -1,0 +1,10 @@
+{
+  "compared": true,
+  "ok": true,
+  "max_abs_gap": 3.464155701182747e-08,
+  "boundary": {
+    "ok": true,
+    "max_abs_gap": 2.6295529087505543e-09,
+    "missing_feature_rejected": true
+  }
+}
