@@ -1,0 +1,37 @@
+{
+  "as_of": "2026-10-13",
+  "retrieved_utc": "2026-10-14T09:21:40.888403+00:00",
+  "source": "https://www.niftyindices.com/IndexConstituent/ind_nifty200list.csv",
+  "source_sha256": "27851fa65cabfc2b9cdbeaf92fdefc34ab841e8a60b3974defcc14aed7be2dd4",
+  "count": 150,
+  "sector_counts": {
+    "Financial Services": 30,
+    "Capital Goods": 16,
+    "Healthcare": 13,
+    "Fast Moving Consumer Goods": 12,
+    "Metals & Mining": 11,
+    "Consumer Services": 10,
+    "Power": 9,
+    "Oil Gas & Consumable Fuels": 9,
+    "Automobile and Auto Components": 7,
+    "Information Technology": 7,
+    "Realty": 6,
+    "Consumer Durables": 5,
+    "Chemicals": 4,
+    "Telecommunication": 4,
+    "Services": 3,
+    "Construction": 2,
+    "Construction Materials": 2
+  },
+  "affordable": 147,
+  "liquid_with_history": 150,
+  "monitor_only": [
+    "BPCL",
+    "CDSL",
+    "HAL",
+    "INFY",
+    "ZENTEC"
+  ],
+  "selection": "price affordability then median turnover; sector maximum 30; force include legacy holdings",
+  "bias": "Current membership and current liquidity selection; historical study exploratory, not survivorship-free."
+}

@@ -64,4 +64,5 @@ def completed_bar_iloc(index, now: datetime | None = None) -> int | None:
         return -1
     if last == today:
         return -2 if n >= 2 else None
-    return -2 if n >= 2 else None
+    # A future-dated bar invalidates the input; dropping one row is not enough.
+    return None

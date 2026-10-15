@@ -1,0 +1,830 @@
+[
+  {
+    "date": "2023-06-05",
+    "symbol": "DLF",
+    "side": "BUY",
+    "lot_id": "2023-06-02:DLF"
+  },
+  {
+    "date": "2023-06-16",
+    "symbol": "DLF",
+    "side": "SELL",
+    "lot_id": "2023-06-02:DLF"
+  },
+  {
+    "date": "2023-06-28",
+    "symbol": "ABCAPITAL",
+    "side": "BUY",
+    "lot_id": "2023-06-27:ABCAPITAL"
+  },
+  {
+    "date": "2023-07-10",
+    "symbol": "ABCAPITAL",
+    "side": "SELL",
+    "lot_id": "2023-06-27:ABCAPITAL"
+  },
+  {
+    "date": "2023-07-12",
+    "symbol": "IDFCFIRSTB",
+    "side": "BUY",
+    "lot_id": "2023-07-11:IDFCFIRSTB"
+  },
+  {
+    "date": "2023-07-25",
+    "symbol": "IDFCFIRSTB",
+    "side": "SELL",
+    "lot_id": "2023-07-11:IDFCFIRSTB"
+  },
+  {
+    "date": "2023-07-27",
+    "symbol": "TATACOMM",
+    "side": "BUY",
+    "lot_id": "2023-07-26:TATACOMM"
+  },
+  {
+    "date": "2023-07-31",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2023-07-28:ETERNAL"
+  },
+  {
+    "date": "2023-08-02",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2023-07-28:ETERNAL"
+  },
+  {
+    "date": "2023-08-08",
+    "symbol": "KALYANKJIL",
+    "side": "BUY",
+    "lot_id": "2023-08-07:KALYANKJIL"
+  },
+  {
+    "date": "2023-08-09",
+    "symbol": "TATACOMM",
+    "side": "SELL",
+    "lot_id": "2023-07-26:TATACOMM"
+  },
+  {
+    "date": "2023-08-11",
+    "symbol": "KALYANKJIL",
+    "side": "SELL",
+    "lot_id": "2023-08-07:KALYANKJIL"
+  },
+  {
+    "date": "2023-08-14",
+    "symbol": "EXIDEIND",
+    "side": "BUY",
+    "lot_id": "2023-08-11:EXIDEIND"
+  },
+  {
+    "date": "2023-08-25",
+    "symbol": "EXIDEIND",
+    "side": "SELL",
+    "lot_id": "2023-08-11:EXIDEIND"
+  },
+  {
+    "date": "2023-08-30",
+    "symbol": "MOTHERSON",
+    "side": "BUY",
+    "lot_id": "2023-08-29:MOTHERSON"
+  },
+  {
+    "date": "2023-09-12",
+    "symbol": "MOTHERSON",
+    "side": "SELL",
+    "lot_id": "2023-08-29:MOTHERSON"
+  },
+  {
+    "date": "2023-09-14",
+    "symbol": "GLENMARK",
+    "side": "BUY",
+    "lot_id": "2023-09-13:GLENMARK"
+  },
+  {
+    "date": "2023-09-18",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2023-09-15:ETERNAL"
+  },
+  {
+    "date": "2023-09-21",
+    "symbol": "GLENMARK",
+    "side": "SELL",
+    "lot_id": "2023-09-13:GLENMARK"
+  },
+  {
+    "date": "2023-09-21",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2023-09-15:ETERNAL"
+  },
+  {
+    "date": "2023-09-26",
+    "symbol": "TRENT",
+    "side": "BUY",
+    "lot_id": "2023-09-25:TRENT"
+  },
+  {
+    "date": "2023-09-26",
+    "symbol": "MCX",
+    "side": "BUY",
+    "lot_id": "2023-09-25:MCX"
+  },
+  {
+    "date": "2023-09-28",
+    "symbol": "TRENT",
+    "side": "SELL",
+    "lot_id": "2023-09-25:TRENT"
+  },
+  {
+    "date": "2023-09-28",
+    "symbol": "MCX",
+    "side": "SELL",
+    "lot_id": "2023-09-25:MCX"
+  },
+  {
+    "date": "2023-10-12",
+    "symbol": "BSE",
+    "side": "BUY",
+    "lot_id": "2023-10-11:BSE"
+  },
+  {
+    "date": "2023-10-12",
+    "symbol": "KALYANKJIL",
+    "side": "BUY",
+    "lot_id": "2023-10-11:KALYANKJIL"
+  },
+  {
+    "date": "2023-10-18",
+    "symbol": "KALYANKJIL",
+    "side": "SELL",
+    "lot_id": "2023-10-11:KALYANKJIL"
+  },
+  {
+    "date": "2023-10-23",
+    "symbol": "BSE",
+    "side": "SELL",
+    "lot_id": "2023-10-11:BSE"
+  },
+  {
+    "date": "2023-11-22",
+    "symbol": "KALYANKJIL",
+    "side": "BUY",
+    "lot_id": "2023-11-21:KALYANKJIL"
+  },
+  {
+    "date": "2023-11-30",
+    "symbol": "KALYANKJIL",
+    "side": "SELL",
+    "lot_id": "2023-11-21:KALYANKJIL"
+  },
+  {
+    "date": "2023-12-01",
+    "symbol": "BSE",
+    "side": "BUY",
+    "lot_id": "2023-11-30:BSE"
+  },
+  {
+    "date": "2023-12-01",
+    "symbol": "FORTIS",
+    "side": "BUY",
+    "lot_id": "2023-11-30:FORTIS"
+  },
+  {
+    "date": "2023-12-11",
+    "symbol": "BSE",
+    "side": "SELL",
+    "lot_id": "2023-11-30:BSE"
+  },
+  {
+    "date": "2023-12-14",
+    "symbol": "FORTIS",
+    "side": "SELL",
+    "lot_id": "2023-11-30:FORTIS"
+  },
+  {
+    "date": "2023-12-15",
+    "symbol": "SHRIRAMFIN",
+    "side": "BUY",
+    "lot_id": "2023-12-14:SHRIRAMFIN"
+  },
+  {
+    "date": "2023-12-20",
+    "symbol": "SHRIRAMFIN",
+    "side": "SELL",
+    "lot_id": "2023-12-14:SHRIRAMFIN"
+  },
+  {
+    "date": "2023-12-26",
+    "symbol": "PRESTIGE",
+    "side": "BUY",
+    "lot_id": "2023-12-22:PRESTIGE"
+  },
+  {
+    "date": "2023-12-26",
+    "symbol": "GLENMARK",
+    "side": "BUY",
+    "lot_id": "2023-12-22:GLENMARK"
+  },
+  {
+    "date": "2024-01-03",
+    "symbol": "PRESTIGE",
+    "side": "SELL",
+    "lot_id": "2023-12-22:PRESTIGE"
+  },
+  {
+    "date": "2024-01-05",
+    "symbol": "GMRAIRPORT",
+    "side": "BUY",
+    "lot_id": "2024-01-04:GMRAIRPORT"
+  },
+  {
+    "date": "2024-01-08",
+    "symbol": "GLENMARK",
+    "side": "SELL",
+    "lot_id": "2023-12-22:GLENMARK"
+  },
+  {
+    "date": "2024-01-10",
+    "symbol": "KALYANKJIL",
+    "side": "BUY",
+    "lot_id": "2024-01-09:KALYANKJIL"
+  },
+  {
+    "date": "2024-01-17",
+    "symbol": "KALYANKJIL",
+    "side": "SELL",
+    "lot_id": "2024-01-09:KALYANKJIL"
+  },
+  {
+    "date": "2024-01-18",
+    "symbol": "GMRAIRPORT",
+    "side": "SELL",
+    "lot_id": "2024-01-04:GMRAIRPORT"
+  },
+  {
+    "date": "2024-01-19",
+    "symbol": "PHOENIXLTD",
+    "side": "BUY",
+    "lot_id": "2024-01-18:PHOENIXLTD"
+  },
+  {
+    "date": "2024-01-23",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-01-19:ETERNAL"
+  },
+  {
+    "date": "2024-01-23",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-01-19:ETERNAL"
+  },
+  {
+    "date": "2024-01-24",
+    "symbol": "PHOENIXLTD",
+    "side": "SELL",
+    "lot_id": "2024-01-18:PHOENIXLTD"
+  },
+  {
+    "date": "2024-01-25",
+    "symbol": "MCX",
+    "side": "BUY",
+    "lot_id": "2024-01-24:MCX"
+  },
+  {
+    "date": "2024-01-30",
+    "symbol": "ADANIPOWER",
+    "side": "BUY",
+    "lot_id": "2024-01-29:ADANIPOWER"
+  },
+  {
+    "date": "2024-02-02",
+    "symbol": "MCX",
+    "side": "SELL",
+    "lot_id": "2024-01-24:MCX"
+  },
+  {
+    "date": "2024-02-05",
+    "symbol": "MCX",
+    "side": "BUY",
+    "lot_id": "2024-02-02:MCX"
+  },
+  {
+    "date": "2024-02-12",
+    "symbol": "ADANIPOWER",
+    "side": "SELL",
+    "lot_id": "2024-01-29:ADANIPOWER"
+  },
+  {
+    "date": "2024-02-12",
+    "symbol": "MCX",
+    "side": "SELL",
+    "lot_id": "2024-02-02:MCX"
+  },
+  {
+    "date": "2024-02-13",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-02-12:ETERNAL"
+  },
+  {
+    "date": "2024-02-14",
+    "symbol": "GMRAIRPORT",
+    "side": "BUY",
+    "lot_id": "2024-02-13:GMRAIRPORT"
+  },
+  {
+    "date": "2024-02-26",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-02-12:ETERNAL"
+  },
+  {
+    "date": "2024-02-27",
+    "symbol": "POLICYBZR",
+    "side": "BUY",
+    "lot_id": "2024-02-26:POLICYBZR"
+  },
+  {
+    "date": "2024-02-27",
+    "symbol": "GMRAIRPORT",
+    "side": "SELL",
+    "lot_id": "2024-02-13:GMRAIRPORT"
+  },
+  {
+    "date": "2024-02-28",
+    "symbol": "LODHA",
+    "side": "BUY",
+    "lot_id": "2024-02-27:LODHA"
+  },
+  {
+    "date": "2024-03-12",
+    "symbol": "POLICYBZR",
+    "side": "SELL",
+    "lot_id": "2024-02-26:POLICYBZR"
+  },
+  {
+    "date": "2024-03-13",
+    "symbol": "LODHA",
+    "side": "SELL",
+    "lot_id": "2024-02-27:LODHA"
+  },
+  {
+    "date": "2024-03-27",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-03-26:ETERNAL"
+  },
+  {
+    "date": "2024-03-27",
+    "symbol": "INDUSTOWER",
+    "side": "BUY",
+    "lot_id": "2024-03-26:INDUSTOWER"
+  },
+  {
+    "date": "2024-04-05",
+    "symbol": "INDUSTOWER",
+    "side": "SELL",
+    "lot_id": "2024-03-26:INDUSTOWER"
+  },
+  {
+    "date": "2024-04-08",
+    "symbol": "ZYDUSLIFE",
+    "side": "BUY",
+    "lot_id": "2024-04-05:ZYDUSLIFE"
+  },
+  {
+    "date": "2024-04-10",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-03-26:ETERNAL"
+  },
+  {
+    "date": "2024-04-12",
+    "symbol": "ZYDUSLIFE",
+    "side": "SELL",
+    "lot_id": "2024-04-05:ZYDUSLIFE"
+  },
+  {
+    "date": "2024-04-23",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-04-22:ETERNAL"
+  },
+  {
+    "date": "2024-04-23",
+    "symbol": "BLUESTARCO",
+    "side": "BUY",
+    "lot_id": "2024-04-22:BLUESTARCO"
+  },
+  {
+    "date": "2024-04-24",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-04-22:ETERNAL"
+  },
+  {
+    "date": "2024-04-25",
+    "symbol": "POLICYBZR",
+    "side": "BUY",
+    "lot_id": "2024-04-24:POLICYBZR"
+  },
+  {
+    "date": "2024-05-07",
+    "symbol": "BLUESTARCO",
+    "side": "SELL",
+    "lot_id": "2024-04-22:BLUESTARCO"
+  },
+  {
+    "date": "2024-05-09",
+    "symbol": "VBL",
+    "side": "BUY",
+    "lot_id": "2024-05-08:VBL"
+  },
+  {
+    "date": "2024-05-09",
+    "symbol": "POLICYBZR",
+    "side": "SELL",
+    "lot_id": "2024-04-24:POLICYBZR"
+  },
+  {
+    "date": "2024-05-13",
+    "symbol": "VBL",
+    "side": "SELL",
+    "lot_id": "2024-05-08:VBL"
+  },
+  {
+    "date": "2024-05-21",
+    "symbol": "MCX",
+    "side": "BUY",
+    "lot_id": "2024-05-17:MCX"
+  },
+  {
+    "date": "2024-05-21",
+    "symbol": "LODHA",
+    "side": "BUY",
+    "lot_id": "2024-05-17:LODHA"
+  },
+  {
+    "date": "2024-05-21",
+    "symbol": "MCX",
+    "side": "SELL",
+    "lot_id": "2024-05-17:MCX"
+  },
+  {
+    "date": "2024-05-22",
+    "symbol": "ADANIPOWER",
+    "side": "BUY",
+    "lot_id": "2024-05-21:ADANIPOWER"
+  },
+  {
+    "date": "2024-05-23",
+    "symbol": "LODHA",
+    "side": "SELL",
+    "lot_id": "2024-05-17:LODHA"
+  },
+  {
+    "date": "2024-05-24",
+    "symbol": "LODHA",
+    "side": "BUY",
+    "lot_id": "2024-05-23:LODHA"
+  },
+  {
+    "date": "2024-05-31",
+    "symbol": "ADANIPOWER",
+    "side": "SELL",
+    "lot_id": "2024-05-21:ADANIPOWER"
+  },
+  {
+    "date": "2024-06-05",
+    "symbol": "LODHA",
+    "side": "SELL",
+    "lot_id": "2024-05-23:LODHA"
+  },
+  {
+    "date": "2024-07-03",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-07-02:ETERNAL"
+  },
+  {
+    "date": "2024-07-16",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-07-02:ETERNAL"
+  },
+  {
+    "date": "2024-07-19",
+    "symbol": "MOTHERSON",
+    "side": "BUY",
+    "lot_id": "2024-07-18:MOTHERSON"
+  },
+  {
+    "date": "2024-07-19",
+    "symbol": "MOTHERSON",
+    "side": "SELL",
+    "lot_id": "2024-07-18:MOTHERSON"
+  },
+  {
+    "date": "2024-07-23",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-07-22:ETERNAL"
+  },
+  {
+    "date": "2024-07-23",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-07-22:ETERNAL"
+  },
+  {
+    "date": "2024-07-24",
+    "symbol": "FEDERALBNK",
+    "side": "BUY",
+    "lot_id": "2024-07-23:FEDERALBNK"
+  },
+  {
+    "date": "2024-08-06",
+    "symbol": "FEDERALBNK",
+    "side": "SELL",
+    "lot_id": "2024-07-23:FEDERALBNK"
+  },
+  {
+    "date": "2024-08-08",
+    "symbol": "GMRAIRPORT",
+    "side": "BUY",
+    "lot_id": "2024-08-07:GMRAIRPORT"
+  },
+  {
+    "date": "2024-08-22",
+    "symbol": "GMRAIRPORT",
+    "side": "SELL",
+    "lot_id": "2024-08-07:GMRAIRPORT"
+  },
+  {
+    "date": "2024-08-23",
+    "symbol": "VOLTAS",
+    "side": "BUY",
+    "lot_id": "2024-08-22:VOLTAS"
+  },
+  {
+    "date": "2024-09-05",
+    "symbol": "VOLTAS",
+    "side": "SELL",
+    "lot_id": "2024-08-22:VOLTAS"
+  },
+  {
+    "date": "2024-09-06",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-09-05:ETERNAL"
+  },
+  {
+    "date": "2024-09-12",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-09-05:ETERNAL"
+  },
+  {
+    "date": "2024-09-13",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-09-12:ETERNAL"
+  },
+  {
+    "date": "2024-09-13",
+    "symbol": "KALYANKJIL",
+    "side": "BUY",
+    "lot_id": "2024-09-12:KALYANKJIL"
+  },
+  {
+    "date": "2024-09-16",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-09-12:ETERNAL"
+  },
+  {
+    "date": "2024-09-23",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-09-20:ETERNAL"
+  },
+  {
+    "date": "2024-09-23",
+    "symbol": "KALYANKJIL",
+    "side": "SELL",
+    "lot_id": "2024-09-12:KALYANKJIL"
+  },
+  {
+    "date": "2024-09-27",
+    "symbol": "MOTHERSON",
+    "side": "BUY",
+    "lot_id": "2024-09-26:MOTHERSON"
+  },
+  {
+    "date": "2024-09-27",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-09-20:ETERNAL"
+  },
+  {
+    "date": "2024-10-03",
+    "symbol": "MOTHERSON",
+    "side": "SELL",
+    "lot_id": "2024-09-26:MOTHERSON"
+  },
+  {
+    "date": "2024-12-09",
+    "symbol": "MCX",
+    "side": "BUY",
+    "lot_id": "2024-12-06:MCX"
+  },
+  {
+    "date": "2024-12-10",
+    "symbol": "FORTIS",
+    "side": "BUY",
+    "lot_id": "2024-12-09:FORTIS"
+  },
+  {
+    "date": "2024-12-13",
+    "symbol": "MCX",
+    "side": "SELL",
+    "lot_id": "2024-12-06:MCX"
+  },
+  {
+    "date": "2024-12-17",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2024-12-16:ETERNAL"
+  },
+  {
+    "date": "2024-12-18",
+    "symbol": "FORTIS",
+    "side": "SELL",
+    "lot_id": "2024-12-09:FORTIS"
+  },
+  {
+    "date": "2024-12-20",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2024-12-16:ETERNAL"
+  },
+  {
+    "date": "2025-04-21",
+    "symbol": "INDUSTOWER",
+    "side": "BUY",
+    "lot_id": "2025-04-17:INDUSTOWER"
+  },
+  {
+    "date": "2025-04-23",
+    "symbol": "LAURUSLABS",
+    "side": "BUY",
+    "lot_id": "2025-04-22:LAURUSLABS"
+  },
+  {
+    "date": "2025-04-25",
+    "symbol": "LAURUSLABS",
+    "side": "SELL",
+    "lot_id": "2025-04-22:LAURUSLABS"
+  },
+  {
+    "date": "2025-05-02",
+    "symbol": "INDUSTOWER",
+    "side": "SELL",
+    "lot_id": "2025-04-17:INDUSTOWER"
+  },
+  {
+    "date": "2025-05-13",
+    "symbol": "NYKAA",
+    "side": "BUY",
+    "lot_id": "2025-05-12:NYKAA"
+  },
+  {
+    "date": "2025-05-26",
+    "symbol": "NYKAA",
+    "side": "SELL",
+    "lot_id": "2025-05-12:NYKAA"
+  },
+  {
+    "date": "2025-06-06",
+    "symbol": "ETERNAL",
+    "side": "BUY",
+    "lot_id": "2025-06-05:ETERNAL"
+  },
+  {
+    "date": "2025-06-09",
+    "symbol": "LODHA",
+    "side": "BUY",
+    "lot_id": "2025-06-06:LODHA"
+  },
+  {
+    "date": "2025-06-12",
+    "symbol": "LODHA",
+    "side": "SELL",
+    "lot_id": "2025-06-06:LODHA"
+  },
+  {
+    "date": "2025-06-19",
+    "symbol": "ETERNAL",
+    "side": "SELL",
+    "lot_id": "2025-06-05:ETERNAL"
+  },
+  {
+    "date": "2025-06-23",
+    "symbol": "MCX",
+    "side": "BUY",
+    "lot_id": "2025-06-20:MCX"
+  },
+  {
+    "date": "2025-06-26",
+    "symbol": "MCX",
+    "side": "SELL",
+    "lot_id": "2025-06-20:MCX"
+  },
+  {
+    "date": "2025-07-14",
+    "symbol": "PAYTM",
+    "side": "BUY",
+    "lot_id": "2025-07-11:PAYTM"
+  },
+  {
+    "date": "2025-07-21",
+    "symbol": "PAYTM",
+    "side": "SELL",
+    "lot_id": "2025-07-11:PAYTM"
+  },
+  {
+    "date": "2025-10-16",
+    "symbol": "ABCAPITAL",
+    "side": "BUY",
+    "lot_id": "2025-10-15:ABCAPITAL"
+  },
+  {
+    "date": "2025-10-30",
+    "symbol": "ABCAPITAL",
+    "side": "SELL",
+    "lot_id": "2025-10-15:ABCAPITAL"
+  },
+  {
+    "date": "2025-10-31",
+    "symbol": "ABCAPITAL",
+    "side": "BUY",
+    "lot_id": "2025-10-30:ABCAPITAL"
+  },
+  {
+    "date": "2025-11-14",
+    "symbol": "ABCAPITAL",
+    "side": "SELL",
+    "lot_id": "2025-10-30:ABCAPITAL"
+  },
+  {
+    "date": "2025-12-08",
+    "symbol": "IDEA",
+    "side": "BUY",
+    "lot_id": "2025-12-05:IDEA"
+  },
+  {
+    "date": "2025-12-19",
+    "symbol": "IDEA",
+    "side": "SELL",
+    "lot_id": "2025-12-05:IDEA"
+  },
+  {
+    "date": "2026-01-05",
+    "symbol": "INDUSTOWER",
+    "side": "BUY",
+    "lot_id": "2026-01-02:INDUSTOWER"
+  },
+  {
+    "date": "2026-01-19",
+    "symbol": "INDUSTOWER",
+    "side": "SELL",
+    "lot_id": "2026-01-02:INDUSTOWER"
+  },
+  {
+    "date": "2026-02-10",
+    "symbol": "VEDL",
+    "side": "BUY",
+    "lot_id": "2026-02-09:VEDL"
+  },
+  {
+    "date": "2026-02-11",
+    "symbol": "MOTHERSON",
+    "side": "BUY",
+    "lot_id": "2026-02-10:MOTHERSON"
+  },
+  {
+    "date": "2026-02-23",
+    "symbol": "VEDL",
+    "side": "SELL",
+    "lot_id": "2026-02-09:VEDL"
+  },
+  {
+    "date": "2026-02-24",
+    "symbol": "MOTHERSON",
+    "side": "SELL",
+    "lot_id": "2026-02-10:MOTHERSON"
+  }
+]

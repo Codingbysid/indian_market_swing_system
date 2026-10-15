@@ -1,0 +1,900 @@
+{
+  "schema_id": "india_v4_20",
+  "promoted": false,
+  "as_of": "2026-10-13",
+  "universe_size": 150,
+  "history_available": 150,
+  "missing_or_short": [],
+  "detector_hits": {
+    "ema_cross": 523,
+    "range_breakout": 2606,
+    "trend_pullback": 1834,
+    "sector_momentum": 249
+  },
+  "event_status": {
+    "filled": 4282,
+    "unaffordable": 566,
+    "unfilled": 351,
+    "invalid_features": 11,
+    "censored": 1,
+    "censored_no_entry_bar": 1
+  },
+  "outer_folds": 6,
+  "unique_oos_candidates": 2194,
+  "oos_names": 130,
+  "folds": [
+    {
+      "train_start": "2019-12-02",
+      "train_end": "2022-12-02",
+      "calib_end": "2023-06-02",
+      "test_end": "2023-12-02",
+      "id": 0,
+      "train": 1574,
+      "calibration_fit": 87,
+      "calibration_selection": 102,
+      "test": 511,
+      "chosen": "prior",
+      "selection_metrics": {
+        "prior": {
+          "brier": 0.25042069879434686,
+          "logloss": 0.6941508234445862
+        },
+        "logistic": {
+          "brier": 0.34606628558840746,
+          "logloss": 0.9776721808147971
+        },
+        "xgb": {
+          "brier": 0.35048008880377296,
+          "logloss": 0.997222673109576
+        }
+      },
+      "parity": {
+        "logistic": {
+          "max_raw_probability_gap": 1.1102230246251565e-16,
+          "passed": true,
+          "max_calibrated_gap": 5.551115123125783e-17
+        },
+        "xgb": {
+          "max_raw_probability_gap": 1.100748677762553e-07,
+          "passed": true,
+          "max_calibrated_gap": 2.4272348811416045e-08,
+          "boundary_gap": 2.0179208137793836e-08
+        }
+      },
+      "kelly": {
+        "ema_cross": {
+          "status": "unproven",
+          "n": 119,
+          "positive": 47,
+          "negative": 72,
+          "week_blocks": 56,
+          "win_rate": 0.3949579831932773,
+          "mean_win_R": 0.9844372820082206,
+          "mean_loss_R": 0.9845978770101882,
+          "mean_R": -0.20691172176762346,
+          "mean_R_lower_95_one_sided": -0.38625678594681806,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "trend_pullback": {
+          "status": "unproven",
+          "n": 361,
+          "positive": 133,
+          "negative": 228,
+          "week_blocks": 84,
+          "win_rate": 0.3684210526315789,
+          "mean_win_R": 1.1993305908032348,
+          "mean_loss_R": 1.062190907969743,
+          "mean_R": -0.2289987768428565,
+          "mean_R_lower_95_one_sided": -0.3931930994763786,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "range_breakout": {
+          "status": "unproven",
+          "n": 652,
+          "positive": 256,
+          "negative": 396,
+          "week_blocks": 97,
+          "win_rate": 0.39263803680981596,
+          "mean_win_R": 1.2701752601296663,
+          "mean_loss_R": 1.0794222184022433,
+          "mean_R": -0.15688087713818075,
+          "mean_R_lower_95_one_sided": -0.2639409887942992,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "sector_momentum": {
+          "status": "unproven",
+          "n": 54,
+          "positive": 17,
+          "negative": 37,
+          "week_blocks": 38,
+          "win_rate": 0.3148148148148148,
+          "mean_win_R": 1.093586641144498,
+          "mean_loss_R": 1.0724210910604537,
+          "mean_R": -0.39052976795889466,
+          "mean_R_lower_95_one_sided": -0.6381664645851682,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        }
+      }
+    },
+    {
+      "train_start": "2019-12-02",
+      "train_end": "2023-06-02",
+      "calib_end": "2023-12-02",
+      "test_end": "2024-06-02",
+      "id": 1,
+      "train": 1820,
+      "calibration_fit": 140,
+      "calibration_selection": 215,
+      "test": 487,
+      "chosen": "prior",
+      "selection_metrics": {
+        "prior": {
+          "brier": 0.2268769431486656,
+          "logloss": 0.6463409646823213
+        },
+        "logistic": {
+          "brier": 0.25455916443496124,
+          "logloss": 0.7022684802650909
+        },
+        "xgb": {
+          "brier": 0.2628746763916811,
+          "logloss": 0.7189754266265301
+        }
+      },
+      "parity": {
+        "logistic": {
+          "max_raw_probability_gap": 1.1102230246251565e-16,
+          "passed": true,
+          "max_calibrated_gap": 1.1102230246251565e-16
+        },
+        "xgb": {
+          "max_raw_probability_gap": 1.2418379535805713e-07,
+          "passed": true,
+          "max_calibrated_gap": 8.965849151998384e-08,
+          "boundary_gap": 9.631626662898185e-09
+        }
+      },
+      "kelly": {
+        "ema_cross": {
+          "status": "unproven",
+          "n": 133,
+          "positive": 50,
+          "negative": 83,
+          "week_blocks": 63,
+          "win_rate": 0.37593984962406013,
+          "mean_win_R": 0.990371092708907,
+          "mean_loss_R": 0.9743828144422031,
+          "mean_R": -0.23575352603953018,
+          "mean_R_lower_95_one_sided": -0.4099050610226927,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "trend_pullback": {
+          "status": "unproven",
+          "n": 409,
+          "positive": 150,
+          "negative": 259,
+          "week_blocks": 94,
+          "win_rate": 0.36674816625916873,
+          "mean_win_R": 1.2198469311589804,
+          "mean_loss_R": 1.077865610253814,
+          "mean_R": -0.23518374909997747,
+          "mean_R_lower_95_one_sided": -0.37694468975285034,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "range_breakout": {
+          "status": "unproven",
+          "n": 740,
+          "positive": 289,
+          "negative": 451,
+          "week_blocks": 108,
+          "win_rate": 0.39054054054054055,
+          "mean_win_R": 1.2316707510025064,
+          "mean_loss_R": 1.0784825834203342,
+          "mean_R": -0.1762740514633059,
+          "mean_R_lower_95_one_sided": -0.28470326769188076,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "sector_momentum": {
+          "status": "unproven",
+          "n": 59,
+          "positive": 20,
+          "negative": 39,
+          "week_blocks": 41,
+          "win_rate": 0.3389830508474576,
+          "mean_win_R": 1.1852853641506567,
+          "mean_loss_R": 1.0822649225240955,
+          "mean_R": -0.3136038083970607,
+          "mean_R_lower_95_one_sided": -0.5886436964065489,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        }
+      }
+    },
+    {
+      "train_start": "2019-12-02",
+      "train_end": "2023-12-02",
+      "calib_end": "2024-06-02",
+      "test_end": "2024-12-02",
+      "id": 2,
+      "train": 2313,
+      "calibration_fit": 112,
+      "calibration_selection": 207,
+      "test": 380,
+      "chosen": "prior",
+      "selection_metrics": {
+        "prior": {
+          "brier": 0.22649555983685457,
+          "logloss": 0.6456239944231404
+        },
+        "logistic": {
+          "brier": 0.24192778483500818,
+          "logloss": 0.6767613856458549
+        },
+        "xgb": {
+          "brier": 0.24757571674433487,
+          "logloss": 0.688297376094677
+        }
+      },
+      "parity": {
+        "logistic": {
+          "max_raw_probability_gap": 1.1102230246251565e-16,
+          "passed": true,
+          "max_calibrated_gap": 1.6653345369377348e-16
+        },
+        "xgb": {
+          "max_raw_probability_gap": 7.179746797092434e-08,
+          "passed": true,
+          "max_calibrated_gap": 1.7127648077597257e-08,
+          "boundary_gap": 1.9641322457353283e-08
+        }
+      },
+      "kelly": {
+        "ema_cross": {
+          "status": "unproven",
+          "n": 164,
+          "positive": 66,
+          "negative": 98,
+          "week_blocks": 78,
+          "win_rate": 0.4024390243902439,
+          "mean_win_R": 1.0577289156649092,
+          "mean_loss_R": 1.012599148423638,
+          "mean_R": -0.17941834214410063,
+          "mean_R_lower_95_one_sided": -0.3403813349304519,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "trend_pullback": {
+          "status": "unproven",
+          "n": 572,
+          "positive": 219,
+          "negative": 353,
+          "week_blocks": 115,
+          "win_rate": 0.38286713286713286,
+          "mean_win_R": 1.1799304128432895,
+          "mean_loss_R": 1.0721303541370197,
+          "mean_R": -0.20989030524071253,
+          "mean_R_lower_95_one_sided": -0.3338650297539806,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "range_breakout": {
+          "status": "unproven",
+          "n": 964,
+          "positive": 379,
+          "negative": 585,
+          "week_blocks": 129,
+          "win_rate": 0.39315352697095435,
+          "mean_win_R": 1.2067132568074255,
+          "mean_loss_R": 1.0927856589746805,
+          "mean_R": -0.18872954996906008,
+          "mean_R_lower_95_one_sided": -0.28709696706253524,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "sector_momentum": {
+          "status": "unproven",
+          "n": 71,
+          "positive": 25,
+          "negative": 46,
+          "week_blocks": 51,
+          "win_rate": 0.352112676056338,
+          "mean_win_R": 1.1510649367042085,
+          "mean_loss_R": 1.1012828375443589,
+          "mean_R": -0.30820263534415915,
+          "mean_R_lower_95_one_sided": -0.5238383324147126,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        }
+      }
+    },
+    {
+      "train_start": "2019-12-02",
+      "train_end": "2024-06-02",
+      "calib_end": "2024-12-02",
+      "test_end": "2025-06-02",
+      "id": 3,
+      "train": 2817,
+      "calibration_fit": 137,
+      "calibration_selection": 144,
+      "test": 191,
+      "chosen": "logistic",
+      "selection_metrics": {
+        "prior": {
+          "brier": 0.2356810057581951,
+          "logloss": 0.6642871240175876
+        },
+        "logistic": {
+          "brier": 0.2322838582992032,
+          "logloss": 0.6569175252054565
+        },
+        "xgb": {
+          "brier": 0.23579115800948283,
+          "logloss": 0.6644506863726901
+        }
+      },
+      "parity": {
+        "logistic": {
+          "max_raw_probability_gap": 1.1102230246251565e-16,
+          "passed": true,
+          "max_calibrated_gap": 1.1102230246251565e-16
+        },
+        "xgb": {
+          "max_raw_probability_gap": 8.97076076200598e-08,
+          "passed": true,
+          "max_calibrated_gap": 7.576311039647621e-08,
+          "boundary_gap": 2.7776890898500994e-08
+        }
+      },
+      "kelly": {
+        "ema_cross": {
+          "status": "unproven",
+          "n": 209,
+          "positive": 88,
+          "negative": 121,
+          "week_blocks": 98,
+          "win_rate": 0.42105263157894735,
+          "mean_win_R": 1.1002136949920582,
+          "mean_loss_R": 1.041909986617277,
+          "mean_R": -0.13996317330808328,
+          "mean_R_lower_95_one_sided": -0.300425679521986,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "trend_pullback": {
+          "status": "unproven",
+          "n": 722,
+          "positive": 278,
+          "negative": 444,
+          "week_blocks": 139,
+          "win_rate": 0.3850415512465374,
+          "mean_win_R": 1.1943174686835085,
+          "mean_loss_R": 1.0726586585927715,
+          "mean_R": -0.19977865390744484,
+          "mean_R_lower_95_one_sided": -0.3044913015756113,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "range_breakout": {
+          "status": "unproven",
+          "n": 1203,
+          "positive": 493,
+          "negative": 710,
+          "week_blocks": 153,
+          "win_rate": 0.40980881130507063,
+          "mean_win_R": 1.194055322905579,
+          "mean_loss_R": 1.1004759427449389,
+          "mean_R": -0.16015681226638095,
+          "mean_R_lower_95_one_sided": -0.24882801008420086,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "sector_momentum": {
+          "status": "unproven",
+          "n": 85,
+          "positive": 28,
+          "negative": 57,
+          "week_blocks": 61,
+          "win_rate": 0.32941176470588235,
+          "mean_win_R": 1.072605478411378,
+          "mean_loss_R": 1.1035706893757955,
+          "mean_R": -0.3867126576341383,
+          "mean_R_lower_95_one_sided": -0.6147008326492154,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        }
+      }
+    },
+    {
+      "train_start": "2019-12-02",
+      "train_end": "2024-12-02",
+      "calib_end": "2025-06-02",
+      "test_end": "2025-12-02",
+      "id": 4,
+      "train": 3251,
+      "calibration_fit": 58,
+      "calibration_selection": 72,
+      "test": 345,
+      "chosen": "prior",
+      "selection_metrics": {
+        "prior": {
+          "brier": 0.2248004096701612,
+          "logloss": 0.642243917624088
+        },
+        "logistic": {
+          "brier": 0.2274695439004006,
+          "logloss": 0.6533752671307698
+        },
+        "xgb": {
+          "brier": 0.22810417595587207,
+          "logloss": 0.6552013625422186
+        }
+      },
+      "parity": {
+        "logistic": {
+          "max_raw_probability_gap": 1.1102230246251565e-16,
+          "passed": true,
+          "max_calibrated_gap": 8.326672684688674e-17
+        },
+        "xgb": {
+          "max_raw_probability_gap": 9.930921079925881e-08,
+          "passed": true,
+          "max_calibrated_gap": 1.5772395889346313e-08,
+          "boundary_gap": 2.1673426831014808e-08
+        }
+      },
+      "kelly": {
+        "ema_cross": {
+          "status": "unproven",
+          "n": 235,
+          "positive": 101,
+          "negative": 134,
+          "week_blocks": 110,
+          "win_rate": 0.4297872340425532,
+          "mean_win_R": 1.141090376929454,
+          "mean_loss_R": 1.0479002242160662,
+          "mean_R": -0.10710000840458724,
+          "mean_R_lower_95_one_sided": -0.2468044528639418,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "trend_pullback": {
+          "status": "unproven",
+          "n": 822,
+          "positive": 315,
+          "negative": 507,
+          "week_blocks": 156,
+          "win_rate": 0.38321167883211676,
+          "mean_win_R": 1.169323437187036,
+          "mean_loss_R": 1.07022260709714,
+          "mean_R": -0.21200240764517475,
+          "mean_R_lower_95_one_sided": -0.32085017993902176,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "range_breakout": {
+          "status": "unproven",
+          "n": 1355,
+          "positive": 538,
+          "negative": 817,
+          "week_blocks": 171,
+          "win_rate": 0.3970479704797048,
+          "mean_win_R": 1.1937384067258288,
+          "mean_loss_R": 1.1159849189183566,
+          "mean_R": -0.19891396010169846,
+          "mean_R_lower_95_one_sided": -0.2803933513660403,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "sector_momentum": {
+          "status": "unproven",
+          "n": 93,
+          "positive": 30,
+          "negative": 63,
+          "week_blocks": 69,
+          "win_rate": 0.3225806451612903,
+          "mean_win_R": 1.0409900291184817,
+          "mean_loss_R": 1.11170572606771,
+          "mean_R": -0.417287740523777,
+          "mean_R_lower_95_one_sided": -0.6099915740095893,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        }
+      }
+    },
+    {
+      "train_start": "2019-12-02",
+      "train_end": "2025-06-02",
+      "calib_end": "2025-12-02",
+      "test_end": "2026-06-02",
+      "id": 5,
+      "train": 3404,
+      "calibration_fit": 142,
+      "calibration_selection": 133,
+      "test": 280,
+      "chosen": "prior",
+      "selection_metrics": {
+        "prior": {
+          "brier": 0.2382542941285613,
+          "logloss": 0.6694756977929184
+        },
+        "logistic": {
+          "brier": 0.24246267987543058,
+          "logloss": 0.6787952253109363
+        },
+        "xgb": {
+          "brier": 0.244213436983049,
+          "logloss": 0.6828883044488085
+        }
+      },
+      "parity": {
+        "logistic": {
+          "max_raw_probability_gap": 1.1102230246251565e-16,
+          "passed": true,
+          "max_calibrated_gap": 1.1102230246251565e-16
+        },
+        "xgb": {
+          "max_raw_probability_gap": 9.193220767977905e-08,
+          "passed": true,
+          "max_calibrated_gap": 6.773516736391372e-08,
+          "boundary_gap": 7.508600291528111e-08
+        }
+      },
+      "kelly": {
+        "ema_cross": {
+          "status": "unproven",
+          "n": 237,
+          "positive": 103,
+          "negative": 134,
+          "week_blocks": 112,
+          "win_rate": 0.4345991561181435,
+          "mean_win_R": 1.141890978390434,
+          "mean_loss_R": 1.0479002242160662,
+          "mean_R": -0.09621881548834663,
+          "mean_R_lower_95_one_sided": -0.25154967561459735,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "trend_pullback": {
+          "status": "unproven",
+          "n": 833,
+          "positive": 317,
+          "negative": 516,
+          "week_blocks": 161,
+          "win_rate": 0.38055222088835533,
+          "mean_win_R": 1.165941197061784,
+          "mean_loss_R": 1.071114904585636,
+          "mean_R": -0.21979823685186417,
+          "mean_R_lower_95_one_sided": -0.3302813933587158,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "range_breakout": {
+          "status": "unproven",
+          "n": 1386,
+          "positive": 545,
+          "negative": 841,
+          "week_blocks": 181,
+          "win_rate": 0.39321789321789324,
+          "mean_win_R": 1.188793326044886,
+          "mean_loss_R": 1.1202960758387193,
+          "mean_R": -0.21232080597828287,
+          "mean_R_lower_95_one_sided": -0.30184697959518236,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        },
+        "sector_momentum": {
+          "status": "unproven",
+          "n": 98,
+          "positive": 31,
+          "negative": 67,
+          "week_blocks": 73,
+          "win_rate": 0.3163265306122449,
+          "mean_win_R": 1.0095600858158995,
+          "mean_loss_R": 1.107649996073041,
+          "mean_R": -0.4379202762918455,
+          "mean_R_lower_95_one_sided": -0.6369583305843208,
+          "full_kelly": 0.0,
+          "half_kelly": 0.0,
+          "quarter_kelly": 0.0,
+          "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+        }
+      }
+    }
+  ],
+  "replay": {
+    "rules_fixed_risk": {
+      "mode": "rules",
+      "kelly_enabled": false,
+      "completed_fills": 69,
+      "open_positions_at_end": 0,
+      "initial_cash": 15255.5,
+      "final_cash_sleeve_equity": 13960.919061640028,
+      "net_completed_pnl": -1294.5809383599656,
+      "max_cash_sleeve_drawdown": -0.11632508811662978,
+      "profit_factor": 0.6473721639990169,
+      "expectancy_R": -0.2261075232603989,
+      "rejections": {
+        "theme_block": 477,
+        "cost_R": 452,
+        "same_sector": 59,
+        "legacy_sector_breach": 57,
+        "held_no_add": 78,
+        "cash_or_stressed_risk": 77,
+        "legacy_correlation": 36,
+        "slots": 222,
+        "regime": 665,
+        "correlation": 1
+      },
+      "activity": {
+        "unique_buy_or_sell_intents": 138,
+        "sessions": 736,
+        "rolling_10_session_windows": 727,
+        "fraction_windows_at_least_2": 0.48693259972489683,
+        "median_intents_per_10_sessions": 1.0,
+        "zero_intent_window_fraction": 0.328748280605227,
+        "fraction_14_calendar_day_windows_at_least_2": 0.47129629629629627,
+        "median_intents_per_14_calendar_days": 1.0,
+        "definition": "One admitted BUY and one exit per system lot. Repeated reminders, WATCH and target touches excluded. Overlapping windows are descriptive, not independent samples."
+      },
+      "interpretation": "Counterfactual current-cash repair sleeve. Legacy valuation frozen, not the historical user book; no future exits credited at the final date."
+    },
+    "selected_fixed_risk": {
+      "mode": "selected",
+      "kelly_enabled": false,
+      "completed_fills": 0,
+      "open_positions_at_end": 0,
+      "initial_cash": 15255.5,
+      "final_cash_sleeve_equity": 15255.5,
+      "net_completed_pnl": 0,
+      "max_cash_sleeve_drawdown": 0.0,
+      "profit_factor": null,
+      "expectancy_R": null,
+      "rejections": {
+        "nonpositive_edge": 911,
+        "theme_block": 477,
+        "legacy_sector_breach": 57,
+        "held_no_add": 47,
+        "legacy_correlation": 36,
+        "regime": 665
+      },
+      "activity": {
+        "unique_buy_or_sell_intents": 0,
+        "sessions": 736,
+        "rolling_10_session_windows": 727,
+        "fraction_windows_at_least_2": 0.0,
+        "median_intents_per_10_sessions": 0.0,
+        "zero_intent_window_fraction": 1.0,
+        "fraction_14_calendar_day_windows_at_least_2": 0.0,
+        "median_intents_per_14_calendar_days": 0.0,
+        "definition": "One admitted BUY and one exit per system lot. Repeated reminders, WATCH and target touches excluded. Overlapping windows are descriptive, not independent samples."
+      },
+      "interpretation": "Counterfactual current-cash repair sleeve. Legacy valuation frozen, not the historical user book; no future exits credited at the final date."
+    },
+    "selected_kelly": {
+      "mode": "selected",
+      "kelly_enabled": true,
+      "completed_fills": 0,
+      "open_positions_at_end": 0,
+      "initial_cash": 15255.5,
+      "final_cash_sleeve_equity": 15255.5,
+      "net_completed_pnl": 0,
+      "max_cash_sleeve_drawdown": 0.0,
+      "profit_factor": null,
+      "expectancy_R": null,
+      "rejections": {
+        "kelly_zero": 911,
+        "theme_block": 477,
+        "legacy_sector_breach": 57,
+        "held_no_add": 47,
+        "legacy_correlation": 36,
+        "regime": 665
+      },
+      "activity": {
+        "unique_buy_or_sell_intents": 0,
+        "sessions": 736,
+        "rolling_10_session_windows": 727,
+        "fraction_windows_at_least_2": 0.0,
+        "median_intents_per_10_sessions": 0.0,
+        "zero_intent_window_fraction": 1.0,
+        "fraction_14_calendar_day_windows_at_least_2": 0.0,
+        "median_intents_per_14_calendar_days": 0.0,
+        "definition": "One admitted BUY and one exit per system lot. Repeated reminders, WATCH and target touches excluded. Overlapping windows are descriptive, not independent samples."
+      },
+      "interpretation": "Counterfactual current-cash repair sleeve. Legacy valuation frozen, not the historical user book; no future exits credited at the final date."
+    }
+  },
+  "prediction_metrics": {
+    "prior": {
+      "brier": 0.2381792265884577,
+      "logloss": 0.6693431481424988
+    },
+    "logistic": {
+      "brier": 0.2656782919220534,
+      "logloss": 0.7483757659375884
+    },
+    "xgb": {
+      "brier": 0.2672852116782442,
+      "logloss": 0.7529297469946186
+    },
+    "selected": {
+      "brier": 0.23795905812117082,
+      "logloss": 0.6689052346993511
+    }
+  },
+  "family_economics": {
+    "ema_cross": {
+      "oos_candidates": 201,
+      "risk_on_candidates": 129,
+      "risk_on_mean_R": 0.008384981336340656,
+      "kelly_diagnostic": {
+        "status": "unproven",
+        "n": 129,
+        "positive": 61,
+        "negative": 68,
+        "week_blocks": 61,
+        "win_rate": 0.4728682170542636,
+        "mean_win_R": 1.2483132613328924,
+        "mean_loss_R": 1.1039036227782135,
+        "mean_R": 0.008384981336340656,
+        "mean_R_lower_95_one_sided": -0.19170885970905624,
+        "full_kelly": 0.005,
+        "half_kelly": 0.0025,
+        "quarter_kelly": 0.0,
+        "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+      }
+    },
+    "range_breakout": {
+      "oos_candidates": 1099,
+      "risk_on_candidates": 815,
+      "risk_on_mean_R": -0.3172127510386999,
+      "kelly_diagnostic": {
+        "status": "unproven",
+        "n": 815,
+        "positive": 300,
+        "negative": 515,
+        "week_blocks": 97,
+        "win_rate": 0.36809815950920244,
+        "mean_win_R": 1.1372143479522123,
+        "mean_loss_R": 1.1644518378295223,
+        "mean_R": -0.3172127510386999,
+        "mean_R_lower_95_one_sided": -0.43635949573783706,
+        "full_kelly": 0.0,
+        "half_kelly": 0.0,
+        "quarter_kelly": 0.0,
+        "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+      }
+    },
+    "sector_momentum": {
+      "oos_candidates": 91,
+      "risk_on_candidates": 51,
+      "risk_on_mean_R": -0.5904499542029344,
+      "kelly_diagnostic": {
+        "status": "unproven",
+        "n": 51,
+        "positive": 15,
+        "negative": 36,
+        "week_blocks": 39,
+        "win_rate": 0.29411764705882354,
+        "mean_win_R": 0.7003065938934757,
+        "mean_loss_R": 1.1282651825764385,
+        "mean_R": -0.5904499542029344,
+        "mean_R_lower_95_one_sided": -0.8300646590918808,
+        "full_kelly": 0.0,
+        "half_kelly": 0.0,
+        "quarter_kelly": 0.0,
+        "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+      }
+    },
+    "trend_pullback": {
+      "oos_candidates": 803,
+      "risk_on_candidates": 533,
+      "risk_on_mean_R": -0.25605492478157516,
+      "kelly_diagnostic": {
+        "status": "unproven",
+        "n": 533,
+        "positive": 199,
+        "negative": 334,
+        "week_blocks": 90,
+        "win_rate": 0.37335834896810505,
+        "mean_win_R": 1.102250641674708,
+        "mean_loss_R": 1.0653447682690012,
+        "mean_R": -0.25605492478157516,
+        "mean_R_lower_95_one_sided": -0.3839335496553087,
+        "full_kelly": 0.0,
+        "half_kelly": 0.0,
+        "quarter_kelly": 0.0,
+        "sizing_note": "Quarter Kelly enabled only with positive week-bootstrap lower bound; full/half are diagnostics."
+      }
+    }
+  },
+  "bias": "Current membership/selection. Reused v3 history makes this exploratory. No historical sentiment is backfilled.",
+  "forward_shadow_fit": {
+    "chosen": "xgb",
+    "train": 3993,
+    "calibration_fit": 96,
+    "calibration_selection": 128,
+    "selection_metrics": {
+      "prior": {
+        "brier": 0.20476153604865902,
+        "logloss": 0.60144129703089
+      },
+      "logistic": {
+        "brier": 0.20541054789929572,
+        "logloss": 0.6033208973440557
+      },
+      "xgb": {
+        "brier": 0.19030768956432612,
+        "logloss": 0.5701257013231488
+      }
+    },
+    "parity": {
+      "logistic": {
+        "max_raw_probability_gap": 1.1102230246251565e-16,
+        "passed": true,
+        "max_calibrated_gap": 2.7755575615628914e-16
+      },
+      "xgb": {
+        "max_raw_probability_gap": 1.1535966637499229e-07,
+        "passed": true,
+        "max_calibrated_gap": 7.50198356214149e-08,
+        "boundary_gap": 1.8689007952321646e-08
+      }
+    },
+    "live_data_parity_verified": false,
+    "out_of_sample_evaluation": "Starts after this frozen fit; not available yet."
+  },
+  "runtime_seconds": 27.3195179989998
+}

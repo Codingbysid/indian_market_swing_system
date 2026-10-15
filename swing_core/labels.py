@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 import pandas as pd
 
@@ -36,6 +37,9 @@ def label_triple_barrier(
     fill_mult: float = 1.0,
     sleeve: str = "core",
     horizon: int = HORIZON,
+    stop_mult: float = SL_MULT,
+    target_mult: float = TP_MULT,
+    entry_band_atr: float = 0.5,
 ) -> BarrierResult:
     """Label from completed signal bar i. Entry is next bar's Open * fill_mult.
 
@@ -49,28 +53,42 @@ def label_triple_barrier(
 
     atr = float(df["ATR"].iloc[i])
     signal_close = float(df["Close"].iloc[i])
-    if atr <= 0 or signal_close <= 0 or not (atr == atr and signal_close == signal_close):
+    if (
+        qty <= 0
+        or horizon <= 0
+        or not all(
+            math.isfinite(x) and x > 0
+            for x in (atr, signal_close, stop_mult, target_mult, fill_mult)
+        )
+    ):
         return BarrierResult(None, "invalid_price", 0.0, 0.0, None, 0)
 
     nxt_open = float(df["Open"].iloc[i + 1]) * fill_mult
-    if nxt_open <= 0:
+    if not math.isfinite(nxt_open) or nxt_open <= 0:
         return BarrierResult(None, "unfilled", 0.0, 0.0, None, 0)
 
     # No fill, and no loss, if the next open is outside the entry band.
     # A gap through the planned stop before entry is UNFILLED, not a phantom trade.
-    if abs(nxt_open - signal_close) > 0.5 * atr:
+    if abs(nxt_open - signal_close) > entry_band_atr * atr:
         return BarrierResult(None, "unfilled", 0.0, 0.0, None, 0)
 
     entry = nxt_open
 
-    stop = entry - SL_MULT * atr
-    target = entry + TP_MULT * atr
+    stop = entry - stop_mult * atr
+    target = entry + target_mult * atr
     end = min(len(df) - 1, i + horizon)
     mature = (i + horizon) <= (len(df) - 1)
 
-    risk_unit = SL_MULT * atr
+    risk_unit = stop_mult * atr
 
-    def _economics(exit_px: float, bars: int, reason: str, label: int | None, mae: float, mfe: float) -> BarrierResult:
+    def _economics(
+        exit_px: float,
+        bars: int,
+        reason: str,
+        label: int | None,
+        mae: float,
+        mfe: float,
+    ) -> BarrierResult:
         gross = qty * (exit_px - entry)
         charges = round_trip_charges(entry, exit_px, qty, sleeve=sleeve)
         net = gross - charges
@@ -79,8 +97,17 @@ def label_triple_barrier(
         gross_r = (exit_px - entry) / risk_unit
         y = None if label is None else int(net_r > 0)
         return BarrierResult(
-            y, reason, float(net_r), float(gross_r), exit_px, bars,
-            entry, float(net), float(charges), float(mae), float(mfe),
+            y,
+            reason,
+            float(net_r),
+            float(gross_r),
+            exit_px,
+            bars,
+            entry,
+            float(net),
+            float(charges),
+            float(mae),
+            float(mfe),
         )
 
     mae = 0.0
@@ -90,13 +117,19 @@ def label_triple_barrier(
         lo = float(df["Low"].iloc[j])
         hi = float(df["High"].iloc[j])
         bars = j - i
-        mae = min(mae, (min(op, lo) - entry) / risk_unit)
-        mfe = max(mfe, (max(op, hi) - entry) / risk_unit)
+        if not all(math.isfinite(x) and x > 0 for x in (op, lo, hi)) or lo > hi:
+            return BarrierResult(None, "invalid_future_bar", 0.0, 0.0, None, bars)
+        # At an opening exit, later intraday extremes were never experienced.
+        mae = min(mae, (op - entry) / risk_unit)
+        mfe = max(mfe, (op - entry) / risk_unit)
         # Gap through stop at the open: fill at obtainable open.
         if op <= stop:
             return _economics(op, bars, "stop_gap", 0, mae, mfe)
         if op >= target:
             return _economics(min(op, target), bars, "target", 1, mae, mfe)
+        # Daily-bar excursion bounds, not a claim about intrabar ordering.
+        mae = min(mae, (max(lo, stop) - entry) / risk_unit)
+        mfe = max(mfe, (min(hi, target) - entry) / risk_unit)
         hit_sl = lo <= stop
         hit_tp = hi >= target
         if hit_sl and hit_tp:
@@ -107,6 +140,8 @@ def label_triple_barrier(
             return _economics(target, bars, "target", 1, mae, mfe)
 
     last = float(df["Close"].iloc[end])
+    if not math.isfinite(last) or last <= 0:
+        return BarrierResult(None, "invalid_future_close", 0.0, 0.0, None, end - i)
     bars = end - i
     if not mature:
         return _economics(last, bars, "censored", None, mae, mfe)

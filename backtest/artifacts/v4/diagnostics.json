@@ -1,0 +1,121 @@
+{
+  "selection": "All matured outer-test candidates. Counterfactuals are exploratory; no settings are changed from these comparisons.",
+  "exits": {
+    "original_10_1.5_3": {
+      "ema_cross": {
+        "n": 129,
+        "mean_net_R": 0.008384981336340656,
+        "win_rate": 0.4728682170542636,
+        "timeouts": 47
+      },
+      "range_breakout": {
+        "n": 815,
+        "mean_net_R": -0.3172127510386999,
+        "win_rate": 0.36809815950920244,
+        "timeouts": 248
+      },
+      "sector_momentum": {
+        "n": 51,
+        "mean_net_R": -0.5904499542029344,
+        "win_rate": 0.29411764705882354,
+        "timeouts": 20
+      },
+      "trend_pullback": {
+        "n": 533,
+        "mean_net_R": -0.25605492478157516,
+        "win_rate": 0.37335834896810505,
+        "timeouts": 201
+      }
+    },
+    "shorter_target_10_1.5_2.25": {
+      "ema_cross": {
+        "n": 129,
+        "mean_net_R": -0.02913359346385978,
+        "win_rate": 0.5193798449612403,
+        "timeouts": 35
+      },
+      "range_breakout": {
+        "n": 815,
+        "mean_net_R": -0.3330704700010656,
+        "win_rate": 0.39386503067484663,
+        "timeouts": 167
+      },
+      "sector_momentum": {
+        "n": 51,
+        "mean_net_R": -0.5440889108277358,
+        "win_rate": 0.3137254901960784,
+        "timeouts": 15
+      },
+      "trend_pullback": {
+        "n": 533,
+        "mean_net_R": -0.2698142341876813,
+        "win_rate": 0.3977485928705441,
+        "timeouts": 145
+      }
+    },
+    "longer_hold_15_1.5_3": {
+      "ema_cross": {
+        "n": 129,
+        "mean_net_R": -0.005675549665054206,
+        "win_rate": 0.4573643410852713,
+        "timeouts": 24
+      },
+      "range_breakout": {
+        "n": 815,
+        "mean_net_R": -0.2856489161131998,
+        "win_rate": 0.36687116564417177,
+        "timeouts": 136
+      },
+      "sector_momentum": {
+        "n": 51,
+        "mean_net_R": -0.7020042488913151,
+        "win_rate": 0.23529411764705882,
+        "timeouts": 10
+      },
+      "trend_pullback": {
+        "n": 533,
+        "mean_net_R": -0.22477266322450482,
+        "win_rate": 0.3827392120075047,
+        "timeouts": 131
+      }
+    }
+  },
+  "regimes": {
+    "no_regime": {
+      "candidates": 2194,
+      "mean_net_R": -0.24405569186294562,
+      "win_rate": 0.3887876025524157
+    },
+    "old_nifty_ema50": {
+      "candidates": 1860,
+      "mean_net_R": -0.24029108111721847,
+      "win_rate": 0.39086021505376345
+    },
+    "v4_breadth_trend_volatility": {
+      "candidates": 1528,
+      "mean_net_R": -0.2775110942912838,
+      "win_rate": 0.3763089005235602
+    }
+  },
+  "current_context": {
+    "price_as_of": "2026-10-13",
+    "price_source": "yahoo_chart_research_only",
+    "book_source": "last_confirmed_2026-10-07_fixture_not_broker_reconciled_today",
+    "cash": 15255.5,
+    "marked_equity_preview": 123751.9994506836,
+    "nifty_close": 22721.94921875,
+    "ema50": 23363.06405875786,
+    "breadth50": 0.18666666666666668,
+    "volatility_ratio": 1.392794767498836,
+    "regime": "RISK_OFF",
+    "prices": {
+      "HAL": 4869.0,
+      "ZENTEC": 1652.699951171875,
+      "CDSL": 1292.0,
+      "INFY": 1062.0999755859375,
+      "BPCL": 287.3999938964844
+    },
+    "HAL_total_equity_weight": 0.6295171015078873,
+    "defence_total_equity_weight": 0.7363565842480748
+  }
+}

@@ -1,0 +1,95 @@
+[
+  {
+    "name": "ind_niftypsubanklist.csv",
+    "url": "https://www.niftyindices.com/IndexConstituent/ind_niftypsubanklist.csv",
+    "status": "OK",
+    "symbols": [
+      "BANKBARODA",
+      "BANKINDIA",
+      "MAHABANK",
+      "CANBK",
+      "CENTRALBK",
+      "INDIANB",
+      "IOB",
+      "PSB",
+      "PNB",
+      "SBIN",
+      "UCOBANK",
+      "UNIONBANK"
+    ]
+  },
+  {
+    "name": "ind_niftyindiadefence_list.csv",
+    "url": "https://www.niftyindices.com/IndexConstituent/ind_niftyindiadefence_list.csv",
+    "status": "OK",
+    "symbols": [
+      "AXISCADES",
+      "AEQUS",
+      "APOLLO",
+      "ASTRAMICRO",
+      "BEML",
+      "BDL",
+      "BEL",
+      "BHARATFORG",
+      "CENTUM",
+      "COCHINSHIP",
+      "DATAPATTNS",
+      "DYNAMATECH",
+      "GRSE",
+      "HAL",
+      "MTARTECH",
+      "MAZDOCK",
+      "MIDHANI",
+      "PARAS",
+      "SIGMAADV",
+      "SOLARINDS",
+      "UNIMECH",
+      "ZENTEC"
+    ]
+  },
+  {
+    "name": "ind_niftypselist.csv",
+    "url": "https://www.niftyindices.com/IndexConstituent/ind_niftypselist.csv",
+    "status": "OK",
+    "symbols": [
+      "BEL",
+      "BHEL",
+      "BPCL",
+      "COALINDIA",
+      "CONCOR",
+      "GAIL",
+      "HAL",
+      "HINDPETRO",
+      "IOC",
+      "IRFC",
+      "NHPC",
+      "NMDC",
+      "NTPC",
+      "NATIONALUM",
+      "ONGC",
+      "OIL",
+      "PFC",
+      "POWERGRID",
+      "RECLTD",
+      "SAIL"
+    ]
+  },
+  {
+    "name": "ind_niftycpselist.csv",
+    "url": "https://www.niftyindices.com/IndexConstituent/ind_niftycpselist.csv",
+    "status": "OK",
+    "symbols": [
+      "BEL",
+      "COALINDIA",
+      "COCHINSHIP",
+      "NBCC",
+      "NHPC",
+      "NLCINDIA",
+      "NTPC",
+      "ONGC",
+      "OIL",
+      "POWERGRID",
+      "SJVN"
+    ]
+  }
+]

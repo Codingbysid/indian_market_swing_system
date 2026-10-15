@@ -8,7 +8,7 @@ BE_FLAT_FEE = 18.0  # conservative legacy floor; not a substitute for dated DP
 # Zerodha CNC (delivery) research defaults as of the 7 Oct 2026 spec.
 STT_BUY = 0.001  # 0.1%
 STT_SELL = 0.001
-EXCHANGE_TXN = 0.0000297  # approx NSE equity delivery
+EXCHANGE_TXN = 0.0000307  # Zerodha charges page, checked 14 Oct 2026
 GST_ON_EXCHANGE = 0.18
 SEBI = 0.000001
 STAMP_BUY = 0.00015
@@ -25,7 +25,7 @@ def entry_charges(price: float, qty: int, *, sleeve: str = "core") -> float:
         return 0.0
     exch = EXCHANGE_TXN * notional
     slip = (SLIPPAGE_CORE if sleeve != "satellite" else SLIPPAGE_SAT) * notional
-    return STT_BUY * notional + exch + GST_ON_EXCHANGE * exch + SEBI * notional + STAMP_BUY * notional + slip
+    return STT_BUY * notional + exch + GST_ON_EXCHANGE * (exch + SEBI * notional) + SEBI * notional + STAMP_BUY * notional + slip
 
 
 def true_breakeven(avg_cost: float, qty: int) -> float:
@@ -45,8 +45,8 @@ def round_trip_charges(
     sell_notional = exit_px * qty
     stt = STT_BUY * buy_notional + STT_SELL * sell_notional
     exch = EXCHANGE_TXN * (buy_notional + sell_notional)
-    gst = GST_ON_EXCHANGE * exch
     sebi = SEBI * (buy_notional + sell_notional)
+    gst = GST_ON_EXCHANGE * (exch + sebi)
     stamp = STAMP_BUY * buy_notional
     dp = DP_SELL if qty > 0 else 0.0
     slip = 0.0

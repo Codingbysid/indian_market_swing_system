@@ -1,0 +1,29 @@
+{
+  "version": "india150_v4",
+  "as_of": "2026-10-13",
+  "universe": "universes/india_150.csv",
+  "data_dir": "backtest/data",
+  "warmup": 300,
+  "liquidity_rupees": 200000000,
+  "min_panel_coverage": 0.9,
+  "entry_band_atr": 0.5,
+  "stop_atr": 1.5,
+  "target_atr": 3.0,
+  "horizon_sessions": 10,
+  "train_months": 36,
+  "calibration_months": 6,
+  "test_months": 6,
+  "embargo_sessions": 10,
+  "fixed_models": [
+    "constant_train_prior",
+    "logistic_C0.1",
+    "xgb_depth2_160"
+  ],
+  "kelly_fraction": 0.25,
+  "frequency_goal": {
+    "unique_buy_or_sell_intents_per_10_sessions": 2
+  },
+  "promote_automatically": false,
+  "allowed_live_families": [],
+  "protocol_note": "Fixed before this v4 evaluation. Existing v3 results already inspected; all reused history is exploratory, current membership is biased. Promotion requires fresh forward evidence and TradingView feature parity. No search for a threshold that meets the activity quota."
+}

@@ -19,6 +19,7 @@ import time
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
 from io import StringIO
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import boto3
@@ -29,6 +30,7 @@ from bs4 import BeautifulSoup
 from tvDatafeed import Interval, TvDatafeed
 
 from swing_core.calendar_nse import completed_bar_iloc, now_ist
+from swing_core.india import FEATURE_NAMES
 from swing_core.costs import true_breakeven as sc_true_breakeven
 from swing_core.indicators import calculate_atr as sc_atr
 from swing_core.indicators import calculate_rsi as sc_rsi
@@ -93,7 +95,10 @@ def get_market_regime(tv: TvDatafeed) -> tuple[str, str]:
         hist = slice_completed(hist)
         if hist is None or hist.empty or len(hist) < 50:
             print("Regime fetch short/empty; DATA_INVALID (no new buys).")
-            return "DATA_INVALID", "Regime: DATA_INVALID (Nifty completed bars unavailable)"
+            return (
+                "DATA_INVALID",
+                "Regime: DATA_INVALID (Nifty completed bars unavailable)",
+            )
 
         close = hist["close"].astype(float)
         ema50 = close.ewm(span=50, adjust=False).mean()
@@ -246,7 +251,9 @@ def write_json_to_s3(payload: dict, key: str) -> None:
     s3_client.put_object(
         Bucket=BUCKET_NAME,
         Key=key,
-        Body=json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"),
+        Body=json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False).encode(
+            "utf-8"
+        ),
         ContentType="application/json",
     )
 
@@ -255,12 +262,20 @@ def load_portfolio_state() -> dict:
     """Strict load. Missing or invalid state cannot invent cash or emit BUYs."""
     from swing_core.state import PortfolioInvalid, validate_state
 
-    data = read_json_from_s3(PORTFOLIO_STATE_KEY)
     try:
-        return validate_state(data)
-    except PortfolioInvalid as exc:
-        print(f"PORTFOLIO_INVALID: {exc.reason}. No BUY and no state mutation.")
-        return {"status": "PORTFOLIO_INVALID", "reason": exc.reason, "cash": None, "holdings": []}
+        from swing_core.s3_state import read_state
+
+        data, etag = read_state(s3_client, BUCKET_NAME, PORTFOLIO_STATE_KEY)
+        return {**data, "_etag": etag}
+    except Exception as exc:
+        reason = exc.reason if isinstance(exc, PortfolioInvalid) else type(exc).__name__
+        print(f"PORTFOLIO_INVALID: {reason}. No BUY and no state mutation.")
+        return {
+            "status": "PORTFOLIO_INVALID",
+            "reason": reason,
+            "cash": None,
+            "holdings": [],
+        }
 
 
 def held_symbol_set(state: dict) -> set[str]:
@@ -291,7 +306,11 @@ def portfolios_from_state(state: dict | None) -> list[dict]:
     """Core = 2/3 of validated cash. Invalid state does not fall back to env capital."""
     core = copy.deepcopy(CORE_PORTFOLIO)
     sat = copy.deepcopy(SATELLITE_PORTFOLIO)
-    if not state or state.get("status") == "PORTFOLIO_INVALID" or state.get("cash") is None:
+    if (
+        not state
+        or state.get("status") == "PORTFOLIO_INVALID"
+        or state.get("cash") is None
+    ):
         core["capital"] = 0.0
         sat["capital"] = 0.0
         print("PORTFOLIO_INVALID: sleeves set to 0. No env-capital fallback.")
@@ -306,7 +325,7 @@ def portfolios_from_state(state: dict | None) -> list[dict]:
     return [core, sat]
 
 
-FEATURE_NAMES = [
+LEGACY_FEATURE_NAMES = [
     "rsi",
     "rsi_slope",
     "atr_pct",
@@ -359,6 +378,7 @@ def _score_xgb_tree(tree: dict, features: list[float]) -> float:
         node = left[node] if go_left else right[node]
     return float(base_weights[node])
 
+
 def load_signal_model() -> dict | None:
     """Load XGBoost JSON model (+ feature list) from S3. Returns None if missing."""
     try:
@@ -368,7 +388,7 @@ def load_signal_model() -> dict | None:
         if "learner" in model:
             wrapped = {
                 "xgb_model": model,
-                "feature_names": FEATURE_NAMES,
+                "feature_names": LEGACY_FEATURE_NAMES,
             }
         else:
             wrapped = model
@@ -398,7 +418,9 @@ def extract_live_features(stock_data: pd.DataFrame, regime_on: float = 1.0) -> d
     bb_pos = (
         (last_close - float(lower.iloc[-1])) / band_width if band_width > 0 else 0.5
     )
-    sma50_val = float(sma50.iloc[-1]) if not math.isnan(float(sma50.iloc[-1])) else last_close
+    sma50_val = (
+        float(sma50.iloc[-1]) if not math.isnan(float(sma50.iloc[-1])) else last_close
+    )
     dist_sma50 = (last_close - sma50_val) / last_close if last_close else 0.0
     rel_vol = (
         float(volume.iloc[-1]) / float(vol_ma.iloc[-1])
@@ -444,8 +466,11 @@ def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float =
         return None
     try:
         feats = extract_live_features(stock_data, regime_on=regime_on)
-        feature_names = list(model.get("feature_names", FEATURE_NAMES))
-        if feature_names != FEATURE_NAMES or model.get("schema_id") == "features_v3_20":
+        feature_names = list(model.get("feature_names", LEGACY_FEATURE_NAMES))
+        if (
+            feature_names != LEGACY_FEATURE_NAMES
+            or model.get("schema_id") == "features_v3_20"
+        ):
             print("Incompatible model schema for the live 7-feature contract. No BUY.")
             return None
         for name in feature_names:
@@ -501,9 +526,7 @@ class ScreenerScraper:
         self.username = username
         self.password = password
         self.session = requests.Session()
-        self.headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        }
+        self.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
     def login(self) -> None:
         if not self.username or self.username.startswith("YOUR_"):
@@ -623,7 +646,9 @@ class SwingRecommender:
             "holdings": [],
         }
         self.portfolios = list(
-            portfolios if portfolios is not None else portfolios_from_state(self.portfolio_state)
+            portfolios
+            if portfolios is not None
+            else portfolios_from_state(self.portfolio_state)
         )
         self.risk_managers = {
             p["key"]: QuantRiskManager(
@@ -642,7 +667,10 @@ class SwingRecommender:
         self.held_symbols = held_symbol_set(self.portfolio_state)
         self.open_counts = sleeve_open_counts(self.portfolio_state)
         raw_cash = self.portfolio_state.get("cash")
-        self.state_ok = self.portfolio_state.get("status") != "PORTFOLIO_INVALID" and raw_cash is not None
+        self.state_ok = (
+            self.portfolio_state.get("status") != "PORTFOLIO_INVALID"
+            and raw_cash is not None
+        )
         self.remaining_cash = float(raw_cash or 0.0) if self.state_ok else 0.0
         if self.held_symbols:
             print(f"Held symbols (no add): {sorted(self.held_symbols)}")
@@ -751,7 +779,10 @@ class SwingRecommender:
         p_success,
     ) -> None:
         for portfolio in self.portfolios:
-            if getattr(self, "policy", LivePolicy()).park_satellite and portfolio["key"] == "satellite":
+            if (
+                getattr(self, "policy", LivePolicy()).park_satellite
+                and portfolio["key"] == "satellite"
+            ):
                 continue
             min_prob = float(portfolio["min_prob"])
             ok, reason = admit_buy(p_success, min_prob)
@@ -818,7 +849,7 @@ class SwingRecommender:
                 f"{p['kelly_label']}={p['kelly_fraction']:.1%} "
                 f"(max Rs {rm.allocation_cap:,.0f}/trade) | "
                 f"P>= {p['min_prob']:.2f} | max_pos={p.get('max_positions', '-')} | "
-            f"R:R 1:2 (1.5x/3.0x ATR)"
+                f"R:R 1:2 (1.5x/3.0x ATR)"
             )
 
         df_list = []
@@ -917,7 +948,9 @@ class SwingRecommender:
                 curr_upper_band = float(stock_data["Upper_Band"].iloc[i])
                 band_width = curr_upper_band - curr_lower_band
                 position_in_range = (
-                    (last_close - curr_lower_band) / band_width if band_width > 0 else 1.0
+                    (last_close - curr_lower_band) / band_width
+                    if band_width > 0
+                    else 1.0
                 )
                 if not setups:
                     continue
@@ -942,9 +975,7 @@ class SwingRecommender:
                     continue
                 actionable = [s for s in setups if s in self.policy.actionable_setups]
                 if self.regime != "RISK_ON" or not actionable:
-                    watch_item["status"] = (
-                        f"WATCH regime={self.regime} setups={setups}"
-                    )
+                    watch_item["status"] = f"WATCH regime={self.regime} setups={setups}"
                     self.watch.append(watch_item)
                     print(f"WATCH {ticker}: {watch_item['status']}")
                     continue
@@ -971,9 +1002,7 @@ class SwingRecommender:
                     p_success=p_success,
                 )
             except Exception:
-                failed_symbols.append(
-                    f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
-                )
+                failed_symbols.append(f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})")
 
         print(
             f"Market data summary: ok={successful_downloads} "
@@ -1072,8 +1101,7 @@ class SwingRecommender:
             write_execution_log_json(execution_payload)
             append_log_to_s3(
                 f"[{timestamp}] dual-portfolio run | core={core_n} satellite={sat_n}\n"
-                f"{message_body}"
-                + ("-" * 40 + "\n")
+                f"{message_body}" + ("-" * 40 + "\n")
             )
 
         if total_n == 0:
@@ -1225,6 +1253,11 @@ def compute_holding_levels(
     qty = int(holding.get("qty") or 0)
     avg = float(holding.get("avg_cost") or 0)
     symbol = str(holding.get("symbol", "")).strip().upper()
+    observed = stock.iloc[-1].copy()
+    all_session_dates = stock.index
+    stock = slice_completed(stock)
+    if stock is None or len(stock) < 55:
+        raise ValueError("completed holding indicators unavailable")
     stock = stock.copy()
     stock["ATR"] = atr_fn(stock)
     stock["RSI"] = rsi_fn(stock)
@@ -1233,12 +1266,12 @@ def compute_holding_levels(
     stock["EMA_9"] = stock["Close"].ewm(span=9, adjust=False).mean()
     stock["EMA_21"] = stock["Close"].ewm(span=21, adjust=False).mean()
 
-    ltp = float(stock["Close"].iloc[-1])
+    ltp = float(observed["Close"])
     atr = float(stock["ATR"].iloc[-1])
     rsi = float(stock["RSI"].iloc[-1])
     sma50 = float(stock["SMA_50"].iloc[-1]) if len(stock) >= 50 else float("nan")
-    day_high = float(stock["High"].iloc[-1])
-    day_low = float(stock["Low"].iloc[-1])
+    day_high = float(observed["High"])
+    day_low = float(observed["Low"])
     hi20 = float(stock["High"].iloc[-20:].max())
     hi60 = float(stock["High"].iloc[-min(60, len(stock)) :].max())
     hi252 = float(stock["High"].max())
@@ -1246,6 +1279,54 @@ def compute_holding_levels(
     prev_ema21 = float(stock["EMA_21"].iloc[-2])
     curr_ema9 = float(stock["EMA_9"].iloc[-1])
     curr_ema21 = float(stock["EMA_21"].iloc[-1])
+
+    if not all(math.isfinite(x) and x > 0 for x in (ltp, atr, day_high, day_low)):
+        raise ValueError("invalid holding prices")
+    if holding.get("classification") == "system_atr":
+        from swing_core.exits import system_exit_intent
+
+        entry_date = pd.Timestamp(holding["entry_date"]).tz_localize(None).normalize()
+        sessions = sum(
+            pd.Timestamp(d).tz_localize(None).normalize() >= entry_date
+            for d in all_session_dates
+        )
+        intent = system_exit_intent(holding, ltp, sessions_held=sessions)
+        event = (
+            []
+            if intent is None
+            else [
+                f"SELL {intent['qty']} {symbol}: {intent['kind']} near {ltp:.2f}; confirm execution (trigger is not a fill)"
+            ]
+        )
+        return {
+            "symbol": symbol,
+            "qty": qty,
+            "avg_cost": avg,
+            "sleeve": holding.get("sleeve", "core"),
+            "classification": "system_atr",
+            "ltp": ltp,
+            "atr": atr,
+            "rsi": rsi,
+            "pnl_pct": (ltp / avg - 1) * 100,
+            "be": None,
+            "t1": float(holding["target"]),
+            "t2": None,
+            "t3": None,
+            "t1_qty": qty,
+            "t2_qty": 0,
+            "runner_qty": 0,
+            "stop": float(holding["stop"]),
+            "target": float(holding["target"]),
+            "sessions_held": sessions,
+            "high_watermark": None,
+            "trail": None,
+            "trail_active": False,
+            "market_value": ltp * qty,
+            "events": event,
+            "actionable_intents": [] if intent is None else [intent],
+        }
+    if holding.get("classification") != "legacy_profit_only":
+        raise ValueError("holding classification must be explicit")
 
     be = true_breakeven(avg, qty)
     resistances = []
@@ -1256,7 +1337,7 @@ def compute_holding_levels(
     nearest_res = min(resistances) if resistances else None
     t1 = max(be + atr, nearest_res) if nearest_res is not None else be + atr
     t2 = avg + 3.0 * atr
-    if t2 < t1:
+    if t2 <= t1:
         t2 = t1 + atr
     t3 = max(hi60, hi252, t2)
     t1_qty, t2_qty, runner_qty = split_exit_qty(qty, holding)
@@ -1265,16 +1346,22 @@ def compute_holding_levels(
     from swing_core.exits import update_trail
 
     trail_state = update_trail(
-        float(prev_row.get("high_watermark") or 0.0),
+        (
+            float(prev_row.get("high_watermark") or 0.0)
+            if prev_row.get("trail_active")
+            else 0.0
+        ),
         bool(prev_row.get("trail_active")),
         day_low,
-        day_high,
+        day_high if prev_row.get("trail_active") or ltp > t1 else 0.0,
         t1,
         be,
         atr,
+        saved_prior_trail=prev_row.get("trail"),
     )
     hwm = trail_state["high_watermark"]
     trail = trail_state["trail"]
+    trail_active = trail_state["trail_active"]
     trail_breached = trail_state["breached_prior_trail"] and ltp > be
 
     bearish_cross = (prev_ema9 > prev_ema21) and (curr_ema9 <= curr_ema21)
@@ -1310,6 +1397,28 @@ def compute_holding_levels(
             f"(T1 {t1:.2f} / T2 {t2:.2f})"
         )
 
+    intents = []
+    if ltp > be:
+        for stage, level, left in (("t1", t1, t1_qty), ("t2", t2, t2_qty)):
+            if ltp >= level and left > 0:
+                intents.append(
+                    {
+                        "kind": f"legacy_{stage}",
+                        "qty": left,
+                        "limit": math.ceil(level * 100) / 100,
+                        "floor": math.ceil(be * 100) / 100,
+                    }
+                )
+        if not intents and (weakness_exit or trail_breached):
+            intents.append(
+                {
+                    "kind": "legacy_weakness" if weakness_exit else "legacy_trail",
+                    "qty": qty if weakness_exit else (runner_qty or qty),
+                    "limit": math.ceil(max(be, ltp) * 100) / 100,
+                    "floor": math.ceil(be * 100) / 100,
+                }
+            )
+
     pnl_pct = ((ltp / avg) - 1.0) * 100.0 if avg else 0.0
     return {
         "symbol": symbol,
@@ -1335,6 +1444,7 @@ def compute_holding_levels(
         "ema_bull": curr_ema9 > curr_ema21,
         "market_value": round(ltp * qty, 2),
         "events": events,
+        "actionable_intents": intents,
     }
 
 
@@ -1348,6 +1458,8 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
 
     print("Running holdings exit monitor...")
     state = load_portfolio_state()
+    if state.get("status") == "PORTFOLIO_INVALID":
+        return {"status": "PORTFOLIO_INVALID", "SELL": []}
     holdings = [h for h in (state.get("holdings") or []) if int(h.get("qty") or 0) > 0]
     prev_levels_doc = read_json_from_s3(HOLDINGS_LEVELS_KEY) or {}
     prev_by_symbol = {
@@ -1355,8 +1467,17 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         for row in (prev_levels_doc.get("holdings") or [])
     }
 
-    rec = SwingRecommender(portfolios=portfolios_from_state(state), portfolio_state=state)
-    tv = get_tv()
+    rec = SwingRecommender(
+        portfolios=portfolios_from_state(state), portfolio_state=state
+    )
+    from swing_core.market_data import auth_token
+
+    try:
+        monitor_token = auth_token(
+            os.getenv("TV_USERNAME", ""), os.getenv("TV_PASSWORD", "")
+        )
+    except Exception as exc:
+        return {"status": "DATA_INVALID", "reason": type(exc).__name__, "SELL": []}
     rows: list[dict] = []
     events: list[str] = []
     holdings_mv = 0.0
@@ -1365,15 +1486,16 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         raw = str(h.get("symbol", "")).strip()
         tv_symbol = SYMBOL_MAP.get(raw, raw)
         try:
-            hist = tv.get_hist(
-                symbol=tv_symbol,
-                exchange="NSE" if not raw.isdigit() else "BSE",
-                interval=Interval.in_daily,
-                n_bars=260,
-            )
-            time.sleep(0.3)
+            from swing_core.market_data import fetch_bars
+
+            if raw.isdigit():
+                raise ValueError("v4 monitor requires an explicit NSE mapping")
+            hist, feed_health = fetch_bars(tv_symbol, bars=400, token=monitor_token)
             if hist is None or hist.empty or len(hist) < 20:
                 print(f"Monitor skip {raw}: short/empty history")
+                continue
+            if hist.index[-1].date() != datetime.now(ZoneInfo("Asia/Kolkata")).date():
+                print(f"Monitor skip {raw}: current-session quote missing; no SELL.")
                 continue
             row = compute_holding_levels(
                 h,
@@ -1382,6 +1504,11 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
                 rec.calculate_rsi,
                 rec.calculate_atr,
             )
+            from swing_core.signal_journal import record_once
+
+            for intent in row.get("actionable_intents", []):
+                fingerprint = f"{h['symbol']}:{h['classification']}:{h.get('entry_date',h['avg_cost'])}:{h.get('t1_filled_qty',0)}:{h.get('t2_filled_qty',0)}:{intent['kind']}:{intent['qty']}"
+                intent.update(symbol=h["symbol"], side="SELL", signal_id=fingerprint)
             rows.append(row)
             holdings_mv += float(row["market_value"])
             print(
@@ -1394,20 +1521,75 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         except Exception as exc:
             print(f"Monitor failed {raw}: {exc}")
 
+    latest_state = load_portfolio_state()
+    if latest_state.get("status") == "PORTFOLIO_INVALID" or latest_state.get(
+        "_etag"
+    ) != state.get("_etag"):
+        return {
+            "status": "BOOK_CHANGED_DURING_MONITOR",
+            "SELL": [],
+            "message": "Reload confirmed holdings before any sell instruction.",
+        }
+    if not suppress_alerts:
+        from swing_core.signal_journal import record_once
+
+        for row in rows:
+            for intent in row.get("actionable_intents", []):
+                try:
+                    intent["new_intent"] = record_once(
+                        s3_client,
+                        BUCKET_NAME,
+                        intent,
+                        observed_at=datetime.now(timezone.utc).isoformat(),
+                    )
+                except Exception:
+                    intent["journal_status"] = "UNAVAILABLE"
     cash = float(state.get("cash") or 0.0)
     equity = round(cash + holdings_mv, 2)
     gap = round(equity - CHECKPOINT_EQUITY, 2)
     today_dt = datetime.now(ZoneInfo("Asia/Kolkata"))
     today = today_dt.strftime("%Y-%m-%d")
     timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    complete_marks = len(rows) == len(holdings) and len(holdings) > 0
+    complete_marks = len(rows) == len(holdings)
+    mark_label = (
+        "current complete"
+        if complete_marks
+        else "INCOMPLETE: retained last complete mark"
+    )
+    if not complete_marks:
+        equity = state.get("last_marked_equity")
+        gap = float(equity) - CHECKPOINT_EQUITY if equity is not None else None
+    from swing_core.sentiment import fetch_overlay
+
+    metadata_path = Path(__file__).resolve().parent / "universes/india_150.csv"
+    sentiment = fetch_overlay(
+        pd.read_csv(metadata_path).fillna("").to_dict("records"),
+        [h["symbol"] for h in holdings],
+        backend_url=os.getenv("SENTIMENT_BACKEND_URL"),
+    )
+    if not suppress_alerts:
+        write_json_to_s3(
+            sentiment, f"sentiment/v4/{today_dt.strftime('%Y%m%dT%H%M%S')}_monitor.json"
+        )
+    for row in rows:
+        row["sentiment"] = sentiment["symbols"].get(
+            row["symbol"], {"status": "UNKNOWN"}
+        )
     if suppress_alerts:
         print("Dry run: no production writes.")
     elif not complete_marks:
         print("Incomplete marks: refusing to replace last_marked_equity.")
     else:
-        state["last_marked_equity"] = equity
-        write_json_to_s3(state, PORTFOLIO_STATE_KEY)
+        # A mark snapshot must never overwrite a concurrently confirmed fill.
+        write_json_to_s3(
+            {
+                "date_ist": today,
+                "equity": equity,
+                "prices": {r["symbol"]: r["ltp"] for r in rows},
+                "source_book_etag": state.get("_etag"),
+            },
+            "portfolio_marks.json",
+        )
 
     levels_payload = {
         "timestamp_utc": timestamp,
@@ -1420,6 +1602,10 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         "long_horizon_equity": LONG_HORIZON_EQUITY,
         "holdings": rows,
         "events": events,
+        "mark_status": mark_label,
+        "SELL": [i for row in rows for i in row.get("actionable_intents", [])],
+        "sentiment_health": sentiment["health"],
+        "dry_run": suppress_alerts,
     }
     if not suppress_alerts and complete_marks:
         write_json_to_s3(levels_payload, HOLDINGS_LEVELS_KEY)
@@ -1430,9 +1616,7 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         "long_horizon_target": LONG_HORIZON_EQUITY,
         "points": [],
     }
-    points = [
-        p for p in (curve.get("points") or []) if p.get("date") != today
-    ]
+    points = [p for p in (curve.get("points") or []) if p.get("date") != today]
     points.append(
         {
             "date": today,
@@ -1448,11 +1632,13 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
     if not suppress_alerts and complete_marks:
         write_json_to_s3(curve, EQUITY_CURVE_KEY)
 
+    equity_text = f"Rs {equity:,.0f}" if equity is not None else "UNKNOWN"
+    gap_text = f"{gap:+,.0f}" if gap is not None else "UNKNOWN"
     header = (
         f"Holdings Exit Watch | {today}\n"
         f"Cash Rs {cash:,.0f} | Holdings Rs {holdings_mv:,.0f} | "
-        f"Equity Rs {equity:,.0f} vs {CHECKPOINT_DATE} checkpoint "
-        f"Rs {CHECKPOINT_EQUITY:,.0f} (gap {gap:+,.0f})\n"
+        f"Equity {equity_text} ({mark_label}) vs {CHECKPOINT_DATE} checkpoint "
+        f"Rs {CHECKPOINT_EQUITY:,.0f} (gap {gap_text})\n"
     )
     table_lines = []
     for row in rows:
@@ -1464,12 +1650,12 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         )
     digest = ""
     if today_dt.weekday() == 4:
-        below_be = sum(1 for r in rows if r["ltp"] < r["be"])
+        below_be = sum(1 for r in rows if r["be"] is not None and r["ltp"] < r["be"])
         digest = (
             f"\n--- Friday weekly digest (intraday, not EOD labels) ---\n"
             f"Legacy names below BE: {below_be}/{len(rows)} "
             f"(no profit-only sale while below BE).\n"
-            f"New-trade engine: satellite parked; max 2 Core; B/C WATCH until v2 model.\n"
+            f"New-trade engine: satellite parked; max 2 Core; unpromoted v4 families stay WATCH.\n"
             f"Do not treat this 15:05 candle as a completed session.\n"
         )
     if events:
@@ -1500,14 +1686,17 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         )
         print(body)
         if not suppress_alerts:
-            append_log_to_s3(f"[{timestamp}] monitor | events=0 equity={equity}\n" + body)
-        return
+            append_log_to_s3(
+                f"[{timestamp}] monitor | events=0 equity={equity}\n" + body
+            )
+        return levels_payload
 
     print(body)
     if not suppress_alerts:
         append_log_to_s3(
             f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body
         )
+    return levels_payload
 
 
 def is_weekend_ist() -> tuple[bool, str]:
@@ -1540,24 +1729,157 @@ def run_recommender(ignore_weekend: bool = False, suppress_alerts: bool = False)
         )
         append_log_to_s3(
             f"[{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}] "
-            f"Weekend skip — no signals ({ist_label})\n"
-            + ("-" * 40 + "\n")
+            f"Weekend skip — no signals ({ist_label})\n" + ("-" * 40 + "\n")
         )
         return
 
     if weekend and ignore_weekend:
         print(f"Weekend gate bypassed for verification ({ist_label}).")
 
-    print("Running recommender (dual-portfolio single pass)...")
+    # No switch back to the older allocator, which bypasses reservation/stress gates.
+    return run_v4_recommender(suppress_alerts=suppress_alerts)
+
+
+def run_v4_recommender(suppress_alerts: bool = False):
+    from swing_core.market_data import fetch_panel, auth_token
+    from swing_core.engine_v4 import evaluate_snapshot, add_reservations
+    from swing_core.sentiment import fetch_overlay
+    from swing_core.s3_state import write_state
+
+    root = Path(__file__).resolve().parent
+    policy = json.loads((root / "config/live_v4.json").read_text())
+    meta = pd.read_csv(root / policy["universe"]).fillna("")
+    if len(meta) != 150 or meta.Symbol.nunique() != 150:
+        return {"status": "UNIVERSE_INVALID", "BUY": []}
     state = load_portfolio_state()
-    if float(state.get("cash") or 0) <= 0:
-        print("Unknown/zero cash blocks actionable sizing. No fallback to a stale cash figure.")
-    recommender = SwingRecommender(
-        portfolios=portfolios_from_state(state),
-        portfolio_state=state,
+    if state.get("status") == "PORTFOLIO_INVALID":
+        return {"status": "PORTFOLIO_INVALID", "BUY": []}
+    token = None
+    try:
+        token = auth_token(os.getenv("TV_USERNAME", ""), os.getenv("TV_PASSWORD", ""))
+    except Exception as exc:
+        return {
+            "status": "DATA_INVALID",
+            "reason": "TradingView authentication " + type(exc).__name__,
+            "BUY": [],
+        }
+    frames, health = fetch_panel(
+        list(meta.Symbol) + ["NIFTY"],
+        bars=400,
+        token=token,
+        budget_seconds=policy["max_scan_seconds"] - 20,
+        workers=3,
     )
-    recommender.suppress_alerts = suppress_alerts
-    recommender.analyze_stocks(list(RECOMMENDER_CSV_KEYS))
+    nifty = frames.pop("NIFTY", None)
+    if nifty is None:
+        return {
+            "status": "DATA_INVALID",
+            "reason": "Nifty unavailable",
+            "BUY": [],
+            "feed_health": health,
+        }
+    now = datetime.now(timezone.utc)
+    local_day = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
+    quotes = {
+        s: float(d.Close.iloc[-1])
+        for s, d in frames.items()
+        if d.index[-1].date() == local_day
+    }
+    overlay = fetch_overlay(
+        meta.to_dict("records"),
+        list(held_symbol_set(state)),
+        as_of=now,
+        backend_url=os.getenv("SENTIMENT_BACKEND_URL"),
+        include_news=False,
+    )
+    model = read_json_from_s3(policy["model_key"])
+    if model is None:
+        shadow_path = root / "backtest/artifacts/v4/model.candidate.json"
+        if shadow_path.exists():
+            model = json.loads(shadow_path.read_text())
+            model["promoted"] = False
+            model["allowed_live_families"] = []
+    result = evaluate_snapshot(
+        state,
+        frames,
+        nifty,
+        meta,
+        model,
+        as_of=now,
+        sentiment=overlay,
+        policy=policy,
+        live_quotes=quotes,
+    )
+    result["feed_health"] = health
+    result["sentiment_health"] = overlay["health"]
+    if result["BUY"] and not suppress_alerts:
+        try:
+            # Reserve before notifying. A concurrent fill cancels these stale recommendations.
+            updated = add_reservations(state, result["BUY"])
+            write_state(
+                s3_client, BUCKET_NAME, PORTFOLIO_STATE_KEY, updated, state.get("_etag")
+            )
+        except Exception as exc:
+            result["WATCH"].extend(
+                {
+                    **b,
+                    "status": "WATCH",
+                    "reasons": ["reservation_failed_" + type(exc).__name__],
+                }
+                for b in result["BUY"]
+            )
+            result["BUY"] = []
+    if result["BUY"] and not suppress_alerts:
+        from swing_core.signal_journal import record_once
+
+        for b in result["BUY"]:
+            try:
+                b["new_intent"] = record_once(
+                    s3_client,
+                    BUCKET_NAME,
+                    {**b, "side": "BUY"},
+                    observed_at=now.isoformat(),
+                )
+            except Exception:
+                b["journal_status"] = "UNAVAILABLE"
+    body = format_v4_digest(result)
+    print(body)
+    if not suppress_alerts:
+        write_execution_log_json(result)
+        write_json_to_s3(overlay, f"sentiment/v4/{now.strftime('%Y%m%dT%H%M%SZ')}.json")
+        append_log_to_s3(body + "\n")
+        send_push_and_email(
+            title="India150 Swing Scan",
+            message_body=body,
+            email_subject="India150 Swing Scan",
+            priority="high" if result["BUY"] else "default",
+            tags="chart_with_upwards_trend",
+        )
+    return result
+
+
+def format_v4_digest(result):
+    lines = [
+        f"India150 | {result.get('regime', 'DATA_INVALID')} | completed {result.get('market', {}).get('completed_session', 'unknown')}",
+        f"BUY {len(result.get('BUY', []))} | WATCH {len(result.get('WATCH', []))} | {result.get('promotion_status', '')}",
+    ]
+    for b in result.get("BUY", []):
+        lines.append(
+            f"BUY {b['symbol']} {b['qty']}sh only {b['entry_min']:.2f}–{b['entry_max']:.2f}; {b['family']}; max debit ₹{b['debit']:.0f}, stress ₹{b['stress_risk']:.0f}; valid until {b['expires_at']}"
+        )
+    for w in result.get("WATCH", [])[:6]:
+        lines.append(
+            f"WATCH {w['symbol']} {w['family']}: {', '.join(w.get('reasons', []))}; research P={w.get('shadow_probability','unknown')}"
+        )
+    for h in result.get("HOLD", []):
+        tone = h.get("sentiment", {}).get("headline_tone")
+        lines.append(
+            f"HOLD {h['symbol']}: {h['reason']}; headline tone {tone if tone is not None else 'UNKNOWN'}"
+        )
+    lines.append(
+        "WATCH is research. Alerts are not fills; confirmed fills and fees must be recorded."
+    )
+    return "\n".join(lines)
 
 
 # ==========================================
@@ -1572,11 +1894,19 @@ def lambda_handler(event, context):
     from swing_core.scoring import output_policy
 
     policy = output_policy(event)
-    event = {**event, "suppress_alerts": not policy["emit_alerts"], "dry_run": not policy["write_state"]}
+    event = {
+        **event,
+        "suppress_alerts": not policy["emit_alerts"],
+        "dry_run": not policy["write_state"],
+    }
     action = event.get("action", "recommender")  # Default to recommender
-    print(f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}")
+    print(
+        f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}"
+    )
 
     if action == "scraper":
+        if not policy["write_state"]:
+            return {"statusCode": 200, "body": "Dry run: scraper writes skipped"}
         run_scraper()
         return {"statusCode": 200, "body": "Scraper executed successfully"}
     if action == "recommender":
@@ -1585,22 +1915,36 @@ def lambda_handler(event, context):
             or event.get("force")
             or event.get("force_weekend")
         )
-        run_recommender(
+        result = run_recommender(
             ignore_weekend=ignore_weekend,
             suppress_alerts=bool(event.get("suppress_alerts") or event.get("dry_run")),
         )
-        return {"statusCode": 200, "body": "Recommender executed successfully"}
+        return {
+            "statusCode": 200,
+            "body": (
+                json.dumps(result, default=str)
+                if result is not None
+                else "Recommender skipped"
+            ),
+        }
     if action == "monitor":
         ignore_weekend = bool(
             event.get("ignore_weekend")
             or event.get("force")
             or event.get("force_weekend")
         )
-        run_monitor(
+        result = run_monitor(
             ignore_weekend=ignore_weekend,
             suppress_alerts=bool(event.get("suppress_alerts") or event.get("dry_run")),
         )
-        return {"statusCode": 200, "body": "Holdings monitor executed successfully"}
+        return {
+            "statusCode": 200,
+            "body": (
+                json.dumps(result, default=str)
+                if result is not None
+                else "Monitor skipped"
+            ),
+        }
 
     return {
         "statusCode": 400,

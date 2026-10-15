@@ -14,7 +14,8 @@ def calculate_rsi(close: pd.Series, periods: int = 14) -> pd.Series:
     gain = delta.clip(lower=0).ewm(alpha=1 / periods, adjust=False).mean()
     loss = (-delta.clip(upper=0)).ewm(alpha=1 / periods, adjust=False).mean()
     rs = gain / loss.replace(0, np.nan)
-    return 100 - (100 / (1 + rs))
+    rsi = 100 - (100 / (1 + rs))
+    return rsi.mask((loss == 0) & (gain > 0), 100.0).mask((loss == 0) & (gain == 0), 50.0)
 
 
 def calculate_atr(df: pd.DataFrame, periods: int = 14) -> pd.Series:

@@ -1,0 +1,251 @@
+{
+  "version": "india_v4",
+  "as_of": "2026-10-14T09:25:00+05:30",
+  "BUY": [],
+  "WATCH": [
+    {
+      "symbol": "COFORGE",
+      "family": "range_breakout",
+      "price": 1929.0,
+      "atr": 62.767213712602484,
+      "sector": "Information Technology",
+      "status": "WATCH",
+      "shadow_probability": 0.355214107922306,
+      "correlations": {
+        "HAL": 0.12320080640444651,
+        "ZENTEC": -0.06623471625822094,
+        "CDSL": 0.37582868583567275,
+        "INFY": 0.5642567575800354,
+        "BPCL": 0.3210646272595147
+      },
+      "reasons": [
+        "event_feed_unavailable",
+        "kelly_evidence_unproven",
+        "kelly_zero",
+        "model_or_family_unpromoted",
+        "promotion_evidence_missing_or_failed",
+        "regime_RISK_OFF"
+      ]
+    }
+  ],
+  "HOLD": [
+    {
+      "symbol": "HAL",
+      "ltp": 4869.0,
+      "be": 5054.356575,
+      "classification": "legacy_profit_only",
+      "reason": "below_BE_profit_only",
+      "sentiment": {
+        "status": "UNKNOWN"
+      }
+    },
+    {
+      "symbol": "ZENTEC",
+      "ltp": 1652.699951171875,
+      "be": 1717.7781249999998,
+      "classification": "legacy_profit_only",
+      "reason": "below_BE_profit_only",
+      "sentiment": {
+        "status": "UNKNOWN"
+      }
+    },
+    {
+      "symbol": "CDSL",
+      "ltp": 1292.0,
+      "be": 1369.409375,
+      "classification": "legacy_profit_only",
+      "reason": "below_BE_profit_only",
+      "sentiment": {
+        "status": "UNKNOWN"
+      }
+    },
+    {
+      "symbol": "INFY",
+      "ltp": 1062.0999755859375,
+      "be": 1036.175,
+      "classification": "legacy_profit_only",
+      "reason": "monitor_exit_rules",
+      "sentiment": {
+        "status": "UNKNOWN"
+      }
+    },
+    {
+      "symbol": "BPCL",
+      "ltp": 287.3999938964844,
+      "be": 322.446625,
+      "classification": "legacy_profit_only",
+      "reason": "below_BE_profit_only",
+      "sentiment": {
+        "status": "UNKNOWN"
+      }
+    }
+  ],
+  "limits": {
+    "cash": 15255.5,
+    "equity": 123752.0,
+    "reserve": 3051.1,
+    "deployable": 12204.4,
+    "core_envelope": 8136.27,
+    "satellite_envelope": 0.0,
+    "max_ticket": 3712.56,
+    "risk_per_trade": 152.56,
+    "agg_risk": 305.11,
+    "max_new_core": 2,
+    "max_new_satellite": 0,
+    "park_satellite": true
+  },
+  "regime": "RISK_OFF",
+  "data_status": "OK",
+  "promotion_status": "UNPROMOTED_OR_INVALID",
+  "coverage": 1.0,
+  "market": {
+    "nifty_close": 22721.94921875,
+    "nifty_ema50": 23363.06396628629,
+    "breadth50": 0.18666666666666668,
+    "volatility_ratio": 1.3927947674988412,
+    "completed_session": "2026-10-13"
+  },
+  "model_health": {
+    "status": "NO_CONFIRMED_OUTCOMES",
+    "n": 0,
+    "pause": false
+  },
+  "book_status": "OK",
+  "preview_only": true,
+  "price_source": "yahoo_chart_research_proxy",
+  "not_a_live_buy_or_sell": true,
+  "cached_decision_seconds": 4.06188642799998,
+  "max_process_rss_MiB": 192.73046875,
+  "legacy_levels_research_preview": [
+    {
+      "symbol": "HAL",
+      "qty": 16,
+      "avg_cost": 5040.63,
+      "sleeve": "legacy",
+      "ltp": 4869.0,
+      "atr": 117.59,
+      "rsi": 55.6,
+      "pnl_pct": -3.4,
+      "be": 5054.36,
+      "t1": 5171.95,
+      "t2": 5393.41,
+      "t3": 5393.41,
+      "t1_qty": 5,
+      "t2_qty": 5,
+      "runner_qty": 6,
+      "sma50": 4834.2,
+      "hi20": 4940.0,
+      "high_watermark": 0.0,
+      "trail": null,
+      "trail_active": false,
+      "ema_bull": false,
+      "market_value": 77904.0,
+      "events": [],
+      "actionable_intents": []
+    },
+    {
+      "symbol": "ZENTEC",
+      "qty": 8,
+      "avg_cost": 1711.25,
+      "sleeve": "legacy",
+      "ltp": 1652.7,
+      "atr": 59.88,
+      "rsi": 49.5,
+      "pnl_pct": -3.42,
+      "be": 1717.78,
+      "t1": 1777.66,
+      "t2": 1890.9,
+      "t3": 2268.0,
+      "t1_qty": 3,
+      "t2_qty": 3,
+      "runner_qty": 2,
+      "sma50": 1737.38,
+      "hi20": 1732.8,
+      "high_watermark": 0.0,
+      "trail": null,
+      "trail_active": false,
+      "ema_bull": false,
+      "market_value": 13221.6,
+      "events": [],
+      "actionable_intents": []
+    },
+    {
+      "symbol": "CDSL",
+      "qty": 8,
+      "avg_cost": 1363.75,
+      "sleeve": "legacy",
+      "ltp": 1292.0,
+      "atr": 31.38,
+      "rsi": 46.7,
+      "pnl_pct": -5.26,
+      "be": 1369.41,
+      "t1": 1400.78,
+      "t2": 1457.88,
+      "t3": 1828.9,
+      "t1_qty": 3,
+      "t2_qty": 3,
+      "runner_qty": 2,
+      "sma50": 1339.53,
+      "hi20": 1394.4,
+      "high_watermark": 0.0,
+      "trail": null,
+      "trail_active": false,
+      "ema_bull": false,
+      "market_value": 10336.0,
+      "events": [],
+      "actionable_intents": []
+    },
+    {
+      "symbol": "INFY",
+      "qty": 5,
+      "avg_cost": 1030.0,
+      "sleeve": "legacy",
+      "ltp": 1062.1,
+      "atr": 28.7,
+      "rsi": 54.6,
+      "pnl_pct": 3.12,
+      "be": 1036.17,
+      "t1": 1090.51,
+      "t2": 1116.09,
+      "t3": 1755.1,
+      "t1_qty": 2,
+      "t2_qty": 1,
+      "runner_qty": 2,
+      "sma50": 1090.51,
+      "hi20": 1097.7,
+      "high_watermark": 0.0,
+      "trail": null,
+      "trail_active": false,
+      "ema_bull": false,
+      "market_value": 5310.5,
+      "events": [],
+      "actionable_intents": []
+    },
+    {
+      "symbol": "BPCL",
+      "qty": 6,
+      "avg_cost": 318.65,
+      "sleeve": "legacy",
+      "ltp": 287.4,
+      "atr": 7.3,
+      "rsi": 35.5,
+      "pnl_pct": -9.81,
+      "be": 322.45,
+      "t1": 329.74,
+      "t2": 340.54,
+      "t3": 391.65,
+      "t1_qty": 2,
+      "t2_qty": 2,
+      "runner_qty": 2,
+      "sma50": 310.05,
+      "hi20": 318.2,
+      "high_watermark": 0.0,
+      "trail": null,
+      "trail_active": false,
+      "ema_bull": false,
+      "market_value": 1724.4,
+      "events": [],
+      "actionable_intents": []
+    }
+  ]
+}
