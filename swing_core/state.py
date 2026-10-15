@@ -6,6 +6,8 @@ Normal loads never invent cash or holdings. Administrative bootstrap is explicit
 from __future__ import annotations
 
 import math
+import copy
+from datetime import datetime
 from typing import Any
 
 
@@ -29,6 +31,13 @@ def validate_state(data: dict | None) -> dict:
         raise PortfolioInvalid("cash_not_numeric")
     if not math.isfinite(cash) or cash < 0:
         raise PortfolioInvalid("cash_invalid")
+    if data.get("last_marked_equity") is not None:
+        try:
+            marked = float(data["last_marked_equity"])
+        except (TypeError, ValueError):
+            raise PortfolioInvalid("marked_equity_invalid")
+        if not math.isfinite(marked) or marked < 0:
+            raise PortfolioInvalid("marked_equity_invalid")
     holdings = data.get("holdings")
     if not isinstance(holdings, list):
         raise PortfolioInvalid("holdings_missing")
@@ -48,18 +57,45 @@ def validate_state(data: dict | None) -> dict:
             avg = float(h["avg_cost"])
         except (TypeError, ValueError):
             raise PortfolioInvalid("holding_qty_or_cost_invalid")
-        if qty <= 0 or not math.isfinite(avg) or avg <= 0:
+        if (
+            isinstance(h["qty"], bool)
+            or float(h["qty"]) != qty
+            or qty <= 0
+            or not math.isfinite(avg)
+            or avg <= 0
+        ):
             raise PortfolioInvalid("holding_qty_or_cost_invalid")
-        klass = str(h.get("classification") or "legacy_profit_only")
+        klass = str(h.get("classification") or "")
         if klass not in ("legacy_profit_only", "system_atr"):
             raise PortfolioInvalid("holding_classification_invalid")
         if klass == "system_atr":
             for req in ("entry_price", "entry_atr", "stop", "target"):
                 if h.get(req) in (None, ""):
                     raise PortfolioInvalid("system_lot_missing_risk_metadata")
-    out = dict(data)
+            try:
+                levels = [
+                    float(h[k]) for k in ("entry_price", "entry_atr", "stop", "target")
+                ]
+            except (ValueError, TypeError):
+                raise PortfolioInvalid("system_lot_invalid_risk_metadata")
+            if (
+                not all(math.isfinite(v) and v > 0 for v in levels)
+                or not levels[2] < levels[0] < levels[3]
+            ):
+                raise PortfolioInvalid("system_lot_invalid_risk_metadata")
+            if not h.get("entry_date") or int(h.get("max_sessions") or 0) <= 0:
+                raise PortfolioInvalid("system_lot_missing_expiry")
+            try:
+                datetime.fromisoformat(str(h["entry_date"]).replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                raise PortfolioInvalid("system_lot_invalid_entry_date")
+            if h.get("stress_risk") is not None and not math.isfinite(
+                float(h["stress_risk"])
+            ):
+                raise PortfolioInvalid("system_stressed_risk_invalid")
+    out = copy.deepcopy(data)
     out["cash"] = cash
-    out["holdings"] = holdings
+    out["holdings"] = copy.deepcopy(holdings)
     out.setdefault("closed_trades", [])
     out.setdefault("reservations", [])
     out.setdefault("fills", [])
@@ -70,8 +106,12 @@ def validate_state(data: dict | None) -> dict:
 def remaining_tranches(holding: dict) -> tuple[int, int, int]:
     """Immutable plan minus confirmed stage fills. A finished stage is zero, never full qty."""
     qty = int(holding["qty"])
-    t1_left = max(0, int(holding.get("t1_qty_plan") or 0) - int(holding.get("t1_filled_qty") or 0))
-    t2_left = max(0, int(holding.get("t2_qty_plan") or 0) - int(holding.get("t2_filled_qty") or 0))
+    t1_left = max(
+        0, int(holding.get("t1_qty_plan") or 0) - int(holding.get("t1_filled_qty") or 0)
+    )
+    t2_left = max(
+        0, int(holding.get("t2_qty_plan") or 0) - int(holding.get("t2_filled_qty") or 0)
+    )
     runner_left = max(0, int(holding.get("runner_qty_plan") or 0))
     if t1_left + t2_left + runner_left > qty:
         runner_left = max(0, qty - t1_left - t2_left)
@@ -86,6 +126,18 @@ def apply_fill(state: dict, fill: dict) -> dict:
         raise PortfolioInvalid("fill_id_required")
     seen = {str(f.get("fill_id")) for f in state.get("fills") or []}
     if fid in seen:
+        previous = next(f for f in state["fills"] if str(f.get("fill_id")) == fid)
+        for key in ("symbol", "side", "qty", "price", "fees"):
+            if (
+                key in previous
+                and key in fill
+                and str(previous[key]).lower() != str(fill[key]).lower()
+            ):
+                # Numeric representations 1 / 1.0 are equivalent.
+                if key not in ("qty", "price", "fees") or float(previous[key]) != float(
+                    fill[key]
+                ):
+                    raise PortfolioInvalid("fill_id_collision")
         return state
     sym = str(fill["symbol"]).strip().upper()
     side = str(fill["side"]).strip().lower()
@@ -93,11 +145,52 @@ def apply_fill(state: dict, fill: dict) -> dict:
     price = float(fill["price"])
     fees = float(fill.get("fees") or 0.0)
     stage = str(fill.get("stage") or "")
-    if qty <= 0 or price <= 0:
+    if (
+        isinstance(fill["qty"], bool)
+        or float(fill["qty"]) != qty
+        or qty <= 0
+        or not math.isfinite(price)
+        or price <= 0
+        or not math.isfinite(fees)
+        or fees < 0
+    ):
         raise PortfolioInvalid("fill_qty_or_price_invalid")
     holdings = list(state["holdings"])
-    idx = next((i for i, h in enumerate(holdings) if str(h["symbol"]).upper() == sym), None)
+    idx = next(
+        (i for i, h in enumerate(holdings) if str(h["symbol"]).upper() == sym), None
+    )
     if side == "buy":
+        if idx is None and fill.get("classification") not in (None, "system_atr"):
+            raise PortfolioInvalid("new_buy_must_be_system_atr")
+        matching = next(
+            (
+                r
+                for r in reversed(state.get("reservations", []))
+                if r.get("symbol") == sym
+                and r.get("status") == "open"
+                and (
+                    not fill.get("reservation_id")
+                    or r.get("reservation_id") == fill["reservation_id"]
+                )
+            ),
+            {},
+        )
+        from .costs import round_trip_charges
+
+        atr = float(
+            fill.get("entry_atr")
+            or (holdings[idx].get("entry_atr") if idx is not None else 0)
+            or 0
+        )
+        stress = float(
+            fill.get("stress_risk")
+            or (
+                float(matching["stress_risk"]) * qty / max(int(matching["qty"]), 1)
+                if matching
+                else qty * 2 * atr
+                + round_trip_charges(price, max(0.01, price - 2 * atr), qty)
+            )
+        )
         cost = qty * price + fees
         if state["cash"] + 1e-6 < cost:
             raise PortfolioInvalid("insufficient_cash")
@@ -114,6 +207,18 @@ def apply_fill(state: dict, fill: dict) -> dict:
                     "stop": fill.get("stop"),
                     "target": fill.get("target"),
                     "setup": fill.get("setup"),
+                    "entry_date": fill.get("entry_date") or fill.get("filled_at"),
+                    "max_sessions": fill.get("max_sessions", 10),
+                    "entry_fees": fees,
+                    "entry_fees_remaining": fees,
+                    "protective_order_status": fill.get(
+                        "protective_order_status", "not_placed"
+                    ),
+                    "stress_risk": stress,
+                    "predicted_probability": fill.get(
+                        "predicted_probability", matching.get("predicted_probability")
+                    ),
+                    "model_id": fill.get("model_id", matching.get("model_id")),
                     "t1_filled_qty": 0,
                     "t2_filled_qty": 0,
                 }
@@ -122,8 +227,15 @@ def apply_fill(state: dict, fill: dict) -> dict:
             h = dict(holdings[idx])
             old_q = int(h["qty"])
             new_q = old_q + qty
-            h["avg_cost"] = round((old_q * float(h["avg_cost"]) + qty * price) / new_q, 4)
+            h["avg_cost"] = round(
+                (old_q * float(h["avg_cost"]) + qty * price) / new_q, 4
+            )
             h["qty"] = new_q
+            h["entry_fees_remaining"] = (
+                float(h.get("entry_fees_remaining", h.get("entry_fees", 0))) + fees
+            )
+            if h.get("classification") == "system_atr":
+                h["stress_risk"] = float(h.get("stress_risk") or 0) + stress
             holdings[idx] = h
         state["cash"] = round(float(state["cash"]) - cost, 2)
     elif side == "sell":
@@ -139,7 +251,17 @@ def apply_fill(state: dict, fill: dict) -> dict:
         elif stage == "t2":
             h["t2_filled_qty"] = int(h.get("t2_filled_qty") or 0) + qty
         h["qty"] = held - qty
-        pnl = round((price - float(h["avg_cost"])) * qty - fees, 2)
+        entry_fee_allocation = (
+            float(h.get("entry_fees_remaining", h.get("entry_fees", 0))) * qty / held
+        )
+        h["entry_fees_remaining"] = max(
+            0.0,
+            float(h.get("entry_fees_remaining", h.get("entry_fees", 0)))
+            - entry_fee_allocation,
+        )
+        pnl = round(
+            (price - float(h["avg_cost"])) * qty - fees - entry_fee_allocation, 2
+        )
         state.setdefault("closed_trades", []).append(
             {
                 "symbol": sym,
@@ -150,6 +272,15 @@ def apply_fill(state: dict, fill: dict) -> dict:
                 "fill_id": fid,
                 "stage": stage,
                 "classification": h.get("classification"),
+                "entry_fee_allocation": entry_fee_allocation,
+                "exit_fees": fees,
+                "predicted_probability": h.get("predicted_probability"),
+                "model_id": h.get("model_id"),
+                "net_r": (
+                    pnl / (qty * 1.5 * float(h["entry_atr"]))
+                    if h.get("classification") == "system_atr"
+                    else None
+                ),
             }
         )
         if h["qty"] <= 0:
@@ -160,7 +291,30 @@ def apply_fill(state: dict, fill: dict) -> dict:
     else:
         raise PortfolioInvalid("fill_side_invalid")
     state["holdings"] = holdings
-    state.setdefault("fills", []).append({"fill_id": fid, "symbol": sym, "side": side, "qty": qty})
+    state.setdefault("fills", []).append(
+        {
+            **fill,
+            "fill_id": fid,
+            "symbol": sym,
+            "side": side,
+            "qty": qty,
+            "price": price,
+            "fees": fees,
+        }
+    )
+    for reservation in state.get("reservations", []):
+        if side == "buy" and reservation is matching:
+            old_qty = int(reservation["qty"])
+            remaining = max(0, old_qty - qty)
+            reservation["qty"] = remaining
+            reservation["debit"] = (
+                float(reservation["debit"]) * remaining / max(old_qty, 1)
+            )
+            reservation["stress_risk"] = (
+                float(reservation["stress_risk"]) * remaining / max(old_qty, 1)
+            )
+            reservation["status"] = "filled" if remaining == 0 else "open"
+            reservation["fill_id"] = fid
     return validate_state(state)
 
 
@@ -187,7 +341,14 @@ class VersionedStore:
 def apply_mark_snapshot(state: dict, prices: dict, required_symbols: list[str]) -> dict:
     """Keep the last complete equity mark when any required price is missing."""
     out = dict(state)
-    missing = [s for s in required_symbols if prices.get(s) in (None, "")]
+
+    def valid(value):
+        try:
+            return math.isfinite(float(value)) and float(value) > 0
+        except (TypeError, ValueError):
+            return False
+
+    missing = [s for s in required_symbols if not valid(prices.get(s))]
     if missing:
         out["marks_status"] = "stale"
         out["missing_marks"] = missing

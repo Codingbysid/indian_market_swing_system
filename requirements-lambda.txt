@@ -4,7 +4,7 @@
 #
 # tvdatafeed is not reliably on PyPI — install from GitHub.
 
-git+https://github.com/rongardF/tvdatafeed.git
+git+https://github.com/rongardF/tvdatafeed.git@e6f6aaa7de439ac6e454d9b26d2760ded8dc4923
 websocket-client>=1.0
 beautifulsoup4>=4.12
 lxml>=5.0

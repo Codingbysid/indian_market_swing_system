@@ -113,3 +113,49 @@ def admit_buy(p, min_prob: float) -> tuple[bool, str]:
     if scored < float(min_prob):
         return False, f"p={scored:.3f}<min={float(min_prob):.2f}"
     return True, "ok"
+
+
+def score_model(model: dict | None, features: dict) -> float | None:
+    """Score the explicitly selected model and its matching logit-Platt calibrator."""
+    try:
+        if not isinstance(model, dict):
+            return None
+        names = model["feature_names"]
+        values = [float(features[n]) for n in names]
+        if len(names) != len(set(names)) or not all(math.isfinite(v) for v in values):
+            return None
+        kind = model.get("type")
+        if kind == "logistic":
+            coefficients = model["coefficients"]
+            mean = model["mean"]
+            scale = model["scale"]
+            if not len(values) == len(coefficients) == len(mean) == len(scale) or any(
+                v <= 0 for v in scale
+            ):
+                return None
+            raw = _sigmoid(
+                float(model["intercept"])
+                + sum(
+                    c * (v - m) / s
+                    for c, v, m, s in zip(coefficients, values, mean, scale)
+                )
+            )
+        elif kind == "xgboost_dump":
+            raw = score_dump(model, features)
+        elif kind in ("constant_prior", "family_prior"):
+            raw = float(model["probability"])
+        else:
+            return None
+        if finite_probability(raw) is None:
+            return None
+        calibrator = model.get("calibrator")
+        if calibrator is not None:
+            if calibrator.get("type") != "platt_logit":
+                return None
+            p = min(max(raw, 1e-7), 1 - 1e-7)
+            raw = _sigmoid(
+                float(calibrator["a"]) * math.log(p / (1 - p)) + float(calibrator["b"])
+            )
+        return finite_probability(raw)
+    except (KeyError, TypeError, ValueError, OverflowError, ZeroDivisionError):
+        return None

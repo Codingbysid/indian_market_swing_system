@@ -1,0 +1,42 @@
+[
+  {
+    "name": "nifty200",
+    "url": "https://www.niftyindices.com/IndexConstituent/ind_nifty200list.csv",
+    "status": 200,
+    "bytes": 13020,
+    "content_type": "application/octet-stream",
+    "prefix": "Company Name,Industry,Symbol,Series,ISIN Code\n360 ONE WAM Ltd.,Financial Services,360ONE,EQ,INE466L0"
+  },
+  {
+    "name": "announcements",
+    "url": "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml",
+    "status": 200,
+    "bytes": 274804,
+    "content_type": "application/xml",
+    "prefix": "<rss xmlns:atom=\"http://www.w3.org/2005/Atom\" version=\"2.0\"><channel><atom:link href=\"http://www.nse"
+  },
+  {
+    "name": "announcements_old",
+    "url": "https://archives.nseindia.com/content/RSS/Online_announcements.xml",
+    "status": 200,
+    "bytes": 275260,
+    "content_type": "application/xml",
+    "prefix": "<rss xmlns:atom=\"http://www.w3.org/2005/Atom\" version=\"2.0\"><channel><atom:link href=\"http://www.nse"
+  },
+  {
+    "name": "news",
+    "url": "https://news.google.com/rss/search?q=NSE+HAL+when:7d&hl=en-IN&gl=IN&ceid=IN:en",
+    "status": 200,
+    "bytes": 18476,
+    "content_type": "application/xml; charset=utf-8",
+    "prefix": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><rss version=\"2.0\" xmlns:media=\"http://search"
+  },
+  {
+    "name": "yahoo",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?interval=1d&range=10y",
+    "status": 200,
+    "bytes": 223878,
+    "content_type": "application/json;charset=utf-8",
+    "prefix": "{\"chart\":{\"result\":[{\"meta\":{\"currency\":\"INR\",\"symbol\":\"^NSEI\",\"exchangeName\":\"NSI\",\"fullExchangeNam"
+  }
+]

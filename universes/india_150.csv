@@ -1,0 +1,151 @@
+Symbol,Name,Sector,ISIN,Tags,Role,Close,Turnover20,Bars,DataStatus,Affordable,Eligible,AsOf
+BHARATFORG,Bharat Forge Ltd.,Automobile and Auto Components,INE465A01025,defence,candidate,1842.199951171875,1436097146.0733643,300,ok,True,True,2026-10-13
+EXIDEIND,Exide Industries Ltd.,Automobile and Auto Components,INE302A01020,,candidate,395.0,661792882.9589844,300,ok,True,True,2026-10-13
+HYUNDAI,Hyundai Motor India Ltd.,Automobile and Auto Components,INE0V6F01027,,candidate,1964.9000244140625,970719816.5,300,ok,True,True,2026-10-13
+M&M,Mahindra & Mahindra Ltd.,Automobile and Auto Components,INE101A01026,,candidate,2864.39990234375,7110342265.0,300,ok,True,True,2026-10-13
+MOTHERSON,Samvardhana Motherson International Ltd.,Automobile and Auto Components,INE775A01035,,candidate,160.0,1680716976.1464996,300,ok,True,True,2026-10-13
+TIINDIA,Tube Investments of India Ltd.,Automobile and Auto Components,INE974X01010,,candidate,2194.89990234375,854652529.0,300,ok,True,True,2026-10-13
+TMPV,Tata Motors Passenger Vehicles Ltd.,Automobile and Auto Components,INE155A01022,,candidate,285.8500061035156,2981923757.75,300,ok,True,True,2026-10-13
+APLAPOLLO,APL Apollo Tubes Ltd.,Capital Goods,INE702C01027,,candidate,2185.0,973086194.0651855,300,ok,True,True,2026-10-13
+ASHOKLEY,Ashok Leyland Ltd.,Capital Goods,INE208A01029,,candidate,147.3699951171875,1624783175.7862854,300,ok,True,True,2026-10-13
+ASTRAL,Astral Ltd.,Capital Goods,INE006I01046,,candidate,1442.0,542104944.5619507,300,ok,True,True,2026-10-13
+BDL,Bharat Dynamics Ltd.,Capital Goods,INE171Z01026,defence|psu,candidate,1125.9000244140625,929112105.3294678,300,ok,True,True,2026-10-13
+BEL,Bharat Electronics Ltd.,Capital Goods,INE263A01024,defence|psu,candidate,380.0,3899837983.590912,300,ok,True,True,2026-10-13
+BHEL,Bharat Heavy Electricals Ltd.,Capital Goods,INE257A01026,psu,candidate,442.3500061035156,3380833230.894928,300,ok,True,True,2026-10-13
+CGPOWER,CG Power and Industrial Solutions Ltd.,Capital Goods,INE067A01029,,candidate,854.0,1930082791.0006714,300,ok,True,True,2026-10-13
+COCHINSHIP,Cochin Shipyard Ltd.,Capital Goods,INE704P01025,defence|psu,candidate,1265.0,1095349284.5,300,ok,True,True,2026-10-13
+ENRIN,Siemens Energy India Ltd.,Capital Goods,INE1NPP01017,,candidate,3123.300048828125,1266509680.027832,300,ok,True,True,2026-10-13
+HAL,Hindustan Aeronautics Ltd.,Capital Goods,INE066F01020,defence|psu,monitor_only,4869.0,2795627901.0,300,ok,False,True,2026-10-13
+MAZDOCK,Mazagoan Dock Shipbuilders Ltd.,Capital Goods,INE249Z01020,defence|psu,candidate,2120.0,1343338530.0,300,ok,True,True,2026-10-13
+PREMIERENE,Premier Energies Ltd.,Capital Goods,INE0BS701011,,candidate,906.0,937861396.0,300,ok,True,True,2026-10-13
+SUPREMEIND,Supreme Industries Ltd.,Capital Goods,INE195A01028,,candidate,3506.89990234375,475711593.0,300,ok,True,True,2026-10-13
+SUZLON,Suzlon Energy Ltd.,Capital Goods,INE040H01021,,candidate,40.18999862670898,2384770035.7779713,300,ok,True,True,2026-10-13
+WAAREEENER,Waaree Energies Ltd.,Capital Goods,INE377N01017,,candidate,2451.0,1323155466.5,300,ok,True,True,2026-10-13
+ZENTEC,Zen Technologies Ltd.,Capital Goods,,defence,monitor_only,1652.699951171875,360973128.7032471,300,ok,True,True,2026-10-13
+PIDILITIND,Pidilite Industries Ltd.,Chemicals,INE318A01026,,candidate,1497.5999755859375,866011462.553833,300,ok,True,True,2026-10-13
+PIIND,PI Industries Ltd.,Chemicals,INE603J01030,,candidate,2130.0,385849105.0,300,ok,True,True,2026-10-13
+SRF,SRF Ltd.,Chemicals,INE647A01010,,candidate,2492.0,414742319.55322266,300,ok,True,True,2026-10-13
+UPL,UPL Ltd.,Chemicals,INE628A01036,,candidate,524.7000122070312,1206093997.4234924,300,ok,True,True,2026-10-13
+LT,Larsen & Toubro Ltd.,Construction,INE018A01030,,candidate,3675.0,6071261328.464355,300,ok,False,True,2026-10-13
+RVNL,Rail Vikas Nigam Ltd.,Construction,INE415G01027,psu,candidate,197.3000030517578,737323150.3971024,300,ok,True,True,2026-10-13
+AMBUJACEM,Ambuja Cements Ltd.,Construction Materials,INE079A01024,,candidate,350.0,662362411.125,300,ok,True,True,2026-10-13
+GRASIM,Grasim Industries Ltd.,Construction Materials,INE047A01021,,candidate,2912.0,1450547088.5378418,300,ok,True,True,2026-10-13
+ASIANPAINT,Asian Paints Ltd.,Consumer Durables,INE021A01026,,candidate,2376.0,1268350195.050415,300,ok,True,True,2026-10-13
+BLUESTARCO,Blue Star Ltd.,Consumer Durables,INE472A01039,,candidate,1594.0,831194313.0,300,ok,True,True,2026-10-13
+HAVELLS,Havells India Ltd.,Consumer Durables,INE176B01034,,candidate,1082.0,688250315.1428833,300,ok,True,True,2026-10-13
+KALYANKJIL,Kalyan Jewellers India Ltd.,Consumer Durables,INE303R01014,,candidate,571.0,3102639371.757202,300,ok,True,True,2026-10-13
+VOLTAS,Voltas Ltd.,Consumer Durables,INE226A01021,,candidate,1041.0,566425379.0723267,300,ok,True,True,2026-10-13
+DMART,Avenue Supermarts Ltd.,Consumer Services,INE192R01011,,candidate,3383.0,1758470524.5,300,ok,True,True,2026-10-13
+ETERNAL,Eternal Ltd.,Consumer Services,INE758T01015,,candidate,320.45001220703125,6641838255.438263,300,ok,True,True,2026-10-13
+INDHOTEL,Indian Hotels Co. Ltd.,Consumer Services,INE053A01029,,candidate,724.1500244140625,1692275718.2801514,300,ok,True,True,2026-10-13
+IRCTC,Indian Railway Catering And Tourism Corporation Ltd.,Consumer Services,INE335Y01020,psu,candidate,468.8999938964844,353963667.1228943,300,ok,True,True,2026-10-13
+JUBLFOOD,Jubilant Foodworks Ltd.,Consumer Services,INE797F01020,,candidate,425.0,604965140.7313539,300,ok,True,True,2026-10-13
+NAUKRI,Info Edge (India) Ltd.,Consumer Services,INE663F01032,,candidate,1222.5999755859375,1898651696.2174072,300,ok,True,True,2026-10-13
+NYKAA,FSN E-Commerce Ventures Ltd.,Consumer Services,INE388Y01029,,candidate,338.0,1389235099.859436,300,ok,True,True,2026-10-13
+SWIGGY,Swiggy Ltd.,Consumer Services,INE00H001014,,candidate,232.3999938964844,2802394862.458214,300,ok,True,True,2026-10-13
+TRENT,Trent Ltd.,Consumer Services,INE849A01020,,candidate,2987.800048828125,2162733271.743286,300,ok,True,True,2026-10-13
+VMM,Vishal Mega Mart Ltd.,Consumer Services,INE01EA01019,,candidate,97.0,1039072345.9538612,300,ok,True,True,2026-10-13
+COLPAL,Colgate Palmolive (India) Ltd.,Fast Moving Consumer Goods,INE259A01022,,candidate,1801.0,705042130.7316895,300,ok,True,True,2026-10-13
+DABUR,Dabur India Ltd.,Fast Moving Consumer Goods,INE016A01026,,candidate,378.75,682430273.257431,300,ok,True,True,2026-10-13
+GODFRYPHLP,Godfrey Phillips India Ltd.,Fast Moving Consumer Goods,INE260B01028,,candidate,1850.0,300228435.0,300,ok,True,True,2026-10-13
+GODREJCP,Godrej Consumer Products Ltd.,Fast Moving Consumer Goods,INE102D01028,,candidate,868.75,772078766.0,300,ok,True,True,2026-10-13
+HINDUNILVR,Hindustan Unilever Ltd.,Fast Moving Consumer Goods,INE030A01027,,candidate,1875.5,2438351147.25,300,ok,True,True,2026-10-13
+ITC,ITC Ltd.,Fast Moving Consumer Goods,INE154A01025,,candidate,261.0,3738089934.364563,300,ok,True,True,2026-10-13
+MARICO,Marico Ltd.,Fast Moving Consumer Goods,INE196A01026,,candidate,782.7999877929688,1189141261.3846436,300,ok,True,True,2026-10-13
+NESTLEIND,Nestle India Ltd.,Fast Moving Consumer Goods,INE239A01024,,candidate,1334.0,1828580722.2525635,300,ok,True,True,2026-10-13
+PATANJALI,Patanjali Foods Ltd.,Fast Moving Consumer Goods,INE619A01035,,candidate,367.5,1233691016.946991,300,ok,True,True,2026-10-13
+TATACONSUM,Tata Consumer Products Ltd.,Fast Moving Consumer Goods,INE192A01025,,candidate,960.0,1122374384.2288513,300,ok,True,True,2026-10-13
+UNITDSPR,United Spirits Ltd.,Fast Moving Consumer Goods,INE854D01024,,candidate,1371.0999755859375,1093429573.5,300,ok,True,True,2026-10-13
+VBL,Varun Beverages Ltd.,Fast Moving Consumer Goods,INE200M01039,,candidate,442.0,1954089408.0,300,ok,True,True,2026-10-13
+ABCAPITAL,Aditya Birla Capital Ltd.,Financial Services,INE674K01013,,candidate,384.6499938964844,1357138255.4372406,300,ok,True,True,2026-10-13
+AXISBANK,Axis Bank Ltd.,Financial Services,INE238A01034,,candidate,1268.4000244140625,7176675746.5,300,ok,True,True,2026-10-13
+BAJAJFINSV,Bajaj Finserv Ltd.,Financial Services,INE918I01026,,candidate,1755.699951171875,1359344882.9401855,300,ok,True,True,2026-10-13
+BAJFINANCE,Bajaj Finance Ltd.,Financial Services,INE296A01032,,candidate,982.75,6866760076.079102,300,ok,True,True,2026-10-13
+BSE,BSE Ltd.,Financial Services,INE118H01025,,candidate,3375.39990234375,14136026228.5,300,ok,True,True,2026-10-13
+CANBK,Canara Bank,Financial Services,INE476A01022,psu,candidate,120.44000244140624,1528104903.2722778,300,ok,True,True,2026-10-13
+CDSL,Central Depository Services (India) Ltd.,Financial Services,,,monitor_only,1292.0,1223806950.0,300,ok,True,True,2026-10-13
+CHOLAFIN,Cholamandalam Investment and Finance Company Ltd.,Financial Services,INE121A01024,,candidate,1620.699951171875,2529411173.5370483,300,ok,True,True,2026-10-13
+FEDERALBNK,Federal Bank Ltd.,Financial Services,INE171A01029,,candidate,329.5,1803008821.25,300,ok,True,True,2026-10-13
+HDFCAMC,HDFC Asset Management Company Ltd.,Financial Services,INE127D01025,,candidate,2330.0,1706077771.5648193,300,ok,True,True,2026-10-13
+HDFCBANK,HDFC Bank Ltd.,Financial Services,INE040A01034,,candidate,714.0,20433882998.25,300,ok,True,True,2026-10-13
+HDFCLIFE,HDFC Life Insurance Company Ltd.,Financial Services,INE795G01014,,candidate,560.0,1950239246.7311096,300,ok,True,True,2026-10-13
+ICICIBANK,ICICI Bank Ltd.,Financial Services,INE090A01021,,candidate,1360.199951171875,12314071057.803955,300,ok,True,True,2026-10-13
+IDFCFIRSTB,IDFC First Bank Ltd.,Financial Services,INE092T01019,,candidate,78.83000183105469,1704138021.3563385,300,ok,True,True,2026-10-13
+INDUSINDBK,IndusInd Bank Ltd.,Financial Services,INE095A01012,,candidate,877.3499755859375,2152433600.4887695,300,ok,True,True,2026-10-13
+JIOFIN,Jio Financial Services Ltd.,Financial Services,INE758E01017,,candidate,217.8000030517578,2772300986.2825394,300,ok,True,True,2026-10-13
+KOTAKBANK,Kotak Mahindra Bank Ltd.,Financial Services,INE237A01036,,candidate,439.0,7625094556.177277,300,ok,True,True,2026-10-13
+LICHSGFIN,LIC Housing Finance Ltd.,Financial Services,INE115A01026,,candidate,564.0,1685767579.6089478,300,ok,True,True,2026-10-13
+LICI,Life Insurance Corporation of India,Financial Services,INE0J1Y01017,psu,candidate,394.0499877929688,2361922818.318619,300,ok,True,True,2026-10-13
+MCX,Multi Commodity Exchange of India Ltd.,Financial Services,INE745G01043,,candidate,3308.0,6046931605.067139,300,ok,True,True,2026-10-13
+MUTHOOTFIN,Muthoot Finance Ltd.,Financial Services,INE414G01012,,candidate,2626.0,1582032159.8930664,300,ok,True,True,2026-10-13
+PAYTM,One 97 Communications Ltd.,Financial Services,INE982J01020,,candidate,1715.0,6589643447.788452,300,ok,True,True,2026-10-13
+PFC,Power Finance Corporation Ltd.,Financial Services,INE134E01011,psu,candidate,342.04998779296875,3012073520.0,300,ok,True,True,2026-10-13
+PNB,Punjab National Bank,Financial Services,INE160A01022,psu,candidate,116.5500030517578,1430858544.1620407,300,ok,True,True,2026-10-13
+POLICYBZR,PB Fintech Ltd.,Financial Services,INE417T01026,,candidate,1067.0,4213688094.570801,300,ok,True,True,2026-10-13
+RECLTD,REC Ltd.,Financial Services,INE020B01018,psu,candidate,307.0,1671960480.0,300,ok,True,True,2026-10-13
+SBILIFE,SBI Life Insurance Company Ltd.,Financial Services,INE123W01016,,candidate,1687.199951171875,1956712128.3405762,300,ok,True,True,2026-10-13
+SBIN,State Bank of India,Financial Services,INE062A01020,psu,candidate,957.0,7754148110.25,300,ok,True,True,2026-10-13
+SHRIRAMFIN,Shriram Finance Ltd.,Financial Services,INE721A01047,,candidate,988.0,4877797753.765259,300,ok,True,True,2026-10-13
+YESBANK,Yes Bank Ltd.,Financial Services,INE528G01035,,candidate,20.850000381469727,1435319658.0168695,300,ok,True,True,2026-10-13
+AUROPHARMA,Aurobindo Pharma Ltd.,Healthcare,INE406A01037,,candidate,1684.5999755859375,1512516973.916687,300,ok,True,True,2026-10-13
+BIOCON,Biocon Ltd.,Healthcare,INE376G01013,,candidate,351.0,953798943.2130127,300,ok,True,True,2026-10-13
+CIPLA,Cipla Ltd.,Healthcare,INE059A01026,,candidate,1329.5999755859375,1181624470.899292,300,ok,True,True,2026-10-13
+DIVISLAB,Divi's Laboratories Ltd.,Healthcare,INE361B01024,,candidate,9285.0,4276883671.5,300,ok,False,True,2026-10-13
+DRREDDY,Dr. Reddy's Laboratories Ltd.,Healthcare,INE089A01031,,candidate,1240.0,2424228276.843872,300,ok,True,True,2026-10-13
+FORTIS,Fortis Healthcare Ltd.,Healthcare,INE061F01013,,candidate,756.4000244140625,1358907212.3149414,300,ok,True,True,2026-10-13
+GLENMARK,Glenmark Pharmaceuticals Ltd.,Healthcare,INE935A01035,,candidate,2265.300048828125,1238409673.6263428,300,ok,True,True,2026-10-13
+LAURUSLABS,Laurus Labs Ltd.,Healthcare,INE947Q01028,,candidate,2059.39990234375,2914138025.6029053,300,ok,True,True,2026-10-13
+LUPIN,Lupin Ltd.,Healthcare,INE326A01037,,candidate,1953.5999755859373,1256530618.5594482,300,ok,True,True,2026-10-13
+MANKIND,Mankind Pharma Ltd.,Healthcare,INE634S01028,,candidate,2372.0,1099773968.8701172,300,ok,True,True,2026-10-13
+MAXHEALTH,Max Healthcare Institute Ltd.,Healthcare,INE027H01010,,candidate,861.0,2187171273.1308594,300,ok,True,True,2026-10-13
+SUNPHARMA,Sun Pharmaceutical Industries Ltd.,Healthcare,INE044A01036,,candidate,1770.699951171875,2556318547.7805176,300,ok,True,True,2026-10-13
+ZYDUSLIFE,Zydus Lifesciences Ltd.,Healthcare,INE010B01027,,candidate,1132.5,1629972084.2636719,300,ok,True,True,2026-10-13
+COFORGE,Coforge Ltd.,Information Technology,INE591G01025,,candidate,1929.0,3430207672.8966064,300,ok,True,True,2026-10-13
+HCLTECH,HCL Technologies Ltd.,Information Technology,INE860A01027,,candidate,1326.0,3474491945.3355713,300,ok,True,True,2026-10-13
+INFY,Infosys Ltd.,Information Technology,INE009A01021,,monitor_only,1062.0999755859375,9929243048.831482,300,ok,True,True,2026-10-13
+MPHASIS,MphasiS Ltd.,Information Technology,INE356A01018,,candidate,2466.300048828125,881463988.050293,300,ok,True,True,2026-10-13
+TCS,Tata Consultancy Services Ltd.,Information Technology,INE467B01029,,candidate,2269.300048828125,7357961846.036377,300,ok,True,True,2026-10-13
+TECHM,Tech Mahindra Ltd.,Information Technology,INE669C01036,,candidate,1543.5,3327845854.8689575,300,ok,True,True,2026-10-13
+WIPRO,Wipro Ltd.,Information Technology,INE075A01022,,candidate,169.0,2218716824.0,300,ok,True,True,2026-10-13
+ADANIENT,Adani Enterprises Ltd.,Metals & Mining,INE423A01024,,candidate,2695.0,3549931287.150879,300,ok,True,True,2026-10-13
+HINDALCO,Hindalco Industries Ltd.,Metals & Mining,INE038A01020,,candidate,902.25,3367692600.2266846,300,ok,True,True,2026-10-13
+HINDCOPPER,Hindustan Copper Ltd.,Metals & Mining,INE531E01026,psu,candidate,468.0499877929688,2721517568.346512,300,ok,True,True,2026-10-13
+HINDZINC,Hindustan Zinc Ltd.,Metals & Mining,INE267A01025,,candidate,549.5999755859375,1687766501.9179382,300,ok,True,True,2026-10-13
+JINDALSTEL,Jindal Steel Ltd.,Metals & Mining,INE749A01030,,candidate,1031.699951171875,921821612.0,300,ok,True,True,2026-10-13
+JSWSTEEL,JSW Steel Ltd.,Metals & Mining,INE019A01038,,candidate,1176.5999755859375,1602152938.680542,300,ok,True,True,2026-10-13
+NATIONALUM,National Aluminium Co. Ltd.,Metals & Mining,INE139A01034,psu,candidate,321.0,1557150732.0402832,300,ok,True,True,2026-10-13
+NMDC,NMDC Ltd.,Metals & Mining,INE584A01023,psu,candidate,71.33999633789062,922310418.4034004,300,ok,True,True,2026-10-13
+SAIL,Steel Authority of India Ltd.,Metals & Mining,INE114A01011,psu,candidate,172.77000427246094,2203052040.191307,300,ok,True,True,2026-10-13
+TATASTEEL,Tata Steel Ltd.,Metals & Mining,INE081A01020,,candidate,175.0,4151470042.77372,300,ok,True,True,2026-10-13
+VEDL,Vedanta Ltd.,Metals & Mining,INE205A01025,,candidate,256.29998779296875,2321774134.991577,300,ok,True,True,2026-10-13
+ATGL,Adani Total Gas Ltd.,Oil Gas & Consumable Fuels,INE399L01023,,candidate,572.2000122070312,359716196.93099976,300,ok,True,True,2026-10-13
+BPCL,Bharat Petroleum Corporation Ltd.,Oil Gas & Consumable Fuels,INE029A01011,psu,monitor_only,287.3999938964844,1285141265.9142761,300,ok,True,True,2026-10-13
+COALINDIA,Coal India Ltd.,Oil Gas & Consumable Fuels,INE522F01014,psu,candidate,408.5,2611135416.5,300,ok,True,True,2026-10-13
+GAIL,GAIL (India) Ltd.,Oil Gas & Consumable Fuels,INE129A01019,psu,candidate,168.3000030517578,1198236860.387535,300,ok,True,True,2026-10-13
+HINDPETRO,Hindustan Petroleum Corporation Ltd.,Oil Gas & Consumable Fuels,INE094A01015,psu,candidate,329.0,1393053064.9216614,300,ok,True,True,2026-10-13
+IOC,Indian Oil Corporation Ltd.,Oil Gas & Consumable Fuels,INE242A01010,psu,candidate,126.13999938964844,1217512097.9161224,300,ok,True,True,2026-10-13
+OIL,Oil India Ltd.,Oil Gas & Consumable Fuels,INE274J01014,psu,candidate,445.0,764720533.0874634,300,ok,True,True,2026-10-13
+ONGC,Oil & Natural Gas Corporation Ltd.,Oil Gas & Consumable Fuels,INE213A01029,psu,candidate,222.6499938964844,2185062481.0485077,300,ok,True,True,2026-10-13
+RELIANCE,Reliance Industries Ltd.,Oil Gas & Consumable Fuels,INE002A01018,,candidate,1166.699951171875,16199130970.1557,300,ok,True,True,2026-10-13
+ADANIENSOL,Adani Energy Solutions Ltd.,Power,INE931S01010,,candidate,1296.9000244140625,1995565906.9058838,300,ok,True,True,2026-10-13
+ADANIGREEN,Adani Green Energy Ltd.,Power,INE364U01010,,candidate,1287.0,1937000182.0,300,ok,True,True,2026-10-13
+ADANIPOWER,Adani Power Ltd.,Power,INE814H01029,,candidate,185.9600067138672,3734242379.6527405,300,ok,True,True,2026-10-13
+JSWENERGY,JSW Energy Ltd.,Power,INE121E01018,,candidate,460.5,843170756.8475037,300,ok,True,True,2026-10-13
+NHPC,NHPC Ltd.,Power,INE848E01016,psu,candidate,73.48999786376953,596491496.5880127,300,ok,True,True,2026-10-13
+NLCINDIA,NLC India Ltd.,Power,INE589A01014,psu,candidate,245.3500061035156,269117405.52700806,300,ok,True,True,2026-10-13
+NTPC,NTPC Ltd.,Power,INE733E01010,psu,candidate,311.0,2326472703.41156,300,ok,True,True,2026-10-13
+POWERGRID,Power Grid Corporation of India Ltd.,Power,INE752E01010,psu,candidate,250.5,2167354351.074753,300,ok,True,True,2026-10-13
+TATAPOWER,Tata Power Co. Ltd.,Power,INE245A01021,,candidate,345.0,1125484122.8548126,300,ok,True,True,2026-10-13
+DLF,DLF Ltd.,Realty,INE271C01023,,candidate,664.7999877929688,2178017000.123413,300,ok,True,True,2026-10-13
+GODREJPROP,Godrej Properties Ltd.,Realty,INE484J01027,,candidate,1594.300048828125,748682395.5299072,300,ok,True,True,2026-10-13
+LODHA,Lodha Developers Ltd.,Realty,INE670K01029,,candidate,1091.5,1559896752.1380615,300,ok,True,True,2026-10-13
+OBEROIRLTY,Oberoi Realty Ltd.,Realty,INE093I01010,,candidate,1720.0,719613539.7579346,300,ok,True,True,2026-10-13
+PHOENIXLTD,Phoenix Mills Ltd.,Realty,INE211B01039,,candidate,1902.5999755859373,855863250.0,300,ok,True,True,2026-10-13
+PRESTIGE,Prestige Estates Projects Ltd.,Realty,INE811K01011,,candidate,1485.0,782904205.6751709,300,ok,True,True,2026-10-13
+ADANIPORTS,Adani Ports and Special Economic Zone Ltd.,Services,INE742F01042,,candidate,1763.0,3376783834.2423096,300,ok,True,True,2026-10-13
+CONCOR,Container Corporation of India Ltd.,Services,INE111A01025,psu,candidate,449.75,416982910.28582764,300,ok,True,True,2026-10-13
+GMRAIRPORT,GMR Airports Ltd.,Services,INE776C01039,,candidate,90.33999633789062,1223634031.7798615,300,ok,True,True,2026-10-13
+BHARTIARTL,Bharti Airtel Ltd.,Telecommunication,INE397D01024,,candidate,1806.5,8952812354.789429,300,ok,True,True,2026-10-13
+IDEA,Vodafone Idea Ltd.,Telecommunication,INE669E01016,,candidate,12.800000190734863,4432405472.579126,300,ok,True,True,2026-10-13
+INDUSTOWER,Indus Towers Ltd.,Telecommunication,INE121J01017,,candidate,378.75,1482280252.6620789,300,ok,True,True,2026-10-13
+TATACOMM,Tata Communications Ltd.,Telecommunication,INE151A01013,,candidate,1672.4000244140625,254949716.1321411,300,ok,True,True,2026-10-13

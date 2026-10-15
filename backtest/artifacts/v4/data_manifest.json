@@ -1,0 +1,908 @@
+{
+  "as_of": "2026-10-13",
+  "source": "yahoo_chart",
+  "files": [
+    {
+      "symbol": "BHARATFORG",
+      "sha256": "c52ee8e9f1f88c8389a10c027a829739fbb50145d9354cf3d632585c773bd0a5",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "EXIDEIND",
+      "sha256": "efd6487219a0956f1d58e29b47632956743afe93416c23899b437a64fd7b3606",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HYUNDAI",
+      "sha256": "e5e5aa013cae60f78cba2e52b95308f1b028edc1505553d3492df28397702030",
+      "bars": 490,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "M&M",
+      "sha256": "dab9f256a277bbac4719a0a27840f2a504e8a9cb2b390c36400e2e8e21943c45",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MOTHERSON",
+      "sha256": "985f30b270f1e90f092f1ba164cbcbd0eac7252d01d2328406fa3be150270f1e",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TIINDIA",
+      "sha256": "edc2770c3eecf471ac02da1afd7dea66bfa40cae3453dc53df7557cf7e209557",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TMPV",
+      "sha256": "70f5ff63bd764981bf78724a0118a24d1e73f98e3cfedea2ded9d3225281eca7",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "sha256": "3fb07d8287ff38a92a5aa46cc7d28afc7c6144619eb57799eb6ac75522b9a893",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "sha256": "035b039f5a614c92a43d0b9094914019b9912eaae34d5ecab34619b9b9b2974c",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ASTRAL",
+      "sha256": "0f0480a4d6b0d9ec5de5eb7c8752232482d45f458fc4db12bc444071fb6d91c5",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BDL",
+      "sha256": "697f788da073496aa72400f8b114c22b77c075397b17eaaebe4f301c040fb938",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BEL",
+      "sha256": "04c4cba83a8476ab652914886e3c7080516f04b2098cfa4fea7b83f6aea18c9c",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BHEL",
+      "sha256": "fdce7cd7f4ab1eba7c7e2007f3c3bd6bd9a0d096654a1eb5a778b6a5de20e727",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "CGPOWER",
+      "sha256": "f7e8e9c1aee0f1e07b7d1a208f980ccbcc6847636d09b5a16a6f24d07dccbe40",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "sha256": "f66333d667d8288480bfebb71325805aa77ed92ca09d3bd72a7f124ca3e49520",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ENRIN",
+      "sha256": "744ea3eecf0b01f793958a22973dbef3e977798606bdbc15b81e2b7de9eb375b",
+      "bars": 327,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HAL",
+      "sha256": "7be0e0a4082a597e2e9c38e7cdc68b5a27398c51f50da402b376a6ba69d8cca4",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MAZDOCK",
+      "sha256": "49540b4bb0a62c9419b32b74d27c0644b304c7ba311fafea9f29d1ebfdd03873",
+      "bars": 1486,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PREMIERENE",
+      "sha256": "165a1c502f863f7f8732e859b88909369dd37b3226002fdcf246a442fd48b132",
+      "bars": 524,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SUPREMEIND",
+      "sha256": "552a05a6597bbf088df27d575e717acad148c271a767c5c6e1f5b2520a7341bb",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SUZLON",
+      "sha256": "e01fd235bfb3db36d5aafb33eacf0d8f8987f6e54bc34db2b72abeaee6de0777",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "WAAREEENER",
+      "sha256": "a296820c2302bcdf3583241af9fcbfb2f8c846aea3f501121d52a797d8b9e6b3",
+      "bars": 486,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ZENTEC",
+      "sha256": "776af1b9561ef41c96e5cfe40ccaf19977b4eea5728a702d9d6d4c49342b243e",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "sha256": "f1c3456029e531d2aaee0a4852efe6e30cd34d66429a6607883fbac1b3e6772a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PIIND",
+      "sha256": "c1a70d3893f20f65a2172f457404b37b1f9c63204006c72d91e6baacc43b2420",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SRF",
+      "sha256": "3e278dfd1cc69894b51bbfc995e9b56cbc541a130dc4af0504661d2fe7b07008",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "UPL",
+      "sha256": "452aa846c2450b6c8128f705820a64055c6836881fb432619fe9e2be9e1501ac",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "LT",
+      "sha256": "43efae06ba2c8a2fb0ac2c50c39521b342ee11856cf8a3fce69289a7d78c49e1",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "RVNL",
+      "sha256": "35338990a321e767308b74b05ca9302f51caf9b00fd0f8df9b7930db2a7968a4",
+      "bars": 1855,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "AMBUJACEM",
+      "sha256": "d17f868138c31ea2e34c54dd90e53683a16fe203fbd5ed756b1ad07a91f70a9e",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GRASIM",
+      "sha256": "cafa67751ba21910dfedc497611e0bede2dad665efc667e5c126f513854befe9",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "sha256": "9173a79a84927d67e9e16ad0adcb95c118a615ace6051c98f50b1c176222e25f",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "sha256": "d01419500efad7ab292bbc89ab3c697491c1991dae3413a7d64dc151cd2aea46",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HAVELLS",
+      "sha256": "6f8c7081f0fd1d4724cd8f07d7daefbca23d25b4cd131528e23d03243803e074",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "KALYANKJIL",
+      "sha256": "d3ac5e8cc000b17ec2f4fd0bfa512f14d148b51b1f9594af7d8ab5c0abe3894b",
+      "bars": 1371,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "VOLTAS",
+      "sha256": "6d97affd5661d7d70bb1708962b08c34cabc76407ce998e220f0dbeebd002f4b",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "DMART",
+      "sha256": "387e0ba99af34e9f6c5f1f73caeec767f7ec547242fb3bf74c5a7f06ae5d605c",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ETERNAL",
+      "sha256": "3968ed1fabf0893032ed1fe93421ce6e084ab01f8fc4fb44377a1d9b6194a091",
+      "bars": 1292,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "INDHOTEL",
+      "sha256": "a204ef8654b467ee02cdf1ee2878469d9b1390403b9b00a41cf29c94a16f9419",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "IRCTC",
+      "sha256": "b55969355ec9e9680a14e2e65ffbea715134bccb0b900d9d323bc759e57b4e19",
+      "bars": 1734,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "sha256": "a405a1581129019a01d6100f94b4142baecfa88dbc72cab2e588ecae1b1a0900",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NAUKRI",
+      "sha256": "b31b492b44a18005e559653f663348e0a34a3ccf47a67ab6bd9628dc235e5791",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NYKAA",
+      "sha256": "bafb9a94ddd0c5d80dfe50c43e2f9843a3e28c5e56ddbb5875835c8cdc53f00c",
+      "bars": 1218,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SWIGGY",
+      "sha256": "663c8f14d1291e6fc87d23791fcdf51aac1c7102637547a7496bd977c9cc3fa4",
+      "bars": 474,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TRENT",
+      "sha256": "5c4627988d9e8f246df9b7d4bf1fd026ccd76641adb4f97dc1421bb4853f567d",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "VMM",
+      "sha256": "a46fe47dc1b0af821ace5af17ab5649c22dfe3fe3d3eaad4e2bd1b216477ab2d",
+      "bars": 451,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "COLPAL",
+      "sha256": "cde340acb9b630c1aa6f07de625ab403f4da601dfde44bea733d9914c58d8dff",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "DABUR",
+      "sha256": "01262a7cf869f3b796320474c20538b6ea633b9d24b3b380c81abc7dcdb8f1b6",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "sha256": "aa3fabd18501e89273d3adb5ea1a58591dc9cd1769e342ed65f8e7fea1056bbf",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GODREJCP",
+      "sha256": "f974ab8daa4a9ea4cf892bd316b8cc79aaa65a0f51c7fafc4569accf56ba6ea5",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HINDUNILVR",
+      "sha256": "8486ac69db1b781ddfff324a04352a6f469edc3b4c570cdfbc28535ca9e365ab",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ITC",
+      "sha256": "c669d892e41523da0dd1510fc997d00830e4f262f70ac5afba7a586a0ee15d13",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MARICO",
+      "sha256": "167b127757125e717cd69f602ee66b8aa25513ffd504376e4f71d0aa4094c645",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "sha256": "bd64548179014b5f5388e1fc65a6d85d6730e9c7bd13ced82abcdc5cd5f0bd8a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PATANJALI",
+      "sha256": "3db5e91d9a5d23a2ed2e1f979ca0d5b9b45510c52741cf94d391fd29c5762019",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TATACONSUM",
+      "sha256": "316ff437901fe15e3faa47417a9a7b3e4d4f875f35f84f8edcb01e4afb888a98",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "UNITDSPR",
+      "sha256": "bf7eee3296b6bb35bbc799b4f9a065b73f6c2ae69b92875600347b76543eabef",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "VBL",
+      "sha256": "b4e5c22f9f469b5988307a025ecd4d4aeedaae1e7aa903c5be35399786a158ad",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ABCAPITAL",
+      "sha256": "4c97ad73acaafd64e82da0831a6ff1702fde8bd6ce63df66102d236b0144ccb8",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "AXISBANK",
+      "sha256": "6342b5deade6c2945072b8266ec10f8e6dbeb7810f1e29c8a07207ddd5e3d858",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "sha256": "35a5907dfd202f2b5c780f99d12c5f716b2e4a289a13192f35fd3a038e3b60b1",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "sha256": "4ded159dc64abb6b53afed240eda0fdba26a4f955831eb30a554b6fdd42ec122",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BSE",
+      "sha256": "90293d254d1795a72c179ee806351980d15006d50e4886e1cc3fb9f69dcea50e",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "CANBK",
+      "sha256": "99aa82a2c5b6e00b10185636ab7a5876992498702bb32660b0a8f479cc990393",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "CDSL",
+      "sha256": "e665363382155747f5115d4736408b66931a3a333b9f4e8fb2337c628456bbfa",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "CHOLAFIN",
+      "sha256": "96c45282bd62290708a3408e0719a906d2351613b3cb3d50cb48677ee1d229ca",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "FEDERALBNK",
+      "sha256": "6197f1f0dbd2d14889b86026bb15955b7a685052bf514e62194a7119a37f5939",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HDFCAMC",
+      "sha256": "020f6d49e48524458a673719c028942112630b1e605a14e55cc3638630cfaa91",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "sha256": "cd618f01e58aa24cbc6fdd1d1e300d38ac3fde942aae0bb5256d549eb6837159",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HDFCLIFE",
+      "sha256": "88db0c07c04179a768cdb4b2d70ab3373fdc0005c8249c40680e063d3df430e3",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ICICIBANK",
+      "sha256": "00eb0cde7c5c56f234d4ab58dcd5aeffd442a1e52c598b52a0eb94e560e85ea1",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "IDFCFIRSTB",
+      "sha256": "98b8dce14ea0b814e8de9c25d2d7b53d332b7d5191d68efd0d02ca1ecaa8245f",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "INDUSINDBK",
+      "sha256": "88ceef09a9009c4ae02172b467cb19c687a35eb421de3302cd43e606b4abba65",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "JIOFIN",
+      "sha256": "d7ef27f0fb7b6d069d7dd83cdc307a0e79552d2f845cced89c58f86eb9b3c8da",
+      "bars": 777,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "sha256": "8e1b20f37b5e03082e5c7010f29037ff9639e0a0f4b15f9471a3441fa42eba39",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "LICHSGFIN",
+      "sha256": "20fc62c04869a666a42cf0e6a9bdf1187d89a93a19e3b4a1830a5858c4f0cdc7",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "LICI",
+      "sha256": "c319ea03343e04ed3da442a0facda7f461d555f12a03d83c76a3cc28d253e0f9",
+      "bars": 1091,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MCX",
+      "sha256": "a904e6516adb4106029e5ece782335bdb48b27ba14e2948d58889a1c5b4528d4",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MUTHOOTFIN",
+      "sha256": "4aef927dd4e8fab2c5c836d7d5c4bddb41aa466eb11cd404beb16b434cbe8f15",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PAYTM",
+      "sha256": "698165bdfcc94ce46b43c4114ed23183cc65d49fd9fd4e48e7fa8a915d552ad7",
+      "bars": 1212,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PFC",
+      "sha256": "f6b3d28064d12a453cbb0eb99b5ce0fc7a68ee65180f814805187c0b40098051",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PNB",
+      "sha256": "20cfa9fa5a468cc33e05cf1faec96b9618fec585c45668c62c46bfdb83f119a8",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "POLICYBZR",
+      "sha256": "7e6e0c81d6061e1589c222ebd6394f76b2112c6a88aa98a7f346ec40b3581fc1",
+      "bars": 1214,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "RECLTD",
+      "sha256": "f087ac69b33b9ca8d5fcebbe2cddadb08bf90d28d2b6dfc418602477b8fc690a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SBILIFE",
+      "sha256": "deeff12de337786def570939b03576fd005bf0d3e0bbab65479153daec2bf72c",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SBIN",
+      "sha256": "b590b29cba9a00cb4fbde0d3fc0e9cde0ecc90246b1c98e8000e21311d61b748",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "sha256": "58219d1c6718e510324c8158d21148655b6c2bfc8793a5906c5387a0419c88bb",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "YESBANK",
+      "sha256": "3832162cd979926aad5dc1152dee5d6447519c1ddb29f78109db288c124e97ef",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "AUROPHARMA",
+      "sha256": "578afaef894e2ef98f74dc6052a9096112b685b0df189b04918720f33bae74af",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BIOCON",
+      "sha256": "5d90ea5ea0b065323b4ecc9d4636b6f0bd9d3a0fd65a19b20ab6d9817fb860d2",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "CIPLA",
+      "sha256": "5ae2d63a61df5ce6f4ca7de7071155ed150b2e3de6998d1dc1c88e7e843538d7",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "DIVISLAB",
+      "sha256": "a891191f739e4726057e7a03f7a51717c13dd06da5361df1b71cb5ed9e37a478",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "DRREDDY",
+      "sha256": "2029841e9cafeb14c08dc4dd79fabd8ff76cb28a6c4fd01688211e16f1c021aa",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "FORTIS",
+      "sha256": "fb71682c4828a34cffce48a6fb033e91847f4fd1edca22f4ad655cf33688ad9a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GLENMARK",
+      "sha256": "28410b862673283bfa9d7b14cbb7b6567d670a2cc4fb975b6def3d0fd3cc532a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "sha256": "da09114a51ab84483d978e83d4151f81d986db7a5c8dd4f0d354693bb66ac427",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "LUPIN",
+      "sha256": "0999b0326d4fb8f39fa9e16b2eed80370c0c801f6f0e58e247e2386f03b9a743",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MANKIND",
+      "sha256": "222e33bc311373bcaf4a895615f7ed611f17ee07b504581ce14c4efe89ddd71b",
+      "bars": 849,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MAXHEALTH",
+      "sha256": "e3db38abeec151463a1f3c54735f87533346091714500862c8472fd67ff99cb2",
+      "bars": 1521,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "sha256": "51c00ef93a2ed943fc2b9a570ddf6fe64f84e11d100cf347222de057a82e3c4d",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ZYDUSLIFE",
+      "sha256": "3f87458e0deb4f1991461e53a4274b5863dcf37c7e4ebc20cc320059b407c04b",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "COFORGE",
+      "sha256": "9b03aff0d37af42c660140224039aa5df51780e91a6d0c72f57bb15985d26582",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HCLTECH",
+      "sha256": "1ad012f631cfd735b50ac74914adf57059b7946261558ca5646bd32f6e9fd1cc",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "INFY",
+      "sha256": "00d415f4de4cb6091a751cdaf894569cd13f976abda196804c9659e563da3a88",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "MPHASIS",
+      "sha256": "178fa0a5c8193cfee1472c91cc7252befbf6685bacd619a62f4f30fb45a27a51",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TCS",
+      "sha256": "42404d520c75154169a6835f960002ae3e73c7c4b93088d70da1c3288644ff7e",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TECHM",
+      "sha256": "8341dbcedde2257469cdf170a5309f446051ee3c3a3695aa90764a06acd3286d",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "WIPRO",
+      "sha256": "f80fbff8abbd847f3adc5576ff0bdcf02aac4c8751c0d8710b810a0485238aa9",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ADANIENT",
+      "sha256": "b948668240db8bb53f354e319466fb2f06235119e00dac359c65bfd3afd2ab04",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HINDALCO",
+      "sha256": "2f32ca0b32188b5906df9ef08412ce2efc5f5e201ba3194fa14c16e898f5a7bb",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HINDCOPPER",
+      "sha256": "27abd52690249e9ad8291bc372f895050cb6ec81ea05b49893516e3d6f2b74e0",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HINDZINC",
+      "sha256": "c18fc4151784c5ee1d609eaf4965b7b67adf71dbad768ae10cf1b15da23d54fe",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "JINDALSTEL",
+      "sha256": "b9a3bac6a37ecfe16231772942d24a8c819f71b2e0270ee180084e5fccac84ef",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "sha256": "e95bb2e821dd37ed4700e9fcd4f29e64b5cb9335acfeeeef920a46ef40f15d88",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NATIONALUM",
+      "sha256": "bfcd0afce4a72057f9713feffae59cf9d867fac7e8e55a45994408c521e6fc91",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NMDC",
+      "sha256": "a464e5df88f41d1f07dac5310e171b8692ec17ec5e51d1f37555210940a40e8a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "SAIL",
+      "sha256": "a5564c18f2c5c1168fe670188e9efc2848c22d0404b2a1e445678b929ba5920e",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "sha256": "2a86e6ff929a45817cae8815f9a5ff4a0fece38d40af8f0b15d03ed15a481822",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "VEDL",
+      "sha256": "1f3397513abdf514ffd4d611754f0f45bf1828ad7fe3f150f88b7ebf8390b0c4",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ATGL",
+      "sha256": "363966e7bf96d0d2a40cd7a02318485477ba3053a05328d914af1737328034c3",
+      "bars": 1961,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BPCL",
+      "sha256": "6773fdb9682bc94773aec16d9744ebeab92cced21d7f13606862b22e67108aba",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "COALINDIA",
+      "sha256": "c140b0c868552380a90fd4ed6805590a34d55d2a173a2b8cec17a756de9aa2e4",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GAIL",
+      "sha256": "89ae0494b292d2eb1ffba1a1f837c473e8f1c9f4ed6020e995d04f0eb99a7128",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "sha256": "0df7c62d1b950f4d8337843fa14748198ef874fedfd7829764289c12ee7bd1ba",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "IOC",
+      "sha256": "a667bf1f5f774dd3dd8a77dd9a1936d30ba066913e3f25f1e61c29ee2d597651",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "OIL",
+      "sha256": "17a63c6743ca69e056bed681343d9416ff6386fe01e1ffe57c3761dbcc403994",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ONGC",
+      "sha256": "a2e370e4ac15631dee67fb2052c20e07c247bb04a907e170b52d091a85ca9499",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "RELIANCE",
+      "sha256": "075c4c40ed082b02eea3cc894707953b663e1577ca44002b9f59758ad5c33ea3",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ADANIENSOL",
+      "sha256": "00594b696dd4260852bdf994bf1868f5cecf6fbf5586e0334a0327772116d773",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ADANIGREEN",
+      "sha256": "31a760dfbcfddf08f7a040db66cf45f627b2d8101dad6880d9e630f5491f665a",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "sha256": "5905e0e8f11db26cdc3aca1de91b5a67488b0c3db81e62d9a50ae4a10ce80548",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "JSWENERGY",
+      "sha256": "f4f845b584a4342331e661de92885c38db632dbd37378395f837b748f2e0d444",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NHPC",
+      "sha256": "1f263f3c8cc6b4f42d70b63f171b077d05b8d6ab721188fe2465977e029702ee",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NLCINDIA",
+      "sha256": "5846298b68f240353babbd671f6d2940a9cbb701fee7fa2b7786e645f9223296",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "NTPC",
+      "sha256": "1b558e4f1c4042421510d879ed524c8dfdee88df6dc1f6e0baf511b32854c602",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "POWERGRID",
+      "sha256": "2b21cfee6b9af25c170ac52339763411999d7ad435371ef32ef34f32821a9c88",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TATAPOWER",
+      "sha256": "264e1d19b85b773726bb8ccae693c9c95336b98b504a26ab252db9cb8c62560d",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "DLF",
+      "sha256": "40978a8563de1e39adba9a518b331b694167ee0f681a0cb72abb5d2c3ecd30f6",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GODREJPROP",
+      "sha256": "0babaf409ad55bb67471074fcc91d1f76e626b2bd1edfd32af5990b84e735593",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "LODHA",
+      "sha256": "5e26a0a1eafba734818888cf6b6ed6efd66775537ed43fba51e7012112ac9255",
+      "bars": 1358,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "OBEROIRLTY",
+      "sha256": "62dba6d243d70fc4108402db9e680a771c432c49e1c77cbce2a78a4f2911bdae",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "sha256": "48747aaf046f7abae711a34c142599f164420b5809f6635e36b82eaa7f630be1",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "PRESTIGE",
+      "sha256": "d601dccd64c09678b13825b942becbabb3355a82736002d3e288b26cbb4e4347",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "ADANIPORTS",
+      "sha256": "fe946e1ae447e84ddfc70e5a47aeac1be88b7e05a6e6e5b9649a7c828113e4f2",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "CONCOR",
+      "sha256": "21de6280327171d2813e20305312e9a468319ac94b762baad5a8c2c73d5f23dd",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "GMRAIRPORT",
+      "sha256": "b02089ed6f58d6b6142ce2ab1e2e130671233fc415f71901b679e90dcf68aecc",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "sha256": "f8012e920393d78a072960b594c9b87c82694227fd1b84bb06098f3d8410d9e1",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "IDEA",
+      "sha256": "219400a36b71343c0969c12e94e5f1519fed7051ee88909f8c64c2db926a4f95",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "INDUSTOWER",
+      "sha256": "df70de78179d4215eecbebe939c811e0661aac9b86b0252e72fb38760b749e4f",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    },
+    {
+      "symbol": "TATACOMM",
+      "sha256": "419998116c096cbe76f5284635a6f76e1beceee9404629650a1a1b639e7bedd1",
+      "bars": 1999,
+      "last_complete_session": "2026-10-13"
+    }
+  ],
+  "nifty_sha256": "31485246f26ad02fc19448536e98534c0c8cbf1e5ead625d6d6e369ac56cc43c",
+  "protocol_sha256": "c2318202223178e72c42edd3b84e91f8f16ae40dd945a2983e9d146cd5b07391"
+}

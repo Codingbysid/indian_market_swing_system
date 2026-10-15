@@ -1,0 +1,16 @@
+{
+  "review_date": "2026-10-15",
+  "pytest": {
+    "passed": 64,
+    "command": "python -m pytest -q"
+  },
+  "compileall": "passed",
+  "lambda_import_without_ml_libraries": "passed",
+  "package_shadow_only": "passed",
+  "native_json_parity": "see metrics.json; all six folds and forward shadow fit passed",
+  "live_aws_tests": false,
+  "tradingview_full_universe_parity": false,
+  "private_sentiment_backend_connected": false,
+  "deployed": false,
+  "api_health_note": "Successful initial probes are not availability guarantees. Later NSE/HAL requests timed out; TradingView endpoint became environment-blocked."
+}
