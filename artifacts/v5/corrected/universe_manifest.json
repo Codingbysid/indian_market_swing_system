@@ -1,0 +1,23 @@
+{
+  "as_of": "2026-10-17",
+  "max_unique_names": 150,
+  "names_in_india_150": 150,
+  "held_pinned": ["HAL", "ZENTEC", "CDSL", "BPCL"],
+  "price_files_loaded": 149,
+  "missing_price_history": ["ZENTEC"],
+  "replacement": null,
+  "replacement_reason": "ZENTEC is a held name and must keep a slot. Replacing it would hide a required position. One official 2026-10-16 EQ bar was archived; that single session is not 300 sessions of research history.",
+  "official_bar": {
+    "session": "2026-10-16",
+    "symbol": "ZENTEC",
+    "isin": "INE251B01027",
+    "open": 1698.0,
+    "high": 1698.0,
+    "low": 1641.5,
+    "close": 1655.6,
+    "volume": 192102,
+    "source": "artifacts/v5/nse_raw/udiff_20261016_eq.csv"
+  },
+  "fundamental_membership": "not backfilled from today's screens",
+  "research_schema": "price_only_control"
+}

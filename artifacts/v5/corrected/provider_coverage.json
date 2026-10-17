@@ -1,0 +1,25 @@
+{
+  "session_requested": "2026-10-16",
+  "saturday_2026_10_17": "refused before download",
+  "udiff": {
+    "parsed": true,
+    "eq_rows": 2691,
+    "duplicate_symbols": 0,
+    "sha256": "d2c4406c1ecbfbcb9acdafa424f921caad7467d97da47c65973b34aa0aac70bc",
+    "raw": "artifacts/v5/nse_raw/udiff_20261016.zip",
+    "normalized": "artifacts/v5/nse_raw/udiff_20261016_eq.csv"
+  },
+  "delivery": {
+    "parsed_optional": true,
+    "rows": 3511,
+    "sha256": "8afbcce6d74f667f910213f8e1405092676f977f6e0693e1c082d7e13966a162",
+    "used_in_model": false,
+    "absence_would_not_be_zero": true
+  },
+  "holiday_calendar": "not retrieved; weekend exclusion only",
+  "corporate_actions": "not retrieved; missing metadata still blocks new admission",
+  "restriction_metadata": "missing; blocks new admission",
+  "legacy_bhavcopy": "not parsed; no verified legacy file was dispatched",
+  "research_price_cache": "149 of 150 universe files; ZENTEC history file absent",
+  "vendor_tag": "official NSE UDiFF for 2026-10-16 only; cached research prices remain a separate development source"
+}
