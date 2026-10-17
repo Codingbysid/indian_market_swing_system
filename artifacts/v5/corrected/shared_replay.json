@@ -1,0 +1,16 @@
+{
+  "status": "chronological_ledger",
+  "fills": 0,
+  "net_pnl": 0,
+  "profit_factor": null,
+  "final_cash": 5748.0,
+  "max_drawdown": 0.0,
+  "rejections": {
+    "unfilled": 118,
+    "rejected_wide_stop": 84,
+    "zero_quantity": 15
+  },
+  "promoted": false,
+  "pnl_timing": "credited_on_exit_date_only",
+  "admitted_count": 0
+}
