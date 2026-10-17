@@ -1,0 +1,81 @@
+{
+  "version": "four_screen_v5_design_2026_10_17",
+  "status": "unpromoted_design",
+  "free_data_only": true,
+  "max_unique_equities": 150,
+  "execution": "manual_CNC_alerts",
+  "horizons": {
+    "short": {
+      "expected_sessions": [
+        3,
+        15
+      ],
+      "vertical_sessions": 15
+    },
+    "long": {
+      "expected_sessions": [
+        10,
+        40
+      ],
+      "vertical_sessions": 40
+    }
+  },
+  "risk": {
+    "cash_reserve_fraction": 0.2,
+    "position_debit_fraction": 0.4,
+    "max_new_and_pending_positions": 2,
+    "trade_risk_fraction": 0.015,
+    "trade_risk_rupee_cap": 100,
+    "aggregate_risk_fraction": 0.03,
+    "aggregate_risk_rupee_cap": 200,
+    "cumulative_net_loss_pause": 1500,
+    "loss_headroom_trade_divisor": 10,
+    "loss_headroom_aggregate_fraction": 0.2,
+    "kelly_enabled": false,
+    "legacy_profit_only": true,
+    "no_averaging": true,
+    "sector_cap_total_equity": 0.25,
+    "defence_cap_total_equity": 0.25,
+    "psu_cap_total_equity": 0.35,
+    "max_pair_correlation": 0.65,
+    "max_cost_fraction_initial_price_risk": 0.25
+  },
+  "universe": {
+    "screen_slots_max": 100,
+    "sector_slot_fraction": 0.2,
+    "median_turnover_60_min_rupees": 100000000,
+    "median_turnover_20_min_rupees": 50000000,
+    "min_history_sessions": 300,
+    "refresh": "monthly",
+    "holdings_and_pending_pinned": true
+  },
+  "research": {
+    "train_months": 36,
+    "calibration_months": 6,
+    "test_months": 6,
+    "combined_embargo_sessions": 40,
+    "base_slippage_bps_per_side": 10,
+    "stress_slippage_bps_per_side": [
+      25,
+      50
+    ],
+    "fundamentals_require_point_in_time": true,
+    "auto_promotion": false
+  },
+  "promotion": {
+    "min_purged_folds": 3,
+    "min_unique_oos_portfolio_fills": 200,
+    "min_wins": 50,
+    "min_losses": 50,
+    "min_names": 20,
+    "min_forward_shadow_sessions": 60,
+    "positive_lower_95_net_expectancy": true,
+    "positive_25bps_stress_result": true
+  },
+  "screen_urls": [
+    "https://www.screener.in/screens/2/piotroski-scan/",
+    "https://www.screener.in/screens/59/magic-formula/",
+    "https://www.screener.in/screens/57601/coffee-can-portfolio/",
+    "https://www.screener.in/screens/336509/golden-crossover/"
+  ]
+}

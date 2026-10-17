@@ -1,0 +1,54 @@
+{
+  "schema": "v5_onboarding_reference_NOT_S3_STATE",
+  "as_of": "2026-10-17",
+  "source": "user screenshots and explicit confirmations",
+  "cash": 5748,
+  "pending_orders": [],
+  "pending_gtts": [],
+  "timex_active": false,
+  "holdings": [
+    {
+      "symbol": "HAL",
+      "qty": 16,
+      "avg_cost": 5040.63,
+      "mark": 4989,
+      "policy": "legacy_profit_only",
+      "no_averaging": true
+    },
+    {
+      "symbol": "ZENTEC",
+      "qty": 10,
+      "avg_cost": 1669,
+      "mark": 1655.7,
+      "policy": "legacy_profit_only",
+      "no_averaging": true
+    },
+    {
+      "symbol": "CDSL",
+      "qty": 8,
+      "avg_cost": 1363.75,
+      "mark": 1286.9,
+      "policy": "legacy_profit_only",
+      "no_averaging": true
+    },
+    {
+      "symbol": "BPCL",
+      "qty": 6,
+      "avg_cost": 318.65,
+      "mark": 294,
+      "policy": "legacy_profit_only",
+      "no_averaging": true
+    }
+  ],
+  "broker_displayed_invested": 110162,
+  "broker_displayed_holdings_value": 108440.2,
+  "legacy_fill_history_complete": false,
+  "requires_live_reconciliation_before_activation": true,
+  "notes": [
+    "INFY no longer shown; closing fill details unknown.",
+    "ZENTEC increased to10; entry fill details and stage history need reconciliation.",
+    "Screenshots taken Saturday; quote session not independently verified.",
+    "Quarterly settlement bank funds not counted as deployable.",
+    "Do not overwrite live S3 book with this reference."
+  ]
+}
