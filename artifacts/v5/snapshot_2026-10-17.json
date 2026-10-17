@@ -1,0 +1,28 @@
+{
+  "as_of": "2026-10-17",
+  "status": "forward_only",
+  "reason": "no_archived_point_in_time_screen_snapshot",
+  "observed_pages": {
+    "piotroski": {
+      "status": "complete_all_pages",
+      "complete": true,
+      "retrieved_at": "2026-10-17"
+    },
+    "magic": {
+      "status": "complete_single_page",
+      "complete": true,
+      "retrieved_at": "2026-10-17"
+    },
+    "coffee": {
+      "status": "complete_all_pages",
+      "complete": true,
+      "retrieved_at": "2026-10-17"
+    },
+    "golden": {
+      "status": "complete_single_page",
+      "complete": true,
+      "retrieved_at": "2026-10-17"
+    }
+  },
+  "usable_before_retrieval": false
+}
