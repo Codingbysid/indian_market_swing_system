@@ -9,6 +9,7 @@ import pandas as pd
 
 from swing_v5.execution import label_trade
 from swing_v5.features import FEATURES_PRICE, enrich, row_features
+from swing_v5.strategies import golden_cross_series
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "backtest" / "data"
 
@@ -71,7 +72,7 @@ def price_only_events(limit: int | None = None) -> tuple[pd.DataFrame, dict]:
         stock_r = frame["Close"] / frame["Close"].shift(63) - 1
         nifty_r = aligned["Close"] / aligned["Close"].shift(63) - 1
         rel = stock_r - nifty_r
-        cross = (frame["SMA50"] > frame["SMA200"]) & (frame["SMA50"].shift(1) <= frame["SMA200"].shift(1))
+        cross = golden_cross_series(frame)
         recent = cross.rolling(10, min_periods=1).max().fillna(0).astype(bool)
         mask = (
             recent
@@ -106,8 +107,16 @@ def price_only_events(limit: int | None = None) -> tuple[pd.DataFrame, dict]:
                     "short_status": short["status"],
                     "short_label": short.get("label"),
                     "short_net_r": short.get("net_r"),
-                    "exit_date": str(pd.Timestamp(frame["Date"].iloc[min(len(frame) - 1, i + int(long.get("sessions") or 1))]).date()) if long.get("sessions") else None,
+                    "short_entry": short.get("entry"),
+                    "short_exit": short.get("exit"),
+                    "short_stop": short.get("stop"),
                     "entry": long.get("entry"),
+                    "exit": long.get("exit"),
+                    "stop": long.get("stop"),
+                    "target": long.get("target"),
+                    "signal_date": long.get("signal_date"),
+                    "fill_date": long.get("fill_date"),
+                    "exit_date": long.get("exit_date"),
                     "atr": float(frame["ATR"].iloc[i]),
                     "close": float(frame["Close"].iloc[i]),
                     "features_ok": feats is not None,

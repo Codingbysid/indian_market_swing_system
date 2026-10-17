@@ -1,0 +1,22 @@
+{
+  "udiff": {
+    "status": "parsed",
+    "parsed": true,
+    "historical_file_verified": true,
+    "session": "2026-10-16",
+    "url": "https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20261016_F_0000.csv.zip",
+    "sha256": "d2c4406c1ecbfbcb9acdafa424f921caad7467d97da47c65973b34aa0aac70bc",
+    "rows": 3675,
+    "eq_rows": 2691,
+    "duplicate_symbols_removed": 0,
+    "legacy_bhavcopy": "not_dispatched_previous_url_failed",
+    "normalized_rows": 2691
+  },
+  "delivery": {
+    "status": "parsed_optional",
+    "rows": 3511,
+    "sha256": "8afbcce6d74f667f910213f8e1405092676f977f6e0693e1c082d7e13966a162",
+    "used_in_model": false,
+    "absence_is_not_zero": true
+  }
+}

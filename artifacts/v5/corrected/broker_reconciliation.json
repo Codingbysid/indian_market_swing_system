@@ -1,0 +1,23 @@
+{
+  "s3_write": false,
+  "fixture_is_not_a_state_upload": true,
+  "reference_as_of": "2026-10-17",
+  "reference": {
+    "cash": 5748,
+    "HAL": {"qty": 16, "avg_cost": 5040.63},
+    "ZENTEC": {"qty": 10, "avg_cost": 1669, "plan_status": "PLAN_RECONCILIATION_REQUIRED"},
+    "CDSL": {"qty": 8, "avg_cost": 1363.75},
+    "BPCL": {"qty": 6, "avg_cost": 318.65},
+    "pending_orders": [],
+    "timex": "inactive",
+    "infy": "absent_fill_unknown"
+  },
+  "not_applied": ["proposed ZENTEC 3/3/4 tranche plan", "any overwrite of portfolio_state.json"],
+  "records_still_required": [
+    "INFY sell fill id, date, price, quantity and fees",
+    "ZENTEC buy fills that raised quantity from 8 to 10, with dates, prices and fees",
+    "Whether any HAL, CDSL or BPCL stage was already sold",
+    "Broker available cash after those fills, not the screenshot invested amount",
+    "Current S3 ETag before a future conditional write"
+  ]
+}

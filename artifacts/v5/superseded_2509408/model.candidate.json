@@ -1,0 +1,27 @@
+{
+  "type": "unpromoted_rules_reference",
+  "schema_id": "v5_price_only",
+  "feature_names": [
+    "atr_pct",
+    "dist_ema20_atr",
+    "sma50_slope5_atr",
+    "drawdown_63_high",
+    "return_20",
+    "rel_return_63",
+    "rel_return_126",
+    "beta60",
+    "rel_volume20",
+    "log_turnover60",
+    "downside_gap95_63_atr",
+    "volatility_ratio20_63",
+    "nifty_distance_ema50_atr",
+    "breadth50",
+    "recent_golden_cross"
+  ],
+  "feature_order_hash": "eac4425b4309e3edfa57159f529ad5eb7d67f5d55b46db9b8be941006d1710ff",
+  "promoted": false,
+  "allowed_live_families": [],
+  "status": "research",
+  "metrics_ref": "/Users/siddharthgupta/Downloads/Documents/Trader/indian_market_swing_system/artifacts/v5/metrics.json",
+  "reason": "No horizon passed promotion gates. This file must not replace models/model.json."
+}

@@ -1,0 +1,52 @@
+{
+  "promoted": false,
+  "protocol_sha256": "22db086634f7a0f12bf4b4cc53397514ec14b6cfe93a63533e6197d7bd91bf1e",
+  "data_label": "reused_v3_v4_cached_prices_development_not_untouched_holdout",
+  "fundamental_historical_test": "blocked",
+  "v4_negative_baseline": {
+    "preserved": true,
+    "net_completed_pnl": -1294.5809383599656,
+    "profit_factor": 0.6473721639990169,
+    "completed_fills": 69,
+    "fortnight_two_intent_fraction": 0.47129629629629627,
+    "quarter_kelly": "zero_for_every_v4_family",
+    "note": "Development evidence. Not an untouched holdout and not erased by the v5 rebuild."
+  },
+  "coverage": {
+    "requested": 150,
+    "loaded": 149,
+    "events": 217,
+    "quality_continuation": "blocked_no_point_in_time_fundamental_snapshots",
+    "improving_value": "blocked_no_point_in_time_fundamental_snapshots",
+    "delivery": "unavailable_not_zero",
+    "sentiment_history": "unavailable_not_backfilled",
+    "restriction_metadata": "missing_blocks_live_admission",
+    "holiday_calendar": "weekday_only_not_official_nse"
+  },
+  "missing_symbols": [
+    "ZENTEC"
+  ],
+  "price_only_trend_transition": {
+    "events": 217,
+    "long_filled": 15,
+    "long_unfilled": 118,
+    "long_mean_net_r": -1.3040411259138276,
+    "long_profit_factor": 0.22516536417753538,
+    "long_wins": 3,
+    "long_losses": 12,
+    "short_filled": 35,
+    "short_mean_net_r": -2.0304096113527197,
+    "short_profit_factor": 0.10552756038283317,
+    "names": 14,
+    "live_admission": "blocked_missing_restriction_metadata_and_unpromoted",
+    "schema": "price_only_not_fundamental_validation",
+    "development_data": "reused cache through 2026-10-08; not an untouched forward period"
+  },
+  "quality_continuation": "blocked_no_point_in_time_fundamental_snapshots",
+  "improving_value": "blocked_no_point_in_time_fundamental_snapshots",
+  "promotion_gates": {
+    "min_unique_oos_portfolio_fills": 200,
+    "met": false,
+    "reason": "fundamental families have no point-in-time history; price-only control is not a promoted strategy"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "unique_cap": 150,
+  "india_150_rows": 150,
+  "held_missing_same_vendor_history": "ZENTEC",
+  "replacement": null,
+  "reason": "ZENTEC is a held name and cannot be dropped. A different-vendor history exists but was not merged into the TradingView cache.",
+  "research_only_vendor": "yahoo_chart_ZENTEC_2473_bars_not_used_in_evaluation",
+  "live_data": false
+}

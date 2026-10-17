@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     policy_path = ROOT / args.protocol
     raw = policy_path.read_bytes()
     protocol_hash = hashlib.sha256(raw).hexdigest()
-    out = ROOT / "artifacts" / "v5"
+    out = ROOT / "artifacts" / "v5" / "corrected"
     out.mkdir(parents=True, exist_ok=True)
     (out / "protocol.json").write_text(json.dumps({"sha256": protocol_hash, "path": args.protocol}, indent=2) + "\n")
     events, coverage = price_only_events()
@@ -68,10 +68,15 @@ def main(argv: list[str] | None = None) -> int:
             "long_unfilled": int((events["long_status"] == "unfilled").sum()) if len(events) else 0,
             "long_mean_net_r": None if net.empty else float(net.mean()),
             "long_profit_factor": None if net.empty else _pf(net),
+            "long_wins": int((filled["long_label"] == 1).sum()) if len(filled) else 0,
+            "long_losses": int((filled["long_label"] == 0).sum()) if len(filled) else 0,
             "short_filled": int(short.shape[0]),
             "short_mean_net_r": None if short.empty else float(short.mean()),
+            "short_profit_factor": None if short.empty else _pf(short),
             "names": int(filled["symbol"].nunique()) if len(filled) else 0,
             "live_admission": "blocked_missing_restriction_metadata_and_unpromoted",
+            "schema": "price_only_not_fundamental_validation",
+            "development_data": "reused cache through 2026-10-08; not an untouched forward period",
         },
         "quality_continuation": coverage.get("quality_continuation"),
         "improving_value": coverage.get("improving_value"),
