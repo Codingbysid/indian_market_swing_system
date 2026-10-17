@@ -1,0 +1,54 @@
+{
+  "book_schema": "v5_book",
+  "s3_write": false,
+  "zentec_plan": "PLAN_RECONCILIATION_REQUIRED",
+  "decision": {
+    "intents": [
+      {
+        "action": "HOLD",
+        "symbol": "HAL",
+        "reason": "legacy_profit_only"
+      },
+      {
+        "action": "HOLD",
+        "symbol": "ZENTEC",
+        "reason": "legacy_profit_only"
+      },
+      {
+        "action": "HOLD",
+        "symbol": "CDSL",
+        "reason": "legacy_profit_only"
+      },
+      {
+        "action": "HOLD",
+        "symbol": "BPCL",
+        "reason": "legacy_profit_only"
+      }
+    ],
+    "rejections": [
+      {
+        "reason": "stale_or_unverified_quotes"
+      },
+      {
+        "reason": "missing_restriction_metadata"
+      }
+    ],
+    "writes": 0,
+    "notifications": 0
+  },
+  "research_replay": {
+    "status": "chronological_ledger",
+    "fills": 0,
+    "net_pnl": 0,
+    "profit_factor": null,
+    "final_cash": 5748.0,
+    "max_drawdown": 0.0,
+    "rejections": {
+      "zero_quantity": 15
+    },
+    "admitted": [],
+    "promoted": false,
+    "pnl_timing": "credited_on_exit_date_only"
+  },
+  "promoted": false
+}

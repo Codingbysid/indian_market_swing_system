@@ -1,0 +1,29 @@
+{
+  "s3_write": false,
+  "plan_status": "PLAN_RECONCILIATION_REQUIRED",
+  "proposed_3_3_4_applied": false,
+  "reference_fixture_does_not_overwrite_s3": true,
+  "reference": {
+    "symbol": "ZENTEC",
+    "qty": 10,
+    "avg_cost": 1669.0,
+    "mark_on_screenshot": 1655.7,
+    "as_of": "2026-10-17"
+  },
+  "official_session_bar": {
+    "session": "2026-10-16",
+    "close": 1655.6,
+    "note": "This is an exchange bar, not a fill, and it does not reconstruct the average cost."
+  },
+  "diff": {
+    "saved_tranche_plan": "unknown",
+    "filled_stages": "unknown",
+    "would_apply": null
+  },
+  "broker_records_still_required": [
+    "Each ZENTEC buy fill: date, quantity, price, and charges",
+    "Any ZENTEC sell fill, including the extra quantity beyond the original plan",
+    "Current saved tranche stage quantities and whether any stage already filled",
+    "Contract note or ledger line that ties the ₹1,669.00 average to those fills"
+  ]
+}

@@ -134,9 +134,9 @@ def row_features(
 
 
 def recent_cross(frame: pd.DataFrame, i: int) -> bool:
+    from .strategies import golden_cross_series
+
     if i < 10 or "SMA50" not in frame.columns:
         return False
-    window = frame.iloc[i - 9 : i + 1]
-    prev = window["SMA50"].shift(1)
-    crossed = (window["SMA50"] > window["SMA200"]) & (prev <= window["SMA200"])
-    return bool(crossed.fillna(False).any())
+    crosses = golden_cross_series(frame)
+    return bool(crosses.iloc[i - 9 : i + 1].fillna(False).any())

@@ -1,0 +1,386 @@
+{
+  "policy_changed": false,
+  "cash": 5748.0,
+  "reserve": 1149.6,
+  "position_debit_cap": 2299.2,
+  "trade_stressed_risk": 86.22,
+  "aggregate_stressed_risk": 172.44,
+  "max_new_positions": 2,
+  "loss_latch": 1500,
+  "grid_points": 36,
+  "admitted_points": 0,
+  "admitted_fraction": 0.0,
+  "examples": [
+    {
+      "price": 80,
+      "atr_fraction": 0.015,
+      "stop_distance": 2.4,
+      "gap_buffer": 0.8,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.68,
+      "cost_to_price_risk": 6.532,
+      "buy_fees_one_share": 0.17
+    },
+    {
+      "price": 80,
+      "atr_fraction": 0.02,
+      "stop_distance": 3.2,
+      "gap_buffer": 0.8,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.68,
+      "cost_to_price_risk": 4.899,
+      "buy_fees_one_share": 0.17
+    },
+    {
+      "price": 80,
+      "atr_fraction": 0.03,
+      "stop_distance": 4.8,
+      "gap_buffer": 1.2,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.68,
+      "cost_to_price_risk": 3.266,
+      "buy_fees_one_share": 0.17
+    },
+    {
+      "price": 80,
+      "atr_fraction": 0.04,
+      "stop_distance": 6.4,
+      "gap_buffer": 1.6,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.68,
+      "cost_to_price_risk": 2.45,
+      "buy_fees_one_share": 0.17
+    },
+    {
+      "price": 120,
+      "atr_fraction": 0.015,
+      "stop_distance": 3.6,
+      "gap_buffer": 1.2,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.85,
+      "cost_to_price_risk": 4.402,
+      "buy_fees_one_share": 0.26
+    },
+    {
+      "price": 120,
+      "atr_fraction": 0.02,
+      "stop_distance": 4.8,
+      "gap_buffer": 1.2,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.85,
+      "cost_to_price_risk": 3.301,
+      "buy_fees_one_share": 0.26
+    },
+    {
+      "price": 120,
+      "atr_fraction": 0.03,
+      "stop_distance": 7.2,
+      "gap_buffer": 1.8,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.85,
+      "cost_to_price_risk": 2.201,
+      "buy_fees_one_share": 0.26
+    },
+    {
+      "price": 120,
+      "atr_fraction": 0.04,
+      "stop_distance": 9.6,
+      "gap_buffer": 2.4,
+      "quantity": 0,
+      "one_share_round_trip_fees": 15.85,
+      "cost_to_price_risk": 1.651,
+      "buy_fees_one_share": 0.26
+    },
+    {
+      "price": 200,
+      "atr_fraction": 0.015,
+      "stop_distance": 6.0,
+      "gap_buffer": 2.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.18,
+      "cost_to_price_risk": 2.697,
+      "buy_fees_one_share": 0.44
+    },
+    {
+      "price": 200,
+      "atr_fraction": 0.02,
+      "stop_distance": 8.0,
+      "gap_buffer": 2.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.18,
+      "cost_to_price_risk": 2.023,
+      "buy_fees_one_share": 0.44
+    },
+    {
+      "price": 200,
+      "atr_fraction": 0.03,
+      "stop_distance": 12.0,
+      "gap_buffer": 3.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.18,
+      "cost_to_price_risk": 1.349,
+      "buy_fees_one_share": 0.44
+    },
+    {
+      "price": 200,
+      "atr_fraction": 0.04,
+      "stop_distance": 16.0,
+      "gap_buffer": 4.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.18,
+      "cost_to_price_risk": 1.012,
+      "buy_fees_one_share": 0.44
+    },
+    {
+      "price": 320,
+      "atr_fraction": 0.015,
+      "stop_distance": 9.6,
+      "gap_buffer": 3.2,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.69,
+      "cost_to_price_risk": 1.739,
+      "buy_fees_one_share": 0.7
+    },
+    {
+      "price": 320,
+      "atr_fraction": 0.02,
+      "stop_distance": 12.8,
+      "gap_buffer": 3.2,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.69,
+      "cost_to_price_risk": 1.304,
+      "buy_fees_one_share": 0.7
+    },
+    {
+      "price": 320,
+      "atr_fraction": 0.03,
+      "stop_distance": 19.2,
+      "gap_buffer": 4.8,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.69,
+      "cost_to_price_risk": 0.869,
+      "buy_fees_one_share": 0.7
+    },
+    {
+      "price": 320,
+      "atr_fraction": 0.04,
+      "stop_distance": 25.6,
+      "gap_buffer": 6.4,
+      "quantity": 0,
+      "one_share_round_trip_fees": 16.69,
+      "cost_to_price_risk": 0.652,
+      "buy_fees_one_share": 0.7
+    },
+    {
+      "price": 500,
+      "atr_fraction": 0.015,
+      "stop_distance": 15.0,
+      "gap_buffer": 5.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 17.45,
+      "cost_to_price_risk": 1.163,
+      "buy_fees_one_share": 1.09
+    },
+    {
+      "price": 500,
+      "atr_fraction": 0.02,
+      "stop_distance": 20.0,
+      "gap_buffer": 5.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 17.45,
+      "cost_to_price_risk": 0.873,
+      "buy_fees_one_share": 1.09
+    },
+    {
+      "price": 500,
+      "atr_fraction": 0.03,
+      "stop_distance": 30.0,
+      "gap_buffer": 7.5,
+      "quantity": 0,
+      "one_share_round_trip_fees": 17.45,
+      "cost_to_price_risk": 0.582,
+      "buy_fees_one_share": 1.09
+    },
+    {
+      "price": 500,
+      "atr_fraction": 0.04,
+      "stop_distance": 40.0,
+      "gap_buffer": 10.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 17.45,
+      "cost_to_price_risk": 0.436,
+      "buy_fees_one_share": 1.09
+    },
+    {
+      "price": 800,
+      "atr_fraction": 0.015,
+      "stop_distance": 24.0,
+      "gap_buffer": 8.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 18.72,
+      "cost_to_price_risk": 0.78,
+      "buy_fees_one_share": 1.75
+    },
+    {
+      "price": 800,
+      "atr_fraction": 0.02,
+      "stop_distance": 32.0,
+      "gap_buffer": 8.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 18.72,
+      "cost_to_price_risk": 0.585,
+      "buy_fees_one_share": 1.75
+    },
+    {
+      "price": 800,
+      "atr_fraction": 0.03,
+      "stop_distance": 48.0,
+      "gap_buffer": 12.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 18.72,
+      "cost_to_price_risk": 0.39,
+      "buy_fees_one_share": 1.75
+    },
+    {
+      "price": 800,
+      "atr_fraction": 0.04,
+      "stop_distance": 64.0,
+      "gap_buffer": 16.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 18.72,
+      "cost_to_price_risk": 0.292,
+      "buy_fees_one_share": 1.75
+    },
+    {
+      "price": 1400,
+      "atr_fraction": 0.015,
+      "stop_distance": 42.0,
+      "gap_buffer": 14.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 21.25,
+      "cost_to_price_risk": 0.506,
+      "buy_fees_one_share": 3.06
+    },
+    {
+      "price": 1400,
+      "atr_fraction": 0.02,
+      "stop_distance": 56.0,
+      "gap_buffer": 14.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 21.25,
+      "cost_to_price_risk": 0.38,
+      "buy_fees_one_share": 3.06
+    },
+    {
+      "price": 1400,
+      "atr_fraction": 0.03,
+      "stop_distance": 84.0,
+      "gap_buffer": 21.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 21.25,
+      "cost_to_price_risk": 0.253,
+      "buy_fees_one_share": 3.06
+    },
+    {
+      "price": 1400,
+      "atr_fraction": 0.04,
+      "stop_distance": 112.0,
+      "gap_buffer": 28.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": 21.25,
+      "cost_to_price_risk": 0.19,
+      "buy_fees_one_share": 3.06
+    },
+    {
+      "price": 2300,
+      "atr_fraction": 0.015,
+      "stop_distance": 69.0,
+      "gap_buffer": 23.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 2300,
+      "atr_fraction": 0.02,
+      "stop_distance": 92.0,
+      "gap_buffer": 23.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 2300,
+      "atr_fraction": 0.03,
+      "stop_distance": 138.0,
+      "gap_buffer": 34.5,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 2300,
+      "atr_fraction": 0.04,
+      "stop_distance": 184.0,
+      "gap_buffer": 46.0,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 5040,
+      "atr_fraction": 0.015,
+      "stop_distance": 151.2,
+      "gap_buffer": 50.4,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 5040,
+      "atr_fraction": 0.02,
+      "stop_distance": 201.6,
+      "gap_buffer": 50.4,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 5040,
+      "atr_fraction": 0.03,
+      "stop_distance": 302.4,
+      "gap_buffer": 75.6,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    },
+    {
+      "price": 5040,
+      "atr_fraction": 0.04,
+      "stop_distance": 403.2,
+      "gap_buffer": 100.8,
+      "quantity": 0,
+      "one_share_round_trip_fees": null,
+      "cost_to_price_risk": null,
+      "buy_fees_one_share": null
+    }
+  ],
+  "held_names": {
+    "HAL": "price above the 2299.20 debit cap, quantity 0",
+    "ZENTEC": "legacy holding, no averaging, new lot not admitted on this name",
+    "CDSL": "legacy holding, no averaging",
+    "BPCL": "legacy holding, no averaging"
+  },
+  "conclusion": "The debit cap, the 86.22 stressed-loss cap, the fixed DP charge and the 25 percent cost-to-price-risk filter jointly reject every point in this grid. That is an account-size and policy combination result, not evidence that the strategy rules were loosened or that a larger account would have an edge.",
+  "counterfactual_not_applied": {
+    "label": "not an active policy and not an assumed deposit",
+    "note": "A viable one-share ticket needs price risk large enough that round-trip costs are under 25 percent of that risk, and stressed loss including the gap buffer under 86.22. Fixed DP of 15.34 dominates stops on cheap shares. No cash figure here is added to the book."
+  }
+}

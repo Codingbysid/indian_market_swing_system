@@ -1,0 +1,7 @@
+{
+  "destination": "local_artifacts_only",
+  "s3_write": false,
+  "schedule_created": false,
+  "untouched_forward_sessions": 0,
+  "reason": "protocol was not frozen before an unseen outcome window"
+}

@@ -14,6 +14,44 @@ def sleeve_pnl(nav: float, launch_nav: float, external_inflows: float) -> float:
     return float(nav) - float(launch_nav) - float(external_inflows)
 
 
+def is_latched(book: dict, policy: dict) -> bool:
+    """A rebound or a deposit does not clear a latched pause. Only an explicit resume does."""
+    if book.get("explicit_resume") is True:
+        return False
+    if book.get("circuit_latched") is True:
+        return True
+    pause = float(policy["risk"]["cumulative_net_loss_pause"])
+    pnl = sleeve_pnl(
+        book.get("sleeve_nav", book.get("cash", 0.0)),
+        book.get("launch_nav", book.get("cash", 0.0)),
+        book.get("external_inflows", 0.0),
+    )
+    return math.isfinite(pnl) and pnl <= -pause
+
+
+def open_stressed_risk(book: dict) -> float:
+    total = 0.0
+    for holding in book.get("holdings") or []:
+        if holding.get("classification") != "system_atr":
+            continue
+        if "stressed_risk" not in holding:
+            return float("nan")
+        value = float(holding.get("stressed_risk"))
+        if not math.isfinite(value) or value < 0:
+            return float("nan")
+        total += value
+    for reservation in book.get("reservations") or []:
+        if reservation.get("status") != "open":
+            continue
+        if "stressed_risk" not in reservation:
+            return float("nan")
+        value = float(reservation.get("stressed_risk"))
+        if not math.isfinite(value) or value < 0:
+            return float("nan")
+        total += value
+    return total
+
+
 def limits_for(
     nav: float,
     policy: dict,
@@ -66,9 +104,12 @@ def largest_quantity(
     """Search integers. Fees are recomputed at each quantity, not added after a division."""
     from .costs import buy_fees, round_trip
 
-    if entry <= 0 or not math.isfinite(entry) or gap_buffer < 0 or not math.isfinite(gap_buffer):
+    values = (entry, stop, gap_buffer, cash_left, debit_cap, trade_risk, aggregate_left)
+    if not all(math.isfinite(value) for value in values):
         return 0
-    if gap_buffer == 0 and stop >= entry:
+    if entry <= 0 or stop <= 0 or gap_buffer < 0 or cash_left < 0 or debit_cap < 0 or trade_risk < 0 or aggregate_left < 0:
+        return 0
+    if stop >= entry:
         return 0
     room = min(cash_left, debit_cap)
     if room < entry:

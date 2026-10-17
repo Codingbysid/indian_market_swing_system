@@ -1,0 +1,16 @@
+{
+  "promoted": false,
+  "either_horizon_executable_on_5748": false,
+  "blockers": [
+    "Price-only long mean net R is -1.304 on 15 one-share fills (3 wins, 12 losses), profit factor 0.225.",
+    "Price-only short mean net R is -2.030 on 35 one-share fills, profit factor 0.106.",
+    "Shared cash ledger admitted 0 of those fills under the frozen ₹5,748 caps.",
+    "Feasibility grid admitted 0 of 36 price and ATR points.",
+    "Quality and value families have no point-in-time snapshots.",
+    "Restriction, holiday, and corporate-action metadata are missing.",
+    "No purged-fold model was fit. Logistic, constant-prior, and XGBoost were not promoted.",
+    "No native model exists, so native-versus-JSON parity is not claimed.",
+    "Forward observation was not frozen before outcomes and is not an untouched holdout.",
+    "Promotion gates require 200 out-of-sample portfolio fills, 50 wins, 50 losses, 20 names, and 60 untouched forward sessions."
+  ]
+}

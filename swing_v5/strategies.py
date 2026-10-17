@@ -41,6 +41,13 @@ def quality_continuation(frame: pd.DataFrame, i: int, *, member: bool, rel63: fl
     return close <= ema + atr
 
 
+def golden_cross_series(frame: pd.DataFrame) -> pd.Series:
+    """Crosses are computed on the full series. Previous SMA50 is compared with previous SMA200."""
+    previous_fast = frame["SMA50"].shift(1)
+    previous_slow = frame["SMA200"].shift(1)
+    return (frame["SMA50"] > frame["SMA200"]) & (previous_fast <= previous_slow)
+
+
 def trend_transition(frame: pd.DataFrame, i: int, *, rel63: float) -> bool:
     if i < 220:
         return False
@@ -52,19 +59,36 @@ def trend_transition(frame: pd.DataFrame, i: int, *, rel63: float) -> bool:
         return False
     if sma200 < sma200_prev:
         return False
-    window = frame.iloc[i - 9 : i + 1]
-    prev = window["SMA50"].shift(1)
-    if not bool(((window["SMA50"] > window["SMA200"]) & (prev <= window["SMA200"])).fillna(False).any()):
+    crosses = golden_cross_series(frame)
+    if not bool(crosses.iloc[i - 9 : i + 1].fillna(False).any()):
         return False
     prior_high = float(frame["High"].iloc[i - 20 : i].max())
     vol_med = float(frame["Volume"].iloc[i - 20 : i].median())
     return close > prior_high and vol_med > 0 and float(frame["Volume"].iloc[i]) >= 1.2 * vol_med
 
 
-def improving_value(frame: pd.DataFrame, i: int, *, member: bool, financial: bool, rel63: float, piotroski: float | None) -> bool:
+def improving_value(
+    frame: pd.DataFrame,
+    i: int,
+    *,
+    member: bool,
+    financial: bool,
+    rel63: float,
+    piotroski: float | None,
+    ebit: float | None = None,
+    equity: float | None = None,
+    snapshot_date: str | None = None,
+    signal_date: str | None = None,
+) -> bool:
     if not member or financial or i < 50:
         return False
-    if piotroski is not None and piotroski < 6:
+    if piotroski is None or not _finite(float(piotroski)) or float(piotroski) < 6:
+        return False
+    if ebit is None or equity is None or not _finite(float(ebit)) or not _finite(float(equity)):
+        return False
+    if float(ebit) <= 0 or float(equity) <= 0:
+        return False
+    if not snapshot_date or not signal_date or str(snapshot_date) > str(signal_date):
         return False
     close = float(frame["Close"].iloc[i])
     sma50 = float(frame["SMA50"].iloc[i])
