@@ -1,12 +1,12 @@
-"""Account-size feasibility under the frozen v5 caps. This does not change policy."""
+"""Account-size feasibility. Research scenarios do not change the active policy."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from .costs import buy_fees, round_trip
-from .risk import largest_quantity
+from .costs import buy_fees, fee_components, round_trip
+from .risk import largest_quantity, stressed_loss
 
 ROOT = Path(__file__).resolve().parents[1]
 CASH = 5748.0
@@ -14,6 +14,89 @@ RESERVE = 1149.60
 DEBIT = 2299.20
 TRADE = 86.22
 AGGREGATE = 172.44
+
+
+def analytical_bound(entry: float, distance: float, gap: float, qty: int, *, day: str = "2026-10-16") -> dict:
+    """F <= 0.25R implies R >= 4F, so stressed risk R+G+F is at least 5F+G."""
+    parts = fee_components(entry, entry, qty, entry_day=day, exit_day=day)
+    price_risk = qty * distance
+    fees = parts["total"]
+    gap_loss = qty * gap
+    return {
+        "R": price_risk,
+        "F": fees,
+        "G": gap_loss,
+        "cost_filter": fees <= 0.25 * price_risk if price_risk else False,
+        "R_at_least_4F": price_risk + 1e-9 >= 4 * fees,
+        "stressed": price_risk + gap_loss + fees,
+        "minimum_stressed_if_filter_binds": 5 * fees + gap_loss,
+        "dp": parts["dp"],
+        "slippage": parts["slippage"],
+    }
+
+
+def explain_ticket(
+    entry: float,
+    stop: float,
+    gap: float,
+    *,
+    cash_left: float = CASH - RESERVE,
+    debit_cap: float = DEBIT,
+    trade_risk: float = TRADE,
+    aggregate_left: float = AGGREGATE,
+    day: str = "2026-10-16",
+    apply_cost_filter: bool = True,
+) -> dict:
+    distance = entry - stop
+    if distance <= 0 or entry <= 0:
+        return {"quantity": 0, "binding": "stop_not_below_entry"}
+    room = min(cash_left, debit_cap)
+    max_qty = int(room // entry) if entry <= room else 0
+    if max_qty <= 0:
+        return {"quantity": 0, "binding": "ticket_or_cash", "entry": entry, "distance": distance}
+    passing = []
+    failures = []
+    for qty in range(1, max_qty + 1):
+        parts = fee_components(entry, entry, qty, entry_day=day, exit_day=day)
+        price_risk = qty * distance
+        fees = parts["total"]
+        gap_loss = qty * gap
+        debit = qty * entry + buy_fees(entry, qty, day=day)
+        failed = []
+        if debit > room + 1e-6:
+            failed.append("ticket_or_cash")
+        if apply_cost_filter and fees > 0.25 * price_risk:
+            failed.append("cost_filter")
+        if price_risk + gap_loss + fees > trade_risk + 1e-6:
+            failed.append("trade_risk")
+        if price_risk + gap_loss + fees > aggregate_left + 1e-6:
+            failed.append("aggregate_risk")
+        row = {
+            "quantity": qty,
+            "debit": round(debit, 2),
+            "price_risk": round(price_risk, 2),
+            "fees": round(fees, 2),
+            "slippage": round(parts["slippage"], 2),
+            "dp": round(parts["dp"], 2),
+            "gap_risk": round(gap_loss, 2),
+            "stressed": round(price_risk + gap_loss + fees, 2),
+        }
+        if failed:
+            failures.append({**row, "failed": failed})
+        else:
+            passing.append(row)
+    if not passing:
+        binding = failures[0]["failed"][0] if len(failures) == 1 else "no_positive_quantity"
+        if failures:
+            counts = {}
+            for item in failures:
+                for name in item["failed"]:
+                    counts[name] = counts.get(name, 0) + 1
+            binding = max(counts, key=counts.get)
+        return {"quantity": 0, "binding": binding, "entry": entry, "distance": round(distance, 2), "attempts": failures[:4]}
+    best = passing[-1]
+    best.update({"binding": "admitted", "entry": entry, "distance": round(distance, 2)})
+    return best
 
 
 def admit(price: float, atr_fraction: float, gap_fraction: float) -> dict:

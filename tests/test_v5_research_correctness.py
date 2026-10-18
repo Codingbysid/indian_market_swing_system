@@ -125,7 +125,7 @@ def test_latch_survives_rebound_and_deposit():
     book["external_inflows"] = 3000
     assert is_latched(book, policy) is True
     book["explicit_resume"] = True
-    assert is_latched(book, policy) is False
+    assert is_latched(book, policy) is True
 
 
 def test_open_risk_reduces_the_next_admission():

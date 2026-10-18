@@ -11,7 +11,17 @@ from .execution import reprice
 from .risk import largest_quantity, stressed_loss
 
 
-def replay_ledger(events: pd.DataFrame, *, cash: float = 5748.0, reserve: float = 1149.60, debit_cap: float = 2299.20, trade_risk: float = 86.22, aggregate_cap: float = 172.44) -> dict:
+def replay_ledger(
+    events: pd.DataFrame,
+    *,
+    cash: float = 5748.0,
+    reserve: float = 1149.60,
+    debit_cap: float = 2299.20,
+    trade_risk: float = 86.22,
+    aggregate_cap: float = 172.44,
+    apply_cost_filter: bool = True,
+    max_cost_fraction: float = 0.25,
+) -> dict:
     if events.empty or "entry" not in events.columns or "stop" not in events.columns:
         return {"status": "blocked_missing_price_fields", "fills": 0, "promoted": False}
     work = events.copy()
@@ -69,6 +79,8 @@ def replay_ledger(events: pd.DataFrame, *, cash: float = 5748.0, reserve: float 
                 trade_risk=trade_risk,
                 aggregate_left=aggregate_cap - used,
                 day=str(row.fill_date or row.date),
+                apply_cost_filter=apply_cost_filter,
+                max_cost_fraction=max_cost_fraction,
             )
             if qty <= 0:
                 reject("zero_quantity")
