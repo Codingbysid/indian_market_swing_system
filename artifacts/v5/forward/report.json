@@ -1,0 +1,10 @@
+{
+  "events": 2,
+  "classifications": [
+    "prospective_observation",
+    "retrospective_replay"
+  ],
+  "production_buys": 0,
+  "paper_orders": 0,
+  "note": "Derived from the ledger. Retrospective price-only results are not in this file."
+}

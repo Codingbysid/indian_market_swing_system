@@ -1,56 +1,62 @@
-"""Append-only local paper log. It does not write S3 or send alerts."""
+"""Record a research snapshot. Production eligibility stays disabled."""
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+from swing_v5.forward_log import append_event, classify, event_id, now_iso
+from swing_v5.paper import policy_hash, provenance
 
 ROOT = Path(__file__).resolve().parents[2]
-LOG = ROOT / "artifacts" / "v5" / "forward" / "observations.jsonl"
+LOG = ROOT / "artifacts" / "v5" / "forward" / "ledger.jsonl"
+IST = ZoneInfo("Asia/Kolkata")
 
 
-def observe(as_of: str, screens: dict | None = None) -> dict:
-    record = {
-        "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "as_of": as_of,
-        "destination": "local_artifacts_v5_forward",
-        "production_write": False,
-        "screens": screens or {},
-        "families": {
-            "quality_continuation": {"status": "blocked", "reason": "no_point_in_time_snapshot"},
-            "improving_value": {"status": "blocked", "reason": "no_point_in_time_snapshot"},
-            "trend_transition_price_control": {"status": "not_a_forward_fundamental_observation"},
-        },
-        "missing_metadata": ["holiday_calendar", "corporate_actions", "restriction_status"],
-        "orders": [],
-        "frozen_before_outcome": True,
-    }
-    LOG.parent.mkdir(parents=True, exist_ok=True)
-    with LOG.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(record) + "\n")
-    return record
+def next_execution(created: datetime) -> str | None:
+    if created.weekday() >= 5:
+        days = 7 - created.weekday()
+        session = (created + timedelta(days=days)).replace(hour=9, minute=25, second=0, microsecond=0)
+        return session.isoformat(timespec="seconds")
+    if (created.hour, created.minute) < (9, 25):
+        return created.replace(hour=9, minute=25, second=0, microsecond=0).isoformat(timespec="seconds")
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--as-of", required=True)
+    parser.add_argument("--as-of", default=None)
     args = parser.parse_args(argv)
-    health = ROOT / "artifacts" / "v5" / "provider_health.json"
-    screens = {}
-    if health.exists():
-        raw = json.loads(health.read_text())
-        for name, row in (raw.get("screens") or {}).items():
-            screens[name] = {
-                "status": row.get("status"),
-                "complete": row.get("complete"),
-                "results_found": row.get("results_found"),
-                "first_observed": args.as_of,
-                "historical_backfill": False,
-            }
-    record = observe(args.as_of, screens)
-    print(json.dumps({"appended": str(LOG), "production_write": record["production_write"]}, indent=2))
+    created = now_iso()
+    clock = datetime.now(IST)
+    market_session = None if clock.weekday() >= 5 else clock.date().isoformat()
+    earliest = next_execution(clock)
+    policy = json.loads((ROOT / "config" / "v5" / "research_policy.json").read_text())
+    screen_path = ROOT / "artifacts" / "v5" / "forward" / "screens.json"
+    source = screen_path.read_bytes() if screen_path.exists() else b""
+    record = provenance(
+        requested_as_of=args.as_of,
+        source_hash=hashlib.sha256(source).hexdigest() if source else "",
+        universe_hash=hashlib.sha256((ROOT / "universes" / "india_150.csv").read_bytes()).hexdigest(),
+        strategy_version="qtv_v1_frozen",
+        policy_digest=policy_hash(policy),
+        market_session=market_session,
+        earliest_execution_at=earliest,
+    )
+    record.update({
+        "event_id": event_id("snapshot", record["decision_created_at"], args.as_of or ""),
+        "signals": [],
+        "orders": [],
+        "production_eligibility": "disabled",
+        "classification": classify(created, earliest, requested_as_of=args.as_of),
+        "note": "No equity session is invented on a weekend. Screen membership is first seen at retrieval, not on the prior session.",
+    })
+    saved = append_event(LOG, record)
+    print(json.dumps({"classification": saved["classification"], "market_session": market_session, "production_eligibility": "disabled", "duplicate_skipped": saved.get("duplicate_skipped", False)}, indent=2))
     return 0
 
 

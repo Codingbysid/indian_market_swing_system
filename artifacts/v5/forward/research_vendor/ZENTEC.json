@@ -1,0 +1,11 @@
+{
+  "symbol": "ZENTEC",
+  "vendor": "yahoo_chart",
+  "bars": 2473,
+  "first": "2016-10-17",
+  "last": "2026-10-16",
+  "live_eligible": false,
+  "mixed_into_tradingview_cache": false,
+  "universe_slot": "retained",
+  "reason": "Held name. This file is research-vendor history only."
+}
