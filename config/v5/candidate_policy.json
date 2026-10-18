@@ -1,0 +1,19 @@
+{
+  "version": "v5_candidate_review_only",
+  "status": "inactive",
+  "active": false,
+  "do_not_apply_without_review": true,
+  "cash_reference": 5748,
+  "assume_deposit": false,
+  "loss_latch": 1500,
+  "max_positions": 2,
+  "cash_reserve_fraction": 0.2,
+  "recommendation": "Keep the current reference caps. Do not raise the trade ceiling and do not drop the cost filter on the basis of this study. Higher ceilings can admit more tickets from a losing price-only sample; that is not an edge.",
+  "rule_b_economic_admission": "research_only_until_validated_payoff_exists",
+  "prerequisites": [
+    "User reviews this note",
+    "Point-in-time fundamental snapshots exist before any Q or V claim",
+    "Forward paper log has frozen inputs before outcomes",
+    "Broker fill records for INFY and ZENTEC exist before any book migration"
+  ]
+}

@@ -1,0 +1,1248 @@
+{
+  "active_policy_changed": false,
+  "cash": 5748,
+  "assumption": "no deposit",
+  "rule_A": "F <= 0.25R",
+  "rule_risk": "R + G + F <= trade ceiling",
+  "implication": "If the cost filter binds, R >= 4F and stressed risk is at least 5F + G. Fixed DP makes F large relative to an ordinary rupee stop.",
+  "proof_rows": [
+    {
+      "R": 20,
+      "F": 16.1849624,
+      "G": 5,
+      "cost_filter": false,
+      "R_at_least_4F": false,
+      "stressed": 41.1849624,
+      "minimum_stressed_if_filter_binds": 85.924812,
+      "dp": 15.34,
+      "slippage": 0.4,
+      "identity_holds": true
+    },
+    {
+      "R": 65,
+      "F": 16.1849624,
+      "G": 5,
+      "cost_filter": true,
+      "R_at_least_4F": true,
+      "stressed": 86.1849624,
+      "minimum_stressed_if_filter_binds": 85.924812,
+      "dp": 15.34,
+      "slippage": 0.4,
+      "identity_holds": true
+    },
+    {
+      "R": 80,
+      "F": 18.719849600000003,
+      "G": 20,
+      "cost_filter": true,
+      "R_at_least_4F": true,
+      "stressed": 118.7198496,
+      "minimum_stressed_if_filter_binds": 113.59924800000002,
+      "dp": 15.34,
+      "slippage": 1.6,
+      "identity_holds": true
+    },
+    {
+      "R": 80,
+      "F": 17.0299248,
+      "G": 10,
+      "cost_filter": true,
+      "R_at_least_4F": true,
+      "stressed": 107.0299248,
+      "minimum_stressed_if_filter_binds": 95.149624,
+      "dp": 15.34,
+      "slippage": 0.8,
+      "identity_holds": true
+    }
+  ],
+  "observed_structural": [
+    {
+      "symbol": "APLAPOLLO",
+      "date": "2025-05-12",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 1725.0,
+      "distance": 148.13,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1728.77,
+          "price_risk": 148.13,
+          "fees": 22.63,
+          "slippage": 3.45,
+          "dp": 15.34,
+          "gap_risk": 11.42,
+          "stressed": 182.17,
+          "failed": [
+            "trade_risk",
+            "aggregate_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "GODREJCP",
+      "date": "2023-12-21",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 1076.15,
+      "distance": 62.75,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1078.5,
+          "price_risk": 62.75,
+          "fees": 19.89,
+          "slippage": 2.15,
+          "dp": 15.34,
+          "gap_risk": 5.34,
+          "stressed": 87.97,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 2157.01,
+          "price_risk": 125.5,
+          "fees": 24.43,
+          "slippage": 4.3,
+          "dp": 15.34,
+          "gap_risk": 10.68,
+          "stressed": 160.61,
+          "failed": [
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "CANBK",
+      "date": "2022-09-14",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 51.340002,
+      "distance": 3.99,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 51.45,
+          "price_risk": 3.99,
+          "fees": 15.56,
+          "slippage": 0.1,
+          "dp": 15.34,
+          "gap_risk": 0.56,
+          "stressed": 20.11,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 102.9,
+          "price_risk": 7.99,
+          "fees": 15.77,
+          "slippage": 0.21,
+          "dp": 15.34,
+          "gap_risk": 1.11,
+          "stressed": 24.88,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 154.36,
+          "price_risk": 11.98,
+          "fees": 15.99,
+          "slippage": 0.31,
+          "dp": 15.34,
+          "gap_risk": 1.67,
+          "stressed": 29.64,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 205.81,
+          "price_risk": 15.98,
+          "fees": 16.21,
+          "slippage": 0.41,
+          "dp": 15.34,
+          "gap_risk": 2.23,
+          "stressed": 34.41,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "FEDERALBNK",
+      "date": "2025-06-02",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 207.11,
+      "distance": 10.26,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 207.56,
+          "price_risk": 10.26,
+          "fees": 16.22,
+          "slippage": 0.41,
+          "dp": 15.34,
+          "gap_risk": 1.54,
+          "stressed": 28.02,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 415.13,
+          "price_risk": 20.51,
+          "fees": 17.09,
+          "slippage": 0.83,
+          "dp": 15.34,
+          "gap_risk": 3.09,
+          "stressed": 40.69,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 622.69,
+          "price_risk": 30.77,
+          "fees": 17.97,
+          "slippage": 1.24,
+          "dp": 15.34,
+          "gap_risk": 4.63,
+          "stressed": 53.37,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 830.25,
+          "price_risk": 41.03,
+          "fees": 18.84,
+          "slippage": 1.66,
+          "dp": 15.34,
+          "gap_risk": 6.17,
+          "stressed": 66.04,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "MUTHOOTFIN",
+      "date": "2023-06-13",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 1157.9,
+      "distance": 51.14,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1160.43,
+          "price_risk": 51.14,
+          "fees": 20.23,
+          "slippage": 2.32,
+          "dp": 15.34,
+          "gap_risk": 6.23,
+          "stressed": 77.6,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "SBILIFE",
+      "date": "2025-05-29",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 1825.0,
+      "distance": 87.13,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1828.99,
+          "price_risk": 87.13,
+          "fees": 23.05,
+          "slippage": 3.65,
+          "dp": 15.34,
+          "gap_risk": 15.22,
+          "stressed": 125.4,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "FORTIS",
+      "date": "2022-09-14",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 310.0,
+      "distance": 25.38,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 310.68,
+          "price_risk": 25.38,
+          "fees": 16.65,
+          "slippage": 0.62,
+          "dp": 15.34,
+          "gap_risk": 3.79,
+          "stressed": 45.82,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 621.36,
+          "price_risk": 50.77,
+          "fees": 17.96,
+          "slippage": 1.24,
+          "dp": 15.34,
+          "gap_risk": 7.58,
+          "stressed": 76.31,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 932.03,
+          "price_risk": 76.15,
+          "fees": 19.27,
+          "slippage": 1.86,
+          "dp": 15.34,
+          "gap_risk": 11.37,
+          "stressed": 106.79,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 1242.71,
+          "price_risk": 101.53,
+          "fees": 20.58,
+          "slippage": 2.48,
+          "dp": 15.34,
+          "gap_risk": 15.16,
+          "stressed": 137.27,
+          "failed": [
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "date": "2025-03-20",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 1052.0,
+      "distance": 60.18,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1054.3,
+          "price_risk": 60.18,
+          "fees": 19.78,
+          "slippage": 2.1,
+          "dp": 15.34,
+          "gap_risk": 11.11,
+          "stressed": 91.07,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 2108.6,
+          "price_risk": 120.36,
+          "fees": 24.23,
+          "slippage": 4.21,
+          "dp": 15.34,
+          "gap_risk": 22.21,
+          "stressed": 166.8,
+          "failed": [
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2023-05-16",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 240.95,
+      "distance": 11.35,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 241.48,
+          "price_risk": 11.35,
+          "fees": 16.36,
+          "slippage": 0.48,
+          "dp": 15.34,
+          "gap_risk": 1.18,
+          "stressed": 28.88,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 482.95,
+          "price_risk": 22.69,
+          "fees": 17.38,
+          "slippage": 0.96,
+          "dp": 15.34,
+          "gap_risk": 2.36,
+          "stressed": 42.43,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 724.43,
+          "price_risk": 34.04,
+          "fees": 18.39,
+          "slippage": 1.45,
+          "dp": 15.34,
+          "gap_risk": 3.54,
+          "stressed": 55.97,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 965.91,
+          "price_risk": 45.38,
+          "fees": 19.41,
+          "slippage": 1.93,
+          "dp": 15.34,
+          "gap_risk": 4.72,
+          "stressed": 69.51,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "COALINDIA",
+      "date": "2023-05-29",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 246.25,
+      "distance": 10.36,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 246.79,
+          "price_risk": 10.36,
+          "fees": 16.38,
+          "slippage": 0.49,
+          "dp": 15.34,
+          "gap_risk": 1.25,
+          "stressed": 27.99,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 493.58,
+          "price_risk": 20.72,
+          "fees": 17.42,
+          "slippage": 0.98,
+          "dp": 15.34,
+          "gap_risk": 2.51,
+          "stressed": 40.65,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 740.37,
+          "price_risk": 31.08,
+          "fees": 18.46,
+          "slippage": 1.48,
+          "dp": 15.34,
+          "gap_risk": 3.76,
+          "stressed": 53.3,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 987.15,
+          "price_risk": 41.44,
+          "fees": 19.5,
+          "slippage": 1.97,
+          "dp": 15.34,
+          "gap_risk": 5.01,
+          "stressed": 65.95,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "NTPC",
+      "date": "2026-02-20",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 374.0,
+      "distance": 15.46,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 374.82,
+          "price_risk": 15.46,
+          "fees": 16.92,
+          "slippage": 0.75,
+          "dp": 15.34,
+          "gap_risk": 3.38,
+          "stressed": 35.75,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 749.64,
+          "price_risk": 30.92,
+          "fees": 18.5,
+          "slippage": 1.5,
+          "dp": 15.34,
+          "gap_risk": 6.75,
+          "stressed": 56.17,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 1124.45,
+          "price_risk": 46.37,
+          "fees": 20.08,
+          "slippage": 2.24,
+          "dp": 15.34,
+          "gap_risk": 10.13,
+          "stressed": 76.58,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 1499.27,
+          "price_risk": 61.83,
+          "fees": 21.66,
+          "slippage": 2.99,
+          "dp": 15.34,
+          "gap_risk": 13.51,
+          "stressed": 97.0,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "OBEROIRLTY",
+      "date": "2022-09-14",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 1070.8,
+      "distance": 84.15,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1073.14,
+          "price_risk": 84.15,
+          "fees": 19.86,
+          "slippage": 2.14,
+          "dp": 15.34,
+          "gap_risk": 14.44,
+          "stressed": 118.46,
+          "failed": [
+            "trade_risk"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 2146.28,
+          "price_risk": 168.31,
+          "fees": 24.39,
+          "slippage": 4.28,
+          "dp": 15.34,
+          "gap_risk": 28.89,
+          "stressed": 221.58,
+          "failed": [
+            "trade_risk",
+            "aggregate_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "symbol": "TATACOMM",
+      "date": "2026-06-22",
+      "kind": "observed_structural_stop",
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 2076.0,
+      "distance": 193.84,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 2080.54,
+          "price_risk": 193.84,
+          "fees": 24.11,
+          "slippage": 4.15,
+          "dp": 15.34,
+          "gap_risk": 24.74,
+          "stressed": 242.69,
+          "failed": [
+            "trade_risk",
+            "aggregate_risk"
+          ]
+        }
+      ]
+    }
+  ],
+  "synthetic_boundary": [
+    {
+      "kind": "synthetic_boundary",
+      "label": "short_floor_100",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 100,
+      "distance": 3.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 100.22,
+          "price_risk": 3.0,
+          "fees": 15.76,
+          "slippage": 0.2,
+          "dp": 15.34,
+          "gap_risk": 1.0,
+          "stressed": 19.76,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 200.44,
+          "price_risk": 6.0,
+          "fees": 16.18,
+          "slippage": 0.4,
+          "dp": 15.34,
+          "gap_risk": 2.0,
+          "stressed": 24.18,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 300.66,
+          "price_risk": 9.0,
+          "fees": 16.61,
+          "slippage": 0.6,
+          "dp": 15.34,
+          "gap_risk": 3.0,
+          "stressed": 28.61,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 400.87,
+          "price_risk": 12.0,
+          "fees": 17.03,
+          "slippage": 0.8,
+          "dp": 15.34,
+          "gap_risk": 4.0,
+          "stressed": 33.03,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "long_floor_100",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 100,
+      "distance": 4.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 100.22,
+          "price_risk": 4.0,
+          "fees": 15.76,
+          "slippage": 0.2,
+          "dp": 15.34,
+          "gap_risk": 1.0,
+          "stressed": 20.76,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 200.44,
+          "price_risk": 8.0,
+          "fees": 16.18,
+          "slippage": 0.4,
+          "dp": 15.34,
+          "gap_risk": 2.0,
+          "stressed": 26.18,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 300.66,
+          "price_risk": 12.0,
+          "fees": 16.61,
+          "slippage": 0.6,
+          "dp": 15.34,
+          "gap_risk": 3.0,
+          "stressed": 31.61,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 400.87,
+          "price_risk": 16.0,
+          "fees": 17.03,
+          "slippage": 0.8,
+          "dp": 15.34,
+          "gap_risk": 4.0,
+          "stressed": 37.03,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "short_floor_300",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 300,
+      "distance": 9.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 300.66,
+          "price_risk": 9.0,
+          "fees": 16.61,
+          "slippage": 0.6,
+          "dp": 15.34,
+          "gap_risk": 3.0,
+          "stressed": 28.61,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 601.31,
+          "price_risk": 18.0,
+          "fees": 17.87,
+          "slippage": 1.2,
+          "dp": 15.34,
+          "gap_risk": 6.0,
+          "stressed": 41.87,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 901.97,
+          "price_risk": 27.0,
+          "fees": 19.14,
+          "slippage": 1.8,
+          "dp": 15.34,
+          "gap_risk": 9.0,
+          "stressed": 55.14,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 1202.62,
+          "price_risk": 36.0,
+          "fees": 20.41,
+          "slippage": 2.4,
+          "dp": 15.34,
+          "gap_risk": 12.0,
+          "stressed": 68.41,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "long_floor_300",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 300,
+      "distance": 12.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 300.66,
+          "price_risk": 12.0,
+          "fees": 16.61,
+          "slippage": 0.6,
+          "dp": 15.34,
+          "gap_risk": 3.0,
+          "stressed": 31.61,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 601.31,
+          "price_risk": 24.0,
+          "fees": 17.87,
+          "slippage": 1.2,
+          "dp": 15.34,
+          "gap_risk": 6.0,
+          "stressed": 47.87,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 3,
+          "debit": 901.97,
+          "price_risk": 36.0,
+          "fees": 19.14,
+          "slippage": 1.8,
+          "dp": 15.34,
+          "gap_risk": 9.0,
+          "stressed": 64.14,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 4,
+          "debit": 1202.62,
+          "price_risk": 48.0,
+          "fees": 20.41,
+          "slippage": 2.4,
+          "dp": 15.34,
+          "gap_risk": 12.0,
+          "stressed": 80.41,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "short_floor_800",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 800,
+      "distance": 24.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 801.75,
+          "price_risk": 24.0,
+          "fees": 18.72,
+          "slippage": 1.6,
+          "dp": 15.34,
+          "gap_risk": 8.0,
+          "stressed": 50.72,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 1603.5,
+          "price_risk": 48.0,
+          "fees": 22.1,
+          "slippage": 3.2,
+          "dp": 15.34,
+          "gap_risk": 16.0,
+          "stressed": 86.1,
+          "failed": [
+            "cost_filter"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "long_floor_800",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 800,
+      "distance": 32.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 801.75,
+          "price_risk": 32.0,
+          "fees": 18.72,
+          "slippage": 1.6,
+          "dp": 15.34,
+          "gap_risk": 8.0,
+          "stressed": 58.72,
+          "failed": [
+            "cost_filter"
+          ]
+        },
+        {
+          "quantity": 2,
+          "debit": 1603.5,
+          "price_risk": 64.0,
+          "fees": 22.1,
+          "slippage": 3.2,
+          "dp": 15.34,
+          "gap_risk": 16.0,
+          "stressed": 102.1,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "short_floor_1500",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "cost_filter",
+      "entry": 1500,
+      "distance": 67.5,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1503.28,
+          "price_risk": 67.5,
+          "fees": 21.68,
+          "slippage": 3.0,
+          "dp": 15.34,
+          "gap_risk": 22.5,
+          "stressed": 111.68,
+          "failed": [
+            "cost_filter",
+            "trade_risk"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "synthetic_boundary",
+      "label": "long_floor_1500",
+      "not_a_recommended_trade": true,
+      "quantity": 0,
+      "binding": "trade_risk",
+      "entry": 1500,
+      "distance": 90.0,
+      "attempts": [
+        {
+          "quantity": 1,
+          "debit": 1503.28,
+          "price_risk": 90.0,
+          "fees": 21.68,
+          "slippage": 3.0,
+          "dp": 15.34,
+          "gap_risk": 22.5,
+          "stressed": 134.18,
+          "failed": [
+            "trade_risk"
+          ]
+        }
+      ]
+    }
+  ],
+  "one_share_expectancy": {
+    "long": {
+      "n": 15,
+      "names": 14,
+      "gross_price_r_mean": -0.3618018666424952,
+      "one_share_net_r_mean": -1.3040411259138276,
+      "one_share_net_pnl": -503.0146071817766
+    },
+    "short": {
+      "n": 35,
+      "names": 27,
+      "gross_price_r_mean": -0.22524937403282952,
+      "one_share_net_r_mean": -2.0304096113527197,
+      "one_share_net_pnl": null
+    },
+    "note": "Gross price R ignores costs. One-share net R includes fixed DP. Neither is a sized portfolio result."
+  },
+  "scenarios": [
+    {
+      "trade_risk": 86.22,
+      "aggregate_risk": 172.44,
+      "cost_filter": true,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 17.4,
+      "active": true,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 0,
+        "net_pnl": 0,
+        "profit_factor": null,
+        "final_cash": 5748.0,
+        "max_drawdown": 0.0,
+        "rejections": {
+          "zero_quantity": 15
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "no admitted round trip"
+      }
+    },
+    {
+      "trade_risk": 86.22,
+      "aggregate_risk": 172.44,
+      "cost_filter": false,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 17.4,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 6,
+        "net_pnl": -178.6,
+        "profit_factor": 0.4265942862247154,
+        "final_cash": 5569.4,
+        "max_drawdown": -0.03868997912317329,
+        "rejections": {
+          "zero_quantity": 7,
+          "slots": 1,
+          "already_open": 1
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "admitted net P&L is not positive"
+      }
+    },
+    {
+      "trade_risk": 100,
+      "aggregate_risk": 200,
+      "cost_filter": true,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 15.0,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 0,
+        "net_pnl": 0,
+        "profit_factor": null,
+        "final_cash": 5748.0,
+        "max_drawdown": 0.0,
+        "rejections": {
+          "zero_quantity": 15
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "no admitted round trip"
+      }
+    },
+    {
+      "trade_risk": 100,
+      "aggregate_risk": 200,
+      "cost_filter": false,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 15.0,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 8,
+        "net_pnl": -220.05,
+        "profit_factor": 0.5775540676390291,
+        "final_cash": 5527.95,
+        "max_drawdown": -0.04719101510926027,
+        "rejections": {
+          "zero_quantity": 5,
+          "slots": 1,
+          "already_open": 1
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "admitted net P&L is not positive"
+      }
+    },
+    {
+      "trade_risk": 125,
+      "aggregate_risk": 250,
+      "cost_filter": true,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 12.0,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 2,
+        "net_pnl": -211.66,
+        "profit_factor": 0.0,
+        "final_cash": 5536.34,
+        "max_drawdown": -0.03682324286708416,
+        "rejections": {
+          "zero_quantity": 13
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "admitted net P&L is not positive"
+      }
+    },
+    {
+      "trade_risk": 125,
+      "aggregate_risk": 250,
+      "cost_filter": false,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 12.0,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 8,
+        "net_pnl": -313.36,
+        "profit_factor": 0.48981053879475445,
+        "final_cash": 5434.64,
+        "max_drawdown": -0.055615866388309065,
+        "rejections": {
+          "zero_quantity": 5,
+          "slots": 1,
+          "already_open": 1
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "admitted net P&L is not positive"
+      }
+    },
+    {
+      "trade_risk": 150,
+      "aggregate_risk": 300,
+      "cost_filter": true,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 10.0,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 4,
+        "net_pnl": -416.51,
+        "profit_factor": 0.0,
+        "final_cash": 5331.49,
+        "max_drawdown": -0.07246172581767574,
+        "rejections": {
+          "zero_quantity": 9,
+          "slots": 1,
+          "already_open": 1
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "admitted net P&L is not positive"
+      }
+    },
+    {
+      "trade_risk": 150,
+      "aggregate_risk": 300,
+      "cost_filter": false,
+      "loss_latch": 1500,
+      "full_losses_to_latch": 10.0,
+      "active": false,
+      "long_ledger": {
+        "status": "chronological_ledger",
+        "fills": 9,
+        "net_pnl": -526.37,
+        "profit_factor": 0.36368289124244924,
+        "final_cash": 5221.63,
+        "max_drawdown": -0.09157446068197628,
+        "rejections": {
+          "zero_quantity": 4,
+          "slots": 1,
+          "already_open": 1
+        },
+        "promoted": false,
+        "pnl_timing": "credited_on_exit_date_only",
+        "qualified": false,
+        "reason": "admitted net P&L is not positive"
+      }
+    }
+  ],
+  "rule_B": {
+    "status": "research_only",
+    "reason": "No validated conditional payoff or calibrated probability exists, so economic admission was not run."
+  }
+}

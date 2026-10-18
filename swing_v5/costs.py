@@ -25,6 +25,8 @@ TARIFF = Tariff(effective_from="2026-01-01")
 
 
 def tariff_as_of(day: str) -> Tariff:
+    if not isinstance(day, str) or len(day) < 10:
+        raise ValueError("tariff date required")
     if day < TARIFF.effective_from:
         return Tariff(
             effective_from="unknown_before_2026",
@@ -58,6 +60,36 @@ def sell_fees(price: float, qty: int, *, day: str, slippage_bps: float = 10.0) -
     slip = (slippage_bps / 10000.0) * notional
     dp = tariff.dp_per_scrip_sell
     return tariff.stt * notional + exch + sebi + brokerage + gst + dp + slip
+
+
+def fee_components(entry: float, exit_px: float, qty: int, *, entry_day: str, exit_day: str, slippage_bps: float = 10.0, charge_dp: bool = True) -> dict:
+    """DP is once per scrip sale, not once per share. Slippage is in the fee total, not in the prices."""
+    buy = tariff_as_of(entry_day)
+    sell = tariff_as_of(exit_day)
+    buy_notional = max(entry, 0.0) * max(int(qty), 0)
+    sell_notional = max(exit_px, 0.0) * max(int(qty), 0)
+    stt = buy.stt * buy_notional + sell.stt * sell_notional
+    exch = buy.nse_txn * buy_notional + sell.nse_txn * sell_notional
+    sebi = buy.sebi * buy_notional + sell.sebi * sell_notional
+    brokerage = buy.brokerage * buy_notional + sell.brokerage * sell_notional
+    gst = buy.gst * (buy.nse_txn * buy_notional + buy.sebi * buy_notional + buy.brokerage * buy_notional)
+    gst += sell.gst * (sell.nse_txn * sell_notional + sell.sebi * sell_notional + sell.brokerage * sell_notional)
+    stamp = buy.stamp_buy * buy_notional
+    dp = sell.dp_per_scrip_sell if charge_dp and qty > 0 else 0.0
+    slippage = (slippage_bps / 10000.0) * (buy_notional + sell_notional)
+    total = stt + exch + sebi + brokerage + gst + stamp + dp + slippage
+    return {
+        "stt": stt,
+        "exchange": exch,
+        "sebi": sebi,
+        "gst": gst,
+        "stamp": stamp,
+        "dp": dp,
+        "slippage": slippage,
+        "total": total,
+        "buy_tariff": buy.approximation,
+        "sell_tariff": sell.approximation,
+    }
 
 
 def round_trip(entry: float, exit_px: float, qty: int, *, day: str, slippage_bps: float = 10.0) -> float:
