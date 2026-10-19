@@ -1,62 +1,59 @@
-"""Record a research snapshot. Production eligibility stays disabled."""
+"""Research forward CLI. It evaluates when inputs exist and stays disabled for production."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
-from swing_v5.forward_log import append_event, classify, event_id, now_iso
-from swing_v5.paper import policy_hash, provenance
+from swing_v5.execution import label_trade
+from swing_v5.pipeline import run_research
+from swing_v5.research_ledger import ResearchLedger
+from swing_v5.sessions import IST
 
 ROOT = Path(__file__).resolve().parents[2]
-LOG = ROOT / "artifacts" / "v5" / "forward" / "ledger.jsonl"
-IST = ZoneInfo("Asia/Kolkata")
-
-
-def next_execution(created: datetime) -> str | None:
-    if created.weekday() >= 5:
-        days = 7 - created.weekday()
-        session = (created + timedelta(days=days)).replace(hour=9, minute=25, second=0, microsecond=0)
-        return session.isoformat(timespec="seconds")
-    if (created.hour, created.minute) < (9, 25):
-        return created.replace(hour=9, minute=25, second=0, microsecond=0).isoformat(timespec="seconds")
-    return None
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--as-of", default=None)
+    parser.add_argument("--clock", required=True, help="Timezone-aware ISO clock injected for this run")
+    parser.add_argument("--fixture", required=True)
+    parser.add_argument("--ledger", required=True)
+    parser.add_argument("--policy", default="config/v5/research_policy.json")
+    parser.add_argument("--advance", action="store_true")
     args = parser.parse_args(argv)
-    created = now_iso()
-    clock = datetime.now(IST)
-    market_session = None if clock.weekday() >= 5 else clock.date().isoformat()
-    earliest = next_execution(clock)
-    policy = json.loads((ROOT / "config" / "v5" / "research_policy.json").read_text())
-    screen_path = ROOT / "artifacts" / "v5" / "forward" / "screens.json"
-    source = screen_path.read_bytes() if screen_path.exists() else b""
-    record = provenance(
-        requested_as_of=args.as_of,
-        source_hash=hashlib.sha256(source).hexdigest() if source else "",
-        universe_hash=hashlib.sha256((ROOT / "universes" / "india_150.csv").read_bytes()).hexdigest(),
-        strategy_version="qtv_v1_frozen",
-        policy_digest=policy_hash(policy),
-        market_session=market_session,
-        earliest_execution_at=earliest,
-    )
-    record.update({
-        "event_id": event_id("snapshot", record["decision_created_at"], args.as_of or ""),
-        "signals": [],
-        "orders": [],
-        "production_eligibility": "disabled",
-        "classification": classify(created, earliest, requested_as_of=args.as_of),
-        "note": "No equity session is invented on a weekend. Screen membership is first seen at retrieval, not on the prior session.",
-    })
-    saved = append_event(LOG, record)
-    print(json.dumps({"classification": saved["classification"], "market_session": market_session, "production_eligibility": "disabled", "duplicate_skipped": saved.get("duplicate_skipped", False)}, indent=2))
+    clock = datetime.fromisoformat(args.clock)
+    if clock.tzinfo is None:
+        clock = clock.replace(tzinfo=IST)
+    bundle = json.loads(Path(args.fixture).read_text())
+    policy = json.loads((ROOT / args.policy).read_text())
+    ledger = ResearchLedger(Path(args.ledger))
+    if args.advance:
+        import pandas as pd
+
+        frame = pd.DataFrame(bundle["prices"])
+        outcome = label_trade(frame, int(bundle.get("signal_index", len(frame) - 2)), horizon="long", qty=1)
+        outcome["execution_proxy"] = "next_session_open_not_verified_0925"
+        logical = __import__("swing_v5.research_ledger", fromlist=["logical_id"]).logical_id(
+            {"run": "paper_exit", "symbol": (bundle.get("identity") or {}).get("nse_symbol"), "signal_index": bundle.get("signal_index")}
+        )
+        stored = ledger.append(logical, outcome)
+        print(json.dumps({"logical_id": logical, "status": outcome.get("status"), "duplicate_skipped": stored["duplicate_skipped"], "execution_proxy": outcome["execution_proxy"]}, indent=2))
+        return 0
+    result = run_research(clock, bundle, ledger, policy)
+    payload = result["payload"]
+    print(json.dumps({
+        "logical_id": result["logical_id"],
+        "duplicate_skipped": result["duplicate_skipped"],
+        "evaluated": payload["evaluated"],
+        "evaluation_stage": payload["evaluation_stage"],
+        "price_session": payload["price_session"],
+        "earliest_execution_at": payload["earliest_execution_at"],
+        "phase": payload["phase"],
+        "paper_orders": len(payload["paper_orders"]),
+        "production_eligibility": payload["production_eligibility"],
+    }, indent=2))
     return 0
 
 

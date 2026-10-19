@@ -20,6 +20,8 @@ backtest/artifacts/v3/events.csv
 !backtest/artifacts/v3/model.candidate.xgb.json
 dist/
 artifacts/v5/raw/
+*.sqlite
+*.sqlite-journal
 backtest/artifacts/v4/probe_*.txt
 backtest/artifacts/v4/events.csv
 backtest/artifacts/v4/oof_predictions.csv

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 
 from .decision import evaluate
-from .execution import label_trade
+from .execution import label_trade, stop_distance
 from .forward_log import classify, event_id, now_iso
 from .risk import is_latched, largest_quantity, limits_for, sleeve_pnl
 from .strategies import improving_value, quality_continuation, trend_transition
@@ -50,9 +50,19 @@ def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: flo
         return {"action": "DETECTION", "paper_action": "REJECTED", "production_action": "DISABLED", "funnel": funnel}
     price = float(frame["Close"].iloc[index])
     atr = float(frame["ATR"].iloc[index])
-    stop = price - (1.5 if family == "quality_continuation" else 2.0) * atr
+    lookback = 5 if family == "quality_continuation" else 10
+    prior_low = float(frame["Low"].iloc[index - lookback + 1 : index + 1].min())
+    distance = stop_distance(
+        price, atr, prior_low,
+        atr_mult=1.5 if family == "quality_continuation" else 2.0,
+        max_mult=2.5 if family == "quality_continuation" else 3.0,
+    )
+    if distance is None:
+        funnel["admission"] = "stop_wider_than_strategy_cap"
+        return {"action": "DETECTION", "paper_action": "REJECTED", "production_action": "DISABLED", "funnel": funnel}
+    stop = price - distance
     qty = largest_quantity(
-        entry=price, stop=stop, gap_buffer=0.5 * atr,
+        entry=price, stop=stop, gap_buffer=max(0.5 * atr, float(frame.attrs.get("gap_buffer", 0.5 * atr))),
         cash_left=max(0.0, cash - limits["reserve"]), debit_cap=limits["position_debit_cap"],
         trade_risk=limits["trade_risk"], aggregate_left=limits["aggregate_risk"],
         day=signal_date or "2026-10-16",
