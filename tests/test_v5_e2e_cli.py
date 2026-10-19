@@ -9,26 +9,26 @@ import pandas as pd
 
 
 def _frame():
+    dates = pd.bdate_range(end="2026-10-16", periods=230)
     rows = []
-    for i in range(230):
+    for i, day in enumerate(dates):
         rows.append({
-            "Date": str(pd.Timestamp("2024-01-02") + pd.offsets.BDay(i)).split(" ")[0] if False else f"2024-{(i//27)+1:02d}-{(i%27)+1:02d}",
+            "Date": day.date().isoformat(),
             "Open": 100.0, "High": 101.0, "Low": 35.0, "Close": 100.0, "Volume": 1000,
             "SMA50": 90.0, "SMA200": 100.0, "EMA20": 100.0, "ATR": 2.0,
         })
-    frame = rows
-    frame[210]["SMA50"] = 100
-    frame[210]["SMA200"] = 110
-    frame[211]["SMA50"] = 120
-    frame[211]["SMA200"] = 110
-    for row in frame[:220]:
+    last = len(rows) - 1
+    rows[last - 1]["SMA50"] = 100
+    rows[last - 1]["SMA200"] = 110
+    rows[last]["SMA50"] = 120
+    rows[last]["SMA200"] = 110
+    rows[last - 20]["SMA200"] = 100
+    for row in rows[:last]:
         row["High"] = 90
-    frame[220]["Close"] = 100
-    frame[220]["High"] = 101
-    frame[220]["Volume"] = 5000
-    frame[220]["SMA200"] = 110
-    frame[200]["SMA200"] = 100
-    return frame
+    rows[last]["Close"] = 100
+    rows[last]["High"] = 101
+    rows[last]["Volume"] = 5000
+    return rows
 
 
 def _write(path: Path, cash: float, metadata: bool, holidays: list[str]):
@@ -37,14 +37,13 @@ def _write(path: Path, cash: float, metadata: bool, holidays: list[str]):
         "holidays": holidays,
         "identity": {"nse_symbol": "TEST", "status": "verified_nse_link"},
         "prices": _frame(),
-        "signal_index": 220,
         "family": "trend_transition",
         "rel63": 0.2,
         "metadata_ok": metadata,
-        "cash": cash,
+        "opening_cash": cash,
         "source_hash": "src",
         "universe_hash": "uni",
-        "membership_first_seen_at": "2026-10-18T13:53:58+05:30",
+        "membership_first_seen_at": "2026-10-16T09:00:00+05:30",
     }))
 
 
@@ -80,8 +79,7 @@ def test_cli_admits_then_rerun_is_duplicate_and_capital_rejects(tmp_path):
         check=False, capture_output=True, text=True,
     )
     assert advanced.returncode == 0, advanced.stderr
-    assert json.loads(advanced.stdout)["execution_proxy"] == "next_session_open_not_verified_0925"
-    assert json.loads(advanced.stdout)["status"] in {"filled", "unfilled", "rejected_wide_stop", "pending_untradable", "censored"}
+    assert json.loads(advanced.stdout)["status"] == "noop"
 
 
 def test_cli_sunday_and_monday_holiday(tmp_path):

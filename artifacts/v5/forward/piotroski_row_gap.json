@@ -1,0 +1,16 @@
+{
+  "reported_results": 554,
+  "table_rows_parsed": 554,
+  "non_identifying_slug": "/company/id/",
+  "rows": [
+    {
+      "page": "page-6-396c46e19a15.html",
+      "row": "137. Fusion CX Ltd 24.81 4172.01 27.39 9.00"
+    },
+    {
+      "page": "page-23-1afbeed92baa.html",
+      "row": "554. Paras Healthcare 171.31 7498.34 11.82 8.00"
+    }
+  ],
+  "conclusion": "Both missing unique ids are present as table rows. They share the non-identifying slug id, so unique company hrefs are 552. The screen stays incomplete."
+}

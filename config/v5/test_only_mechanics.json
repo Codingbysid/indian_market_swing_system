@@ -1,0 +1,22 @@
+{
+  "version": "test_only_mechanics_not_a_live_policy",
+  "status": "test_only",
+  "families": {
+    "quality_continuation": {"status": "research"},
+    "trend_transition": {"status": "research"},
+    "improving_value": {"status": "research"}
+  },
+  "risk": {
+    "cash_reserve_fraction": 0.2,
+    "position_debit_fraction": 0.4,
+    "max_new_and_pending_positions": 2,
+    "trade_risk_fraction": 1.0,
+    "trade_risk_rupee_cap": 500,
+    "aggregate_risk_fraction": 1.0,
+    "aggregate_risk_rupee_cap": 50,
+    "cumulative_net_loss_pause": 1500,
+    "loss_headroom_trade_divisor": 1,
+    "loss_headroom_aggregate_fraction": 1.0,
+    "max_cost_fraction_initial_price_risk": 1.0
+  }
+}

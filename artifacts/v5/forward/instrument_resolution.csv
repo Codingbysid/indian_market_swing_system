@@ -1,0 +1,13 @@
+company_id,status,nse_symbol,candidate_symbols,bse_code,page_isin,official_isin,evidence,retrieved_at,official_session,official_file_sha256,source_url
+KEN,unresolved,,['KEN'],,,,nse_link_absent_from_official_eq_file,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/KEN/
+CMLL,verified_nse,CMLL,['CMLL'],544833,,INE11XY01018,nse_equity_link_and_official_symbol_isin_not_on_page,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/CMLL/
+UWCSL,unresolved,,['UWCSL'],,,,nse_link_absent_from_official_eq_file,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/UWCSL/
+SANGANI,unresolved,,['SANGANI'],,,,nse_link_absent_from_official_eq_file,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/SANGANI/
+SUNTV,verified_nse,SUNTV,['SUNTV'],532733,,INE424H01027,nse_equity_link_and_official_symbol_isin_not_on_page,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/SUNTV/
+541444,fetch_failed,,[],,,,HTTPError,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/541444/
+531994,verified_bse_only,,[],531994,,,no_nse_equity_link,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/531994/
+VHL,fetch_failed,,[],,,,HTTPError,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/VHL/
+542910,verified_bse_only,,[],542910,,,no_nse_equity_link,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/542910/
+SABAR,fetch_failed,,[],,,,HTTPError,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/SABAR/
+ZOTA,verified_nse,ZOTA,['ZOTA'],,,INE358U01012,nse_equity_link_and_official_symbol_isin_not_on_page,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/ZOTA/
+MOMSBELIEF,fetch_failed,,[],,,,HTTPError,2026-10-19T12:01:27+05:30,2026-10-16,d0cf89a384e3f27af915585fa76f5c4215dab9bece6be95437f813ab40cb37c6,https://www.screener.in/company/MOMSBELIEF/

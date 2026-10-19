@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 
+from .costs import round_trip
 from .decision import evaluate
 from .execution import label_trade, stop_distance
 from .forward_log import classify, event_id, now_iso
@@ -15,7 +16,7 @@ def policy_hash(policy: dict) -> str:
     return hashlib.sha256(repr(sorted(policy.get("risk", {}).items())).encode()).hexdigest()[:16]
 
 
-def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: float, metadata_ok: bool, mode: str, cash: float, policy: dict, piotroski=None, ebit=None, equity=None, snapshot_date=None, signal_date=None) -> dict:
+def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: float, metadata_ok: bool, mode: str, cash: float, policy: dict, piotroski=None, ebit=None, equity=None, snapshot_date=None, signal_date=None, aggregate_left: float | None = None) -> dict:
     if family == "quality_continuation":
         detected = quality_continuation(frame, index, member=member, rel63=rel63)
     elif family == "trend_transition":
@@ -61,11 +62,13 @@ def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: flo
         funnel["admission"] = "stop_wider_than_strategy_cap"
         return {"action": "DETECTION", "paper_action": "REJECTED", "production_action": "DISABLED", "funnel": funnel}
     stop = price - distance
+    gap = max(0.5 * atr, float(frame.attrs.get("gap_buffer", 0.5 * atr)))
     qty = largest_quantity(
-        entry=price, stop=stop, gap_buffer=max(0.5 * atr, float(frame.attrs.get("gap_buffer", 0.5 * atr))),
+        entry=price, stop=stop, gap_buffer=gap,
         cash_left=max(0.0, cash - limits["reserve"]), debit_cap=limits["position_debit_cap"],
-        trade_risk=limits["trade_risk"], aggregate_left=limits["aggregate_risk"],
+        trade_risk=limits["trade_risk"], aggregate_left=limits["aggregate_risk"] if aggregate_left is None else min(limits["aggregate_risk"], aggregate_left),
         day=signal_date or "2026-10-16",
+        max_cost_fraction=float(policy["risk"].get("max_cost_fraction_initial_price_risk", 0.25)),
     )
     funnel["quantity"] = qty
     if qty <= 0:
@@ -76,7 +79,17 @@ def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: flo
         "paper_action": "PAPER_ORDER",
         "production_action": "DISABLED",
         "funnel": funnel,
-        "order": {"symbol": "TEST", "family": family, "qty": qty, "limit": price, "stop": stop, "status": "pending"},
+        "order": {
+            "symbol": "TEST",
+            "family": family,
+            "qty": qty,
+            "limit": price,
+            "stop": stop,
+            "atr": float(frame["ATR"].iloc[index]),
+            "target": price + (2.0 if family == "quality_continuation" else 3.0) * (price - stop),
+            "stressed_risk": qty * ((price - stop) + gap) + round_trip(price, price, qty, day=signal_date or "2026-10-16"),
+            "status": "pending",
+        },
     }
 
 

@@ -1,0 +1,17 @@
+symbol,status,stage,vendor,bars,last,adjustment,reason
+KEN,unresolved,blocked_unresolved_instrument,,,,,
+CMLL,verified_nse,blocked_prices,yahoo_chart,59.0,2026-10-16,,
+UWCSL,unresolved,blocked_unresolved_instrument,,,,,
+SANGANI,unresolved,blocked_unresolved_instrument,,,,,
+SUNTV,verified_nse,evaluable,yahoo_chart,2466.0,2026-10-16,yahoo_split_adjusted_ohlc,
+541444,fetch_failed,blocked_unresolved_instrument,,,,,
+531994,verified_bse_only,blocked_unresolved_instrument,,,,,
+VHL,fetch_failed,blocked_unresolved_instrument,,,,,
+542910,verified_bse_only,blocked_unresolved_instrument,,,,,
+SABAR,fetch_failed,blocked_unresolved_instrument,,,,,
+ZOTA,verified_nse,evaluable,yahoo_chart,2329.0,2026-10-16,yahoo_split_adjusted_ohlc,
+MOMSBELIEF,fetch_failed,blocked_unresolved_instrument,,,,,
+HAL,protected_holding,blocked_prices,,,,,no same-vendor panel in this run
+ZENTEC,protected_holding,blocked_prices,,,,,no same-vendor panel in this run
+CDSL,protected_holding,blocked_prices,,,,,no same-vendor panel in this run
+BPCL,protected_holding,blocked_prices,,,,,no same-vendor panel in this run

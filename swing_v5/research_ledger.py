@@ -114,6 +114,10 @@ class ResearchLedger:
             raise LedgerConflict(logical) from exc
         return {"duplicate_skipped": False, "logical_id": logical}
 
+    def get(self, logical: str) -> dict | None:
+        row = self.conn.execute("SELECT payload FROM events WHERE logical_id=?", (logical,)).fetchone()
+        return None if row is None else json.loads(row[0])
+
     def attempt(self, logical: str, at: str, note: str) -> None:
         with self.conn:
             self.conn.execute("INSERT INTO attempts (logical_id, at, note) VALUES (?,?,?)", (logical, at, note))
