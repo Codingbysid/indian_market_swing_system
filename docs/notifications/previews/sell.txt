@@ -1,0 +1,27 @@
+DESIGN PREVIEW · NOT A LIVE SIGNAL
+Illustrative data; do not place an order from this preview.
+
+Holdings | 1 sell alert
+21 Oct 2026 · 15:05 IST
+
+SELL · HAL · 5 shares
+Reason: First profit tranche
+Suggested limit: ₹5,165.00
+Profit-only floor: ₹5,054.36
+Reminder: same unconfirmed signal; check fills before acting again.
+Confirm remaining quantity in Zerodha before selling.
+
+HAL · 16 shares
+Last price: ₹5,170.00
+Breakeven floor: ₹5,054.36
+T1: ₹5,165.00 · 5 shares remaining
+T2: ₹5,373.00 · 5 shares remaining
+Trail: ₹5,054.36
+Policy: profit-only; no averaging
+
+Account snapshot
+Cash: ₹5,748.00
+Marked equity: ₹1,25,000.00
+
+Execution
+A trigger is not a fill. Record confirmed sales before acting on reminders.

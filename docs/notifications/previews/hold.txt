@@ -1,0 +1,30 @@
+DESIGN PREVIEW · NOT A LIVE SIGNAL
+Illustrative data; do not place an order from this preview.
+
+Holdings | No sell signal
+21 Oct 2026 · 15:05 IST
+
+No sell instruction was generated for the priced holdings.
+
+HAL · 16 shares
+Last price: ₹4,791.00
+Breakeven floor: ₹5,054.36
+T1: ₹5,165.00 · 5 shares remaining
+T2: ₹5,373.00 · 5 shares remaining
+Trail: not active
+Policy: profit-only; no averaging
+
+CDSL · 8 shares
+Last price: ₹1,279.00
+Breakeven floor: ₹1,369.41
+T1: ₹1,417.00 · 3 shares remaining
+T2: ₹1,460.00 · 3 shares remaining
+Trail: not active
+Policy: profit-only; no averaging
+
+Account snapshot
+Cash: ₹5,748.00
+Marked equity: ₹1,21,000.00
+
+Execution
+A trigger is not a fill. Record confirmed sales before acting on reminders.
