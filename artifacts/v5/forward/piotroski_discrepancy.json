@@ -1,0 +1,15 @@
+{
+  "reported_results": 554,
+  "parsed_hrefs": 552,
+  "unique_hrefs": 552,
+  "slug_id_count": 0,
+  "pages_short": [
+    {
+      "file": "page-6-4eaf0a16f2eb.html",
+      "page": 6,
+      "ids": 24,
+      "slug_id": 0
+    }
+  ],
+  "conclusion": "Do not lower 554. Parsed company hrefs are 552. Page 6 has 24 links instead of 25 and the last page has 3 instead of 4. Those two rows were not given a company URL in the archived HTML."
+}

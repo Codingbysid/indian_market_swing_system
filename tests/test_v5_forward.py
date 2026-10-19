@@ -75,11 +75,25 @@ def test_gap_and_timeout_paths_are_labeled():
 
 
 def test_rerun_and_interrupted_line(tmp_path):
+    from swing_v5.research_ledger import LedgerConflict, LedgerCorrupt, recover_ledger
+
     path = tmp_path / "ledger.jsonl"
     event = {"event_id": "abc", "kind": "snapshot"}
     assert append_event(path, event).get("duplicate_skipped") is not True
     assert append_event(path, event)["duplicate_skipped"] is True
-    path.write_text(path.read_text() + '{"broken"\n', encoding="utf-8")
+    try:
+        append_event(path, {"event_id": "abc", "kind": "other"})
+        assert False
+    except LedgerConflict:
+        pass
+    path.write_text(path.read_text() + '{"broken"', encoding="utf-8")
+    try:
+        load_events(path)
+        assert False
+    except LedgerCorrupt:
+        pass
+    report = recover_ledger(path, tmp_path / "quarantine.json")
+    assert report["incomplete_tail"] is True
     assert load_events(path) == [event]
 
 

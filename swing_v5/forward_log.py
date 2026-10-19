@@ -30,34 +30,4 @@ def classify(decision_created_at: str, earliest_execution_at: str | None, *, req
     return "retrospective_replay"
 
 
-def load_events(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    text = path.read_text(encoding="utf-8")
-    if text and not text.endswith("\n"):
-        text = text[: text.rfind("\n") + 1] if "\n" in text else ""
-        path.write_text(text, encoding="utf-8")
-    rows = []
-    kept = []
-    for line in text.splitlines():
-        try:
-            rows.append(json.loads(line))
-            kept.append(line)
-        except json.JSONDecodeError:
-            continue
-    if len(kept) != len(text.splitlines()):
-        path.write_text("".join(line + "\n" for line in kept), encoding="utf-8")
-    return rows
-
-
-def append_event(path: Path, event: dict) -> dict:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    existing = {row.get("event_id") for row in load_events(path)}
-    if event.get("event_id") in existing:
-        event = {**event, "duplicate_skipped": True}
-        return event
-    line = json.dumps(event, default=str)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(line + "\n")
-        handle.flush()
-    return event
+from .research_ledger import LedgerConflict, LedgerCorrupt, append_event, load_events, recover_ledger  # noqa: F401

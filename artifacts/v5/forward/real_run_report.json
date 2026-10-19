@@ -1,0 +1,11 @@
+{
+  "logical_id": "7e17934593fd6bed1947aef5",
+  "duplicate_skipped": false,
+  "evaluated": false,
+  "evaluation_stage": "blocked_unresolved_instrument",
+  "price_session": "2026-10-16",
+  "earliest_execution_at": "2026-10-21T09:25:00+05:30",
+  "phase": "intraday",
+  "paper_orders": 0,
+  "production_eligibility": "disabled"
+}

@@ -1,0 +1,99 @@
+[
+  {
+    "source_url": "https://www.screener.in/company/KEN/",
+    "nse_symbol": null,
+    "candidate_symbols": [
+      "KEN",
+      "KEN&"
+    ],
+    "bse_code": null,
+    "status": "ambiguous",
+    "company_id": "KEN",
+    "retrieved_at": "2026-10-19T11:40:00+05:30"
+  },
+  {
+    "source_url": "https://www.screener.in/company/CMLL/",
+    "nse_symbol": "CMLL",
+    "candidate_symbols": [
+      "CMLL"
+    ],
+    "bse_code": "544833",
+    "status": "verified_nse_link",
+    "company_id": "CMLL",
+    "retrieved_at": "2026-10-19T11:40:00+05:30"
+  },
+  {
+    "source_url": "https://www.screener.in/company/UWCSL/",
+    "nse_symbol": null,
+    "candidate_symbols": [
+      "UWCSL",
+      "UWCSL&"
+    ],
+    "bse_code": null,
+    "status": "ambiguous",
+    "company_id": "UWCSL",
+    "retrieved_at": "2026-10-19T11:40:00+05:30"
+  },
+  {
+    "source_url": "https://www.screener.in/company/SANGANI/",
+    "nse_symbol": null,
+    "candidate_symbols": [
+      "SANGANI",
+      "SANGANI&"
+    ],
+    "bse_code": null,
+    "status": "ambiguous",
+    "company_id": "SANGANI",
+    "retrieved_at": "2026-10-19T11:40:00+05:30"
+  },
+  {
+    "source_url": "https://www.screener.in/company/SUNTV/",
+    "nse_symbol": "SUNTV",
+    "candidate_symbols": [
+      "SUNTV"
+    ],
+    "bse_code": "532733",
+    "status": "verified_nse_link",
+    "company_id": "SUNTV",
+    "retrieved_at": "2026-10-19T11:40:00+05:30"
+  },
+  {
+    "source_url": "https://www.screener.in/company/541444/",
+    "nse_symbol": null,
+    "candidate_symbols": [],
+    "bse_code": "541444",
+    "status": "bse_only",
+    "company_id": "541444",
+    "retrieved_at": "2026-10-19T11:40:00+05:30"
+  },
+  {
+    "company_id": "531994",
+    "status": "fetch_failed",
+    "error": "HTTPError"
+  },
+  {
+    "company_id": "VHL",
+    "status": "fetch_failed",
+    "error": "HTTPError"
+  },
+  {
+    "company_id": "542910",
+    "status": "fetch_failed",
+    "error": "HTTPError"
+  },
+  {
+    "company_id": "SABAR",
+    "status": "fetch_failed",
+    "error": "HTTPError"
+  },
+  {
+    "company_id": "ZOTA",
+    "status": "fetch_failed",
+    "error": "HTTPError"
+  },
+  {
+    "company_id": "MOMSBELIEF",
+    "status": "fetch_failed",
+    "error": "HTTPError"
+  }
+]
