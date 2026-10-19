@@ -1,0 +1,7 @@
+{
+  "orders": 0,
+  "pending": [],
+  "open_positions": [],
+  "exits": [],
+  "advance": "noop"
+}
