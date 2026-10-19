@@ -1,0 +1,32 @@
+DESIGN PREVIEW · NOT A LIVE SIGNAL
+Illustrative data; do not place an order from this preview.
+
+PAPER RESEARCH · No live orders
+19 Oct 2026 · 11:59 IST
+
+Data
+Completed price session: 2026-10-16
+Next research window: 21 Oct 2026 · 09:25 IST
+
+This snapshot
+Stocks evaluated: 2
+Setups detected: 0
+Paper orders recorded this snapshot: 0
+Status: Evaluated; no qualifying setup
+
+Evaluated stocks
+SUNTV: no setup
+ZOTA: no setup
+
+Not evaluated · 2 records
+CMLL: Price history is missing or incomplete
+HAL: Price history is missing or incomplete
+
+Paper book · cumulative
+Orders recorded: 0
+Open positions: 0
+Pending orders: 0
+Cash after reservations and fills: ₹5,748.00
+
+Research status
+Strategies are unpromoted. Paper results are not broker fills or validated forward returns.

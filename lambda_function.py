@@ -18,6 +18,7 @@ import smtplib
 import time
 from datetime import datetime, timezone, timedelta
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from io import StringIO
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -31,6 +32,8 @@ from tvDatafeed import Interval, TvDatafeed
 
 from swing_core.calendar_nse import completed_bar_iloc, now_ist
 from swing_core.india import FEATURE_NAMES
+from swing_core.messages import (scan_message, monitor_message, buy_card, reason,
+                                 when, email_html, push_parts, header_text)
 from swing_core.costs import true_breakeven as sc_true_breakeven
 from swing_core.indicators import calculate_atr as sc_atr
 from swing_core.indicators import calculate_rsi as sc_rsi
@@ -1020,61 +1023,22 @@ class SwingRecommender:
         self.dispatch_alerts()
 
     def _build_segmented_message(self) -> str:
-        """Exact dual-portfolio ntfy/email payload."""
-        lines = [self.regime_detail, ""]
-
-        # CORE / SATELLITE headers from live portfolio config (capital + gates)
-        by_key = {p["key"]: p for p in self.portfolios}
-        core_cfg = by_key.get("core", CORE_PORTFOLIO)
-        sat_cfg = by_key.get("satellite", SATELLITE_PORTFOLIO)
-        core_cap_pct = float(core_cfg["kelly_fraction"]) * 100
-        sat_cap_pct = float(sat_cfg["kelly_fraction"]) * 100
-
-        lines.append(
-            f"--- 🛡️ CORE (₹{float(core_cfg['capital']):,.0f} | "
-            f"{core_cap_pct:.2f}% Cap | P>={float(core_cfg['min_prob']):.2f}) ---"
-        )
-        core = self.signals.get("core") or []
-        if core:
-            for setup in core:
-                lines.append(self._setup_bullet(setup))
-        else:
-            lines.append("• No setups today")
-        lines.append("")
-
-        lines.append(
-            f"--- ⚡ SATELLITE (₹{float(sat_cfg['capital']):,.0f} | "
-            f"{sat_cap_pct:.2f}% Cap | P>={float(sat_cfg['min_prob']):.2f}) ---"
-        )
-        sat = self.signals.get("satellite") or []
-        if sat:
-            for setup in sat:
-                lines.append(self._setup_bullet(setup))
-        else:
-            lines.append("• No setups today")
-        lines.append("")
-
-        lines.append("--- WATCH (not a BUY) ---")
+        """Compact presentation for the legacy adapter; admission is unchanged."""
+        setups = list(self.signals.get("core") or []) + list(self.signals.get("satellite") or [])
+        blocks = [f"Swing scan · {len(setups)} buy alerts\n{when(datetime.now(timezone.utc).isoformat())}",
+                  "Market\n" + str(self.regime_detail)]
+        blocks.extend(buy_card(item, legacy=True) for item in setups)
+        if not setups:
+            blocks.append("No order to place\nNo candidate passed all entry checks.")
         watches = list(getattr(self, "watch", []) or [])
         if watches:
-            for w in watches[:15]:
-                lines.append(
-                    f"• {w.get('name')} ({w.get('ticker')}) | "
-                    f"{w.get('setups')} | {w.get('status')} | Px ₹{w.get('price')}"
-                )
-            if len(watches) > 15:
-                lines.append(f"• … {len(watches)-15} more WATCH names")
-        else:
-            lines.append("• No watch setups")
-        lines.append("")
-        lines.append(
-            f"Policy: satellite parked, max {self.limits.get('max_new_core', 2)} new Core, "
-            f"ticket≤₹{self.limits.get('max_ticket', 0):,.0f}, 20% cash reserve. "
-            f"B/C setups stay WATCH until v2 model is promoted."
-        )
-        lines.append("")
-
-        return "\n".join(lines).rstrip() + "\n"
+            blocks.append("WATCH · no order\n" + "\n".join(
+                str(w.get("ticker", w.get("name", "Unknown"))) + ": " + reason(w.get("status"))
+                for w in watches[:3]))
+            if len(watches) > 3:
+                blocks.append(f"{len(watches)-3} more candidates in the scan log.")
+        blocks.append("Execution\nConfirm price, remaining cash and protective order in Zerodha. Record actual fills.")
+        return "\n\n".join(blocks)
 
     def dispatch_alerts(self):
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
@@ -1137,21 +1101,22 @@ def send_push_and_email(
     priority: str = "default",
     tags: str = "grey_question",
 ) -> None:
-    try:
-        response = requests.post(
-            f"https://ntfy.sh/{NTFY_TOPIC}",
-            data=message_body.encode(encoding="utf-8"),
-            headers={
-                "Title": title,
-                "Priority": priority,
-                "Tags": tags,
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
-        print("Push notification sent successfully to your phone.")
-    except Exception as e:
-        print(f"Failed to send push notification: {e}")
+    parts = push_parts(message_body)
+    for index, part in enumerate(parts, 1):
+        suffix = f" ({index}/{len(parts)})" if len(parts) > 1 else ""
+        try:
+            response = requests.post(
+                f"https://ntfy.sh/{NTFY_TOPIC}",
+                data=part.encode("utf-8"),
+                headers={"Title": header_text(title) + suffix,
+                         "Priority": priority, "Tags": tags,
+                         "Content-Type": "text/plain; charset=utf-8"},
+                timeout=30,
+            )
+            response.raise_for_status()
+            print(f"Push notification part {index}/{len(parts)} sent.")
+        except Exception as e:
+            print(f"Failed to send push part {index}/{len(parts)}: {e}")
 
     try:
         sender_email = os.getenv("GMAIL_ADDRESS", "")
@@ -1165,7 +1130,9 @@ def send_push_and_email(
         ):
             print("Email skipped: set GMAIL_ADDRESS / GMAIL_APP_PASSWORD env vars.")
         else:
-            msg = MIMEText(message_body, _charset="utf-8")
+            msg = MIMEMultipart("alternative")
+            msg.attach(MIMEText(message_body, "plain", "utf-8"))
+            msg.attach(MIMEText(email_html(email_subject, message_body), "html", "utf-8"))
             msg["Subject"] = email_subject
             msg["From"] = sender_email
             msg["To"] = receiver_email
@@ -1605,6 +1572,7 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         "mark_status": mark_label,
         "SELL": [i for row in rows for i in row.get("actionable_intents", [])],
         "sentiment_health": sentiment["health"],
+        "missing_symbols": [h["symbol"] for h in holdings if h["symbol"] not in {r["symbol"] for r in rows}],
         "dry_run": suppress_alerts,
     }
     if not suppress_alerts and complete_marks:
@@ -1632,70 +1600,18 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
     if not suppress_alerts and complete_marks:
         write_json_to_s3(curve, EQUITY_CURVE_KEY)
 
-    equity_text = f"Rs {equity:,.0f}" if equity is not None else "UNKNOWN"
-    gap_text = f"{gap:+,.0f}" if gap is not None else "UNKNOWN"
-    header = (
-        f"Holdings Exit Watch | {today}\n"
-        f"Cash Rs {cash:,.0f} | Holdings Rs {holdings_mv:,.0f} | "
-        f"Equity {equity_text} ({mark_label}) vs {CHECKPOINT_DATE} checkpoint "
-        f"Rs {CHECKPOINT_EQUITY:,.0f} (gap {gap_text})\n"
-    )
-    table_lines = []
-    for row in rows:
-        table_lines.append(
-            f"{row['symbol']}  LTP {row['ltp']}  BE {row['be']}  "
-            f"T1 {row['t1']} ({row['t1_qty']}sh)  T2 {row['t2']} ({row['t2_qty']}sh)  "
-            f"T3 {row['t3']}  trail {row['trail'] if row['trail'] is not None else 'n/a'}  "
-            f"P&L {row['pnl_pct']:+.1f}%"
-        )
-    digest = ""
-    if today_dt.weekday() == 4:
-        below_be = sum(1 for r in rows if r["be"] is not None and r["ltp"] < r["be"])
-        digest = (
-            f"\n--- Friday weekly digest (intraday, not EOD labels) ---\n"
-            f"Legacy names below BE: {below_be}/{len(rows)} "
-            f"(no profit-only sale while below BE).\n"
-            f"New-trade engine: satellite parked; max 2 Core; unpromoted v4 families stay WATCH.\n"
-            f"Do not treat this 15:05 candle as a completed session.\n"
-        )
-    if events:
-        body = (
-            header
-            + "\n".join(table_lines)
-            + "\n\nEVENTS:\n"
-            + "\n".join(f"• {e}" for e in events)
-            + digest
-            + "\n"
-        )
-        if suppress_alerts:
-            print("Notifications suppressed (dry-run).")
-        else:
-            send_push_and_email(
-                title="Holdings Exit Watch",
-                message_body=body,
-                email_subject="Holdings Exit Watch (action required)",
-                priority="high",
-                tags="orange_circle,chart_with_upwards_trend",
-            )
-    else:
-        body = (
-            header
-            + ("\n".join(table_lines) + "\n\n" if table_lines else "")
-            + f"No exit events. {len(rows)} holdings tracked.\n"
-            + digest
-        )
-        print(body)
-        if not suppress_alerts:
-            append_log_to_s3(
-                f"[{timestamp}] monitor | events=0 equity={equity}\n" + body
-            )
-        return levels_payload
-
+    notice = monitor_message(levels_payload)
+    body = notice.body
     print(body)
+    # Preserve existing delivery cadence: only monitor events generate notifications.
+    # Only structured SELL intents deserve an actionable subject/high priority.
+    if events and not suppress_alerts:
+        send_push_and_email(title=notice.title, message_body=body,
+                            email_subject=notice.title, priority=notice.priority, tags=notice.tags)
+    elif suppress_alerts:
+        print("Notifications suppressed (dry-run).")
     if not suppress_alerts:
-        append_log_to_s3(
-            f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body
-        )
+        append_log_to_s3(f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body)
     return levels_payload
 
 
@@ -1842,44 +1758,25 @@ def run_v4_recommender(suppress_alerts: bool = False):
                 )
             except Exception:
                 b["journal_status"] = "UNAVAILABLE"
-    body = format_v4_digest(result)
+    notice = scan_message(result)
+    body = notice.body
     print(body)
     if not suppress_alerts:
         write_execution_log_json(result)
         write_json_to_s3(overlay, f"sentiment/v4/{now.strftime('%Y%m%dT%H%M%SZ')}.json")
         append_log_to_s3(body + "\n")
         send_push_and_email(
-            title="India150 Swing Scan",
+            title=notice.title,
             message_body=body,
-            email_subject="India150 Swing Scan",
-            priority="high" if result["BUY"] else "default",
-            tags="chart_with_upwards_trend",
+            email_subject=notice.title,
+            priority=notice.priority,
+            tags=notice.tags,
         )
     return result
 
 
 def format_v4_digest(result):
-    lines = [
-        f"India150 | {result.get('regime', 'DATA_INVALID')} | completed {result.get('market', {}).get('completed_session', 'unknown')}",
-        f"BUY {len(result.get('BUY', []))} | WATCH {len(result.get('WATCH', []))} | {result.get('promotion_status', '')}",
-    ]
-    for b in result.get("BUY", []):
-        lines.append(
-            f"BUY {b['symbol']} {b['qty']}sh only {b['entry_min']:.2f}–{b['entry_max']:.2f}; {b['family']}; max debit ₹{b['debit']:.0f}, stress ₹{b['stress_risk']:.0f}; valid until {b['expires_at']}"
-        )
-    for w in result.get("WATCH", [])[:6]:
-        lines.append(
-            f"WATCH {w['symbol']} {w['family']}: {', '.join(w.get('reasons', []))}; research P={w.get('shadow_probability','unknown')}"
-        )
-    for h in result.get("HOLD", []):
-        tone = h.get("sentiment", {}).get("headline_tone")
-        lines.append(
-            f"HOLD {h['symbol']}: {h['reason']}; headline tone {tone if tone is not None else 'UNKNOWN'}"
-        )
-    lines.append(
-        "WATCH is research. Alerts are not fills; confirmed fills and fees must be recorded."
-    )
-    return "\n".join(lines)
+    return scan_message(result).body
 
 
 # ==========================================

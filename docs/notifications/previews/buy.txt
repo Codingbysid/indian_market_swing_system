@@ -1,0 +1,28 @@
+DESIGN PREVIEW · NOT A LIVE SIGNAL
+Illustrative data; do not place an order from this preview.
+
+Swing | 1 buy alert
+21 Oct 2026 · 09:25 IST
+
+BUY · EXAMPLE · 4 shares
+Entry: ₹500.00 – ₹505.00
+Stop: ₹485.00
+Target: ₹540.00
+Max debit: ₹2,028.00
+Stressed risk estimate: ₹90.00
+Valid until: 21 Oct 2026 · 09:45 IST
+Setup: Trend transition
+Exit by: session 10 if no earlier exit
+Record the actual fill and confirm your protective order.
+
+Market: Long entries permitted by the market filter
+Completed price session: 2026-10-19
+
+Cash
+Available: ₹5,748.00
+
+WATCH · 1 candidates · no order
+DEMO: Strategy is still under research
+
+Execution
+Alerts are instructions to review, not confirmed fills. Gap losses can exceed risk estimates.

@@ -7,6 +7,7 @@ import csv
 import json
 from pathlib import Path
 
+from swing_core.messages import research_message
 from swing_v5.pipeline import _cash
 from swing_v5.research_ledger import ResearchLedger
 
@@ -79,6 +80,9 @@ def main(argv: list[str] | None = None) -> int:
                     "paper_action": "BLOCKED",
                     "production_eligibility": "disabled",
                 })
+    notice = research_message(latest, book, reconciliation)
+    (FORWARD / "message_preview.txt").write_text(notice.body + "\n", encoding="utf-8")
+    (FORWARD / "message_preview.html").write_text(notice.html, encoding="utf-8")
     print(json.dumps({"snapshots": len(snapshots), "orders": len(orders), "positions": len(positions), "cash": cash}, indent=2))
     return 0
 
