@@ -2,7 +2,8 @@
 
 Production function `indian-swing-bot` in eu-north-1.
 
-- Deployed Lambda version **11**. Code sha256 `s3MWLPWE86vinTvMMzmwjD7cFvwj+t3GUN1DPvsIFMw=`.
+- Deployed Lambda version **12**. Code sha256 `x7eK7hBJPFplYKuGs26Wk8yLTSGscI9PDuQs2kWOnFE=`.
+- Version 11 (`s3MWLPWE86vinTvMMzmwjD7cFvwj+t3GUN1DPvsIFMw=`) is the package that served the 09:25 schedule. Version 12 adds a same-day dedupe for a repeated holiday notice.
 - Rollback version **10**. See `ROLLBACK.md`.
 - Layers unchanged: `AWSSDKPandas-Python312:20` and `quant-dependencies:5`.
 - Timeout 300 seconds, memory 1024 MB, Python 3.12. No sklearn or XGBoost library in the package. The live model remains the pure-Python 7-feature dump.
@@ -38,6 +39,7 @@ The 17 Oct reference (cash ₹5,748, INFY absent, ZENTEC 10 @ 1669) is not in S3
 
 - Dry-run holiday recommender and monitor returned `BLOCKED / exchange_closed` and sent nothing.
 - One transport test sent. CloudWatch recorded `Push notification part 1/1 sent` and `Email alert sent successfully`. A second invoke was `duplicate_skipped` and sent nothing.
+- At 09:25 IST the existing recommender rule invoked `$LATEST` twice. Both runs were the closed-exchange notice, not a buy or sell. A later repeat returned `duplicate_skipped` and did not send again.
 - Paper evaluation stored one snapshot for completed session 2026-10-19. SUNTV was evaluated on a Yahoo split-adjusted panel and had no trend setup. No paper order was admitted. Advance was a no-op. ZOTA and CMLL were fetched but did not have a bar on that completed session after alignment, so they were not called evaluated. Quality and value were not evaluated: there is no point-in-time fundamental snapshot.
 
 ## Commands

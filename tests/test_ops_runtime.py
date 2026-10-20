@@ -63,6 +63,19 @@ def test_holiday_scan_is_blocked_and_not_all_clear():
     assert json.loads(result["body"])["reason"] == "exchange_closed"
     assert "not an all-clear" in notes[0]
     assert "BUY" not in notes[0]
+    client = FakeS3()
+    notes.clear()
+    first = handle_ops(
+        {"action": "recommender", "mode": "replay", "clock": "2026-10-20T09:25:00+05:30"},
+        s3=client, bucket="test", notify=lambda message: notes.append(message.body), suppress=False,
+    )
+    second = handle_ops(
+        {"action": "recommender", "mode": "replay", "clock": "2026-10-20T09:25:00+05:30"},
+        s3=client, bucket="test", notify=lambda message: notes.append(message.body), suppress=False,
+    )
+    assert json.loads(first["body"])["notified"] is True
+    assert json.loads(second["body"])["duplicate_skipped"] is True
+    assert len(notes) == 1
 
 
 def test_unapproved_model_cannot_remain_a_buy():

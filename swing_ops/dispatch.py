@@ -51,9 +51,16 @@ def handle_ops(event: dict, *, s3, bucket: str, notify, suppress: bool) -> dict 
     now = _now(event)
     if action in {"recommender", "monitor"} and clock_for(now).phase() == "closed":
         message = _blocked(action, now)
-        if not suppress:
-            notify(message)
-        return {"statusCode": 200, "body": json.dumps({"status": "BLOCKED", "reason": "exchange_closed", "action": action, "notified": not suppress})}
+        logical = event_id({"run": "calendar_block", "action": action, "day": now.astimezone(IST).date().isoformat()})
+        if suppress:
+            return {"statusCode": 200, "body": json.dumps({"status": "BLOCKED", "reason": "exchange_closed", "action": action, "notified": False})}
+        book = S3PaperBook(s3, bucket, "research/calendar_notices.json")
+        state, etag = book.load()
+        stored = book.commit(state, etag, {"event_id": logical, "kind": "calendar_block", "payload": {"action": action}})
+        if stored["duplicate"]:
+            return {"statusCode": 200, "body": json.dumps({"status": "BLOCKED", "reason": "exchange_closed", "action": action, "notified": False, "duplicate_skipped": True})}
+        notify(message)
+        return {"statusCode": 200, "body": json.dumps({"status": "BLOCKED", "reason": "exchange_closed", "action": action, "notified": True})}
     if action == "transport_test":
         message = _test_message(now)
         logical = event_id({"run": "transport_test", "day": now.astimezone(IST).date().isoformat()})
