@@ -141,11 +141,11 @@ def test_verified_trend_panel_is_evaluated_and_rerun_does_not_notify_twice():
     assert "BUY" not in notes[0]
 
 
-def _metadata():
+def _metadata(symbol: str = "SUNTV"):
     return {
         "calendar_verified": True,
-        "corporate_actions": {"status": "none_in_window", "as_of": "2020-01-01", "source": "fixture"},
-        "restrictions": {"status": "clear", "as_of": "2020-01-01", "source": "fixture"},
+        "corporate_actions": {"status": "none_in_window", "as_of": "2020-01-01", "source": "fixture", "symbols": [symbol]},
+        "restrictions": {"status": "clear", "as_of": "2020-01-01", "source": "fixture", "complete": True, "symbols_clear": [symbol]},
     }
 
 
@@ -344,7 +344,7 @@ def test_distinct_batches_do_not_share_a_snapshot_id_and_quality_detector_is_cal
     try:
         built = build_snapshot(
             now=datetime.fromisoformat(long_rows[221]["Date"] + "T16:00:00+05:30"),
-            identities=common["identities"], holdings=[], policy=_policy(), code_version="t", metadata=_metadata(),
+            identities=common["identities"], holdings=[], policy=_policy(), code_version="t", metadata=_metadata("AAA"),
             panels={"AAA": signal}, index_rows=[{"Date": row["Date"], "Close": 100.0} for row in signal],
             manifest={"version": "m", "symbols": [{"symbol": "AAA", "role": "verified_screen"}]},
         )

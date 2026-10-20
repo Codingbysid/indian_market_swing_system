@@ -14,7 +14,7 @@ from swing_ops.paper_job import build_snapshot
 from swing_v5.sessions import IST
 
 ROOT = Path(__file__).resolve().parents[1]
-CODE_VERSION = "ops-paper-lifecycle"
+CODE_VERSION = "ops-evidence-v1"
 PAPER_KEY = "research/paper_book.json"
 BATCH = 8
 
@@ -111,6 +111,8 @@ def handle_ops(event: dict, *, s3, bucket: str, notify, suppress: bool) -> dict 
         return _calendar_notice(action, now, s3, bucket, notify)
     if action == "transport_test":
         return _transport(now, s3, bucket, notify)
+    if action == "initialize_paper_account":
+        return _initialize(event, s3, bucket)
     if action != "paper":
         return None
     return _paper(event, now, s3, bucket, notify)
@@ -145,6 +147,40 @@ def _transport(now: datetime, s3, bucket: str, notify) -> dict:
     return {"statusCode": 200, "body": json.dumps({"status": "sent", "notified": True, "delivery": status})}
 
 
+def _initialize(event: dict, s3, bucket: str) -> dict:
+    if event.get("confirm_hypothetical_assumption") is not True:
+        return {"statusCode": 400, "body": json.dumps({"status": "rejected", "reason": "explicit_confirmation_required"})}
+    if float(event.get("capital") or 0) != 5748:
+        return {"statusCode": 400, "body": json.dumps({"status": "rejected", "reason": "unexpected_capital_assumption"})}
+    policy = json.loads((ROOT / "config" / "v5" / "research_policy.json").read_text())
+    note = "hypothetical_research_reference_not_broker_cash"
+    logical = event_id({"run": "paper_account_init", "cash": 5748, "label": note, "policy": policy.get("version")})
+    book = S3PaperBook(s3, bucket, _book_key(event) if event.get("isolated") else PAPER_KEY)
+    state, etag = book.load()
+    if (state.get("account") or {}).get("initialized") and (state.get("account") or {}).get("cash") != 5748:
+        return {"statusCode": 200, "body": json.dumps({"status": "rejected", "reason": "account_already_initialized"})}
+    stored = book.commit(state, etag, {
+        "event_id": logical,
+        "kind": "paper_account_init",
+        "payload": {"cash": 5748, "label": note, "assumption_note": note, "policy_version": policy.get("version"), "initialized_at": now_iso()},
+    })
+    account = stored["state"]["account"]
+    return {"statusCode": 200, "body": json.dumps({
+        "status": "duplicate_skipped" if stored["duplicate"] else "initialized",
+        "event_id": logical,
+        "initialized_at": account.get("assumption_note") and event.get("initialized_at"),
+        "capital": account.get("cash"),
+        "label": account.get("label"),
+        "policy_version": policy.get("version"),
+        "duplicate": stored["duplicate"],
+    })}
+
+
+def now_iso() -> str:
+    from datetime import datetime
+    return datetime.now(IST).isoformat(timespec="seconds")
+
+
 def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
     key = _book_key(event)
     policy = _policy(event)
@@ -171,6 +207,7 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
         holdings=event.get("holdings") or [], policy=policy, code_version=CODE_VERSION,
         state=state, manifest=manifest if event.get("panels") is None else {"version": "injected", "symbols": event.get("universe") or [{"symbol": symbol, "role": "injected"} for symbol in panels]},
         metadata=event.get("metadata"),
+        symbol_evidence=_symbol_evidence(event, s3, bucket, key, session_text, manifest, panels),
     )
     built["snapshot"]["coverage"]["complete"] = bool(coverage_complete and built["snapshot"]["coverage"].get("complete"))
     built["snapshot"]["source_notes"] = source_notes
@@ -212,6 +249,32 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
     }, default=str)}
 
 
+def _symbol_evidence(event, s3, bucket, key, session, manifest, panels):
+    if event.get("symbol_evidence") is not None:
+        return event["symbol_evidence"]
+    if event.get("panels") is not None or event.get("metadata") is not None or not session:
+        return None
+    from swing_ops.evidence import collect_session_evidence, symbol_evidence
+    prefix = key.rsplit("/", 1)[0]
+    cache_key = f"{prefix}/evidence/{session}.json"
+    store = _read_json(s3, bucket, cache_key)
+    if store is None or store.get("session") != session:
+        store = collect_session_evidence(session)
+        s3.put_object(Bucket=bucket, Key=cache_key, Body=json.dumps(store).encode(), ContentType="application/json")
+    found = {}
+    for item in manifest.get("symbols") or []:
+        if item.get("role") == "protected_holding":
+            continue
+        symbol = item["symbol"]
+        rows = panels.get(symbol) or []
+        found[symbol] = symbol_evidence(
+            session=session, symbol=symbol, calendar=store.get("calendar") or {}, identity=store.get("identity") or {},
+            actions=store.get("actions") or {}, restrictions=store.get("restrictions") or {},
+            bar_start=rows[0]["Date"] if rows else None,
+        )
+    return found
+
+
 def _identities() -> list[dict]:
     import csv
     with (ROOT / "artifacts" / "v5" / "forward" / "instrument_resolution.csv").open() as handle:
@@ -228,9 +291,6 @@ def _read_json(s3, bucket, key):
 def _panels(event, s3, bucket, book_key, session: str | None, manifest: dict, state: dict):
     if event.get("panels") is not None:
         return event["panels"], event.get("index_rows") or [], [{"source": "injected"}], False
-    from swing_ops.paper_job import metadata_blockers
-    if session and metadata_blockers(event.get("metadata"), session):
-        return {}, [], [{"status": "metadata_blocked"}], True
     from swing_ops.sources import yahoo_bars, yahoo_index_close
     prefix = book_key.rsplit("/", 1)[0]
     work_key = f"{prefix}/work/{session}/{manifest.get('manifest_sha256')}.json"
@@ -245,23 +305,28 @@ def _panels(event, s3, bucket, book_key, session: str | None, manifest: dict, st
         index_rows = yahoo_index_close()
     except Exception as exc:
         return {}, [], [{"symbol": "^NSEI", "status": "fetch_failed", "error": type(exc).__name__}], False
-    pending = [symbol for symbol in work["order"] if work["items"].get(symbol, {}).get("status") == "pending"]
-    for symbol in pending[:BATCH]:
-        cache_key = f"{prefix}/bars/{session}/{symbol}.json"
-        try:
-            fetched = yahoo_bars(symbol)
-            rows = [row for row in fetched["rows"] if row["Date"] <= session]
-            if not rows or rows[-1]["Date"] != session:
-                work["items"][symbol] = {"status": "failed", "reason": "stale_or_partial_session"}
-            else:
-                body = {"vendor": fetched["vendor"], "adjustment": fetched["adjustment"], "retrieved_at": fetched["retrieved_at"], "session": session, "rows": rows}
-                s3.put_object(Bucket=bucket, Key=cache_key, Body=json.dumps(body).encode(), ContentType="application/json")
-                work["items"][symbol] = {"status": "validated", "cache": cache_key, "bars": len(rows), "retrieved_at": fetched["retrieved_at"]}
-            notes.append({"symbol": symbol, **work["items"][symbol]})
-        except Exception as exc:
-            work["items"][symbol] = {"status": "failed", "reason": type(exc).__name__}
-            notes.append({"symbol": symbol, "status": "failed", "reason": type(exc).__name__})
-    s3.put_object(Bucket=bucket, Key=work_key, Body=json.dumps(work).encode(), ContentType="application/json")
+    import time
+    deadline = time.monotonic() + float(event.get("batch_seconds") or 180)
+    while time.monotonic() < deadline:
+        pending = [symbol for symbol in work["order"] if work["items"].get(symbol, {}).get("status") == "pending"]
+        if not pending:
+            break
+        for symbol in pending[:BATCH]:
+            cache_key = f"{prefix}/bars/{session}/{symbol}.json"
+            try:
+                fetched = yahoo_bars(symbol)
+                rows = [row for row in fetched["rows"] if row["Date"] <= session]
+                if not rows or rows[-1]["Date"] != session:
+                    work["items"][symbol] = {"status": "failed", "reason": "stale_or_partial_session"}
+                else:
+                    body = {"vendor": fetched["vendor"], "adjustment": fetched["adjustment"], "retrieved_at": fetched["retrieved_at"], "session": session, "rows": rows}
+                    s3.put_object(Bucket=bucket, Key=cache_key, Body=json.dumps(body).encode(), ContentType="application/json")
+                    work["items"][symbol] = {"status": "validated", "cache": cache_key, "bars": len(rows), "retrieved_at": fetched["retrieved_at"]}
+                notes.append({"symbol": symbol, **work["items"][symbol]})
+            except Exception as exc:
+                work["items"][symbol] = {"status": "failed", "reason": type(exc).__name__}
+                notes.append({"symbol": symbol, "status": "failed", "reason": type(exc).__name__})
+        s3.put_object(Bucket=bucket, Key=work_key, Body=json.dumps(work).encode(), ContentType="application/json")
     panels = {}
     for symbol, item in work["items"].items():
         if item.get("status") != "validated":

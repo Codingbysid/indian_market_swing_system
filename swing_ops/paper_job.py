@@ -45,17 +45,57 @@ def _snapshot_for(rows: list[dict], session: str) -> dict | None:
     return usable[-1] if usable else None
 
 
-def metadata_blockers(metadata: dict | None, session: str) -> list[str]:
-    """A vendor name is not eligibility. Unknown required fields stay blocked."""
+def _relative_strength_ranks(panels: dict, session: str | None) -> dict | None:
+    """Rank only a same-session cross-section of at least 20 names. A small batch is not a universe."""
+    if not session:
+        return None
+    series = {}
+    for symbol, rows in panels.items():
+        ordered = [row for row in rows if row.get("Date") and row["Date"] <= session and row.get("Close")]
+        if len(ordered) < 66:
+            continue
+        series[symbol] = ordered
+    if len(series) < 20:
+        return None
+    def residual(offset: int) -> dict:
+        returns = {symbol: rows[-1 - offset]["Close"] / rows[-65 - offset]["Close"] - 1 for symbol, rows in series.items()}
+        middle = sorted(returns.values())[len(returns) // 2]
+        return {symbol: value - middle for symbol, value in returns.items()}
+    current = residual(0)
+    previous = residual(1)
+    current_order = sorted(current, key=current.get)
+    previous_order = sorted(previous, key=previous.get)
+    width = max(len(current_order) - 1, 1)
+    return {
+        "coverage": len(series),
+        **{symbol: {"current": current_order.index(symbol) / width, "previous": previous_order.index(symbol) / width, "residual": current[symbol]} for symbol in series},
+    }
+
+
+def metadata_blockers(metadata: dict | None, session: str, symbol: str | None = None) -> list[str]:
+    """A vendor name is not eligibility. Restricted is not a clearance."""
     meta = metadata or {}
     reasons = []
-    if meta.get("calendar_verified") is not True:
+    calendar = meta.get("calendar") or {}
+    if meta.get("calendar_verified") is True and not calendar:
+        calendar = {"status": "verified", "coverage_start": "0001-01-01", "coverage_end": "9999-12-31", "source": meta.get("source")}
+    if calendar.get("status") != "verified" and meta.get("calendar_verified") is not True:
+        reasons.append("calendar_unverified")
+    elif calendar.get("coverage_start") and (session < calendar["coverage_start"] or session > calendar.get("coverage_end", session)):
         reasons.append("calendar_unverified")
     actions = meta.get("corporate_actions") or {}
-    if actions.get("status") not in {"none_in_window", "present"} or str(actions.get("as_of") or "") > session or not actions.get("source"):
+    if actions.get("status") == "adjustment_required":
+        reasons.append("corporate_action_adjustment_required")
+    elif actions.get("status") != "none_in_window" or not actions.get("source") or not actions.get("as_of") or actions.get("as_of") > session:
+        reasons.append("corporate_actions_unknown")
+    elif symbol and actions.get("symbols") is not None and symbol not in actions["symbols"]:
         reasons.append("corporate_actions_unknown")
     restrictions = meta.get("restrictions") or {}
-    if restrictions.get("status") not in {"clear", "restricted"} or str(restrictions.get("as_of") or "") > session or not restrictions.get("source"):
+    if restrictions.get("status") == "restricted":
+        reasons.append("restricted")
+    elif restrictions.get("status") != "clear" or not restrictions.get("complete") or not restrictions.get("source") or not restrictions.get("as_of") or restrictions.get("as_of") > session:
+        reasons.append("restrictions_unknown")
+    elif symbol and restrictions.get("symbols_clear") is not None and symbol not in restrictions["symbols_clear"]:
         reasons.append("restrictions_unknown")
     return reasons
 
@@ -144,7 +184,7 @@ def _fundamental_detector(name: str, rows: list[dict], session: str, snap: dict)
     ))
 
 
-def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index_rows: list[dict], holdings: list[dict], policy: dict, code_version: str, state: dict | None = None, manifest: dict | None = None, metadata: dict | None = None) -> dict:
+def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index_rows: list[dict], holdings: list[dict], policy: dict, code_version: str, state: dict | None = None, manifest: dict | None = None, metadata: dict | None = None, symbol_evidence: dict | None = None) -> dict:
     if now.tzinfo is None:
         now = now.replace(tzinfo=IST)
     clock = clock_for(now)
@@ -169,6 +209,7 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         selected = [{"symbol": row.get("symbol"), "role": "protected_holding"} for row in holdings] + selected
     identity_by_symbol = {row.get("nse_symbol"): row for row in identities if row.get("nse_symbol")}
     family_counts = {row["family"]: {"selected": 0, "evaluated": 0, "setups": 0, "admitted": 0, "rejections": [], "data_blockers": []} for row in families}
+    strength_ranks = _relative_strength_ranks(panels, session_text)
     for item in selected:
         symbol = item.get("symbol")
         if not symbol or symbol in seen:
@@ -183,8 +224,15 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         if not identity or identity.get("status") not in {"verified_nse", "verified_nse_link"}:
             blocked.append({"symbol": symbol, "stage": "blocked_unresolved_instrument", "identity_status": None if not identity else identity.get("status")})
             continue
-        if session_text:
-            meta_reasons = metadata_blockers(metadata, session_text)
+        admission_extra = []
+        if symbol_evidence is not None:
+            evidence = symbol_evidence.get(symbol) or {}
+            if evidence.get("evaluation_blockers"):
+                blocked.append({"symbol": symbol, "stage": evidence["evaluation_blockers"][0]})
+                continue
+            admission_extra = list(evidence.get("admission_blockers") or [])
+        elif session_text:
+            meta_reasons = metadata_blockers(metadata, session_text, symbol)
             if meta_reasons:
                 blocked.append({"symbol": symbol, "stage": meta_reasons[0]})
                 continue
@@ -210,7 +258,7 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
             if detected:
                 family_counts["trend_transition"]["setups"] += 1
             detections.append({"symbol": symbol, "family": "trend_transition", "funnel": {"detected": detected, "admission": (outcome.get("reasons") or [None])[0]}, "paper_action": outcome.get("paper_action") or "NO_SIGNAL"})
-            if outcome.get("order"):
+            if outcome.get("order") and not admission_extra:
                 from swing_v5.costs import buy_fees
                 order = {**outcome["order"], "symbol": symbol, "horizon": "long", "signal_session": session_text, "execution_proxy": "next_session_open_not_verified_0925"}
                 worst = float(order["limit"]) + 0.25 * float(order["atr"])
@@ -224,9 +272,10 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
                     family_counts["trend_transition"]["admitted"] += 1
                     account["reserved"] = float(account.get("reserved") or 0.0) + float(order["reserved"])
                     account["reserved_stressed"] = float(account.get("reserved_stressed") or 0.0) + float(order.get("stressed_risk") or 0.0)
-            elif outcome.get("reasons"):
-                rejections.append({"symbol": symbol, "family": "trend_transition", "reasons": outcome["reasons"]})
-                family_counts["trend_transition"]["rejections"].append({"symbol": symbol, "reasons": outcome["reasons"]})
+            elif outcome.get("reasons") or admission_extra:
+                reasons = list(outcome.get("reasons") or []) + [item for item in admission_extra if item not in (outcome.get("reasons") or [])]
+                rejections.append({"symbol": symbol, "family": "trend_transition", "reasons": reasons})
+                family_counts["trend_transition"]["rejections"].append({"symbol": symbol, "reasons": reasons})
         flags = _v4_flags(aligned)
         for name in ("ema_cross", "trend_pullback", "range_breakout", "failed_breakdown_reclaim"):
             family_counts[name]["selected"] += 1
@@ -239,7 +288,20 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
                 rejections.append({"symbol": symbol, "family": name, "reasons": ["promotion_evidence_missing_or_failed"]})
                 family_counts[name]["rejections"].append({"symbol": symbol, "reasons": ["promotion_evidence_missing_or_failed"]})
         family_counts["relative_strength_momentum"]["selected"] += 1
-        family_counts["relative_strength_momentum"]["data_blockers"].append("cross_sectional_rank_unavailable")
+        ranks = strength_ranks or {}
+        rank = ranks.get(symbol)
+        if not ranks or int(ranks.get("coverage") or 0) < 20:
+            family_counts["relative_strength_momentum"]["data_blockers"].append("cross_section_below_20")
+        elif rank is None:
+            family_counts["relative_strength_momentum"]["data_blockers"].append("previous_session_rank_unavailable")
+        else:
+            from swing_core.strategies import relative_strength_signal
+            import pandas as pd
+            from swing_core.indicators import enrich_ohlcv
+            flagged = bool(relative_strength_signal(enrich_ohlcv(pd.DataFrame(aligned)), len(aligned) - 1, rank.get("previous"), rank.get("current"), rank.get("residual")))
+            family_counts["relative_strength_momentum"]["evaluated"] += 1
+            if flagged:
+                family_counts["relative_strength_momentum"]["setups"] += 1
         for name in ("quality_continuation", "improving_value"):
             family_counts[name]["selected"] += 1
             snap = _snapshot_for(fundamentals.get(symbol) or [], session_text or "")

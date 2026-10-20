@@ -1818,7 +1818,7 @@ def lambda_handler(event, context):
     print(
         f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}"
     )
-    if action in {"paper", "transport_test", "recommender", "monitor"}:
+    if action in {"paper", "transport_test", "initialize_paper_account", "recommender", "monitor"}:
         from swing_ops.dispatch import handle_ops
 
         def _notify(message, channels=None):
