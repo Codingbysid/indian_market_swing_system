@@ -1,0 +1,247 @@
+{
+  "captured_utc": "2026-10-20T03:31:59Z",
+  "function": {
+    "name": "indian-swing-bot",
+    "arn": "arn:aws:lambda:eu-north-1:001676203103:function:indian-swing-bot",
+    "runtime": "python3.12",
+    "handler": "lambda_function.lambda_handler",
+    "code_sha256": "TOeunud6CMQm+iDnmWNa0FH30+gp5RedddyS8JPxgJg=",
+    "version": "$LATEST",
+    "last_modified": "2026-10-07T06:22:35.000+0000",
+    "timeout": 300,
+    "memory": 1024,
+    "package_type": "Zip",
+    "layers": [
+      "arn:aws:lambda:eu-north-1:336392948345:layer:AWSSDKPandas-Python312:20",
+      "arn:aws:lambda:eu-north-1:001676203103:layer:quant-dependencies:5"
+    ],
+    "role": "indian-swing-bot-role-rn78qr25",
+    "env": {
+      "GMAIL_APP_PASSWORD": "REDACTED",
+      "CORE_CAPITAL": "16000",
+      "CORE_MIN_PROB": "0.55",
+      "PORTFOLIO_STATE_KEY": "portfolio_state.json",
+      "SATELLITE_CAPITAL": "8000",
+      "MODEL_S3_KEY": "models/model.json",
+      "SATELLITE_MIN_PROB": "0.50",
+      "CORE_MAX_POSITIONS": "2",
+      "SATELLITE_KELLY_FRACTION": "0.50",
+      "CORE_KELLY_FRACTION": "0.25",
+      "TV_PASSWORD": "REDACTED",
+      "MIN_SIGNAL_PROB": "0.55",
+      "GMAIL_ADDRESS": "siddcricket21@gmail.com",
+      "TV_USERNAME": "siddcricket21",
+      "NTFY_TOPIC": "msu_swing_alerts_2026",
+      "SATELLITE_MAX_POSITIONS": "0",
+      "BUCKET_NAME": "indian-swing-bot-data-2026"
+    },
+    "local_zip_sha256": "4ce7ae9ee77a08c426fa20e799635ad051f7d3e829e5179d75dc92f093f18098",
+    "zip_entries": 11,
+    "zip_top": [
+      "lambda_function.py",
+      "swing_core"
+    ]
+  },
+  "versions": [
+    {
+      "version": "$LATEST",
+      "code_sha256": "TOeunud6CMQm+iDnmWNa0FH30+gp5RedddyS8JPxgJg=",
+      "last_modified": "2026-10-07T06:22:35.000+0000"
+    },
+    {
+      "version": "1",
+      "code_sha256": "O4fA0Bulem1mfZFNCxPcLpMukZi0hSZkbpiMgiKuvTU=",
+      "last_modified": "2026-08-11T11:56:43.000+0000"
+    },
+    {
+      "version": "2",
+      "code_sha256": "lBo+RB384YmDH6nrTATmJLFD2zdzp1xv8Yhva3yWOXQ=",
+      "last_modified": "2026-08-11T12:12:26.000+0000"
+    },
+    {
+      "version": "3",
+      "code_sha256": "fjcJe/J6s8ea87fYCHpEPaHPtfXJ2xDccmE7OilijAc=",
+      "last_modified": "2026-08-21T05:11:18.000+0000"
+    },
+    {
+      "version": "4",
+      "code_sha256": "XjpbL5LrtqjWlxtXyCP8zEA0x9hWvc/WQYEqroQdNzM=",
+      "last_modified": "2026-08-21T05:20:26.000+0000"
+    },
+    {
+      "version": "5",
+      "code_sha256": "LEoMOK3onCTzZ073S4zaQvgBephj9z2y95ceFYZFNz8=",
+      "last_modified": "2026-08-22T02:58:46.000+0000"
+    },
+    {
+      "version": "6",
+      "code_sha256": "azonNsDpWy35tPULRcmsbmzi5BoB7fM/m11gA5F3N9Y=",
+      "last_modified": "2026-08-22T03:08:34.000+0000"
+    },
+    {
+      "version": "7",
+      "code_sha256": "azonNsDpWy35tPULRcmsbmzi5BoB7fM/m11gA5F3N9Y=",
+      "last_modified": "2026-08-22T03:11:26.000+0000"
+    },
+    {
+      "version": "8",
+      "code_sha256": "7We4sEKjtNch+6vLJtIGGLPyQ8M/AcZ2l4JTBIeeROY=",
+      "last_modified": "2026-08-24T07:45:08.000+0000"
+    },
+    {
+      "version": "9",
+      "code_sha256": "mOB/6aGJE1PvtwtJKB5jl0qpggb77NvchNJDkNAMTJE=",
+      "last_modified": "2026-08-24T07:54:26.000+0000"
+    }
+  ],
+  "aliases": [],
+  "iam": [
+    {
+      "attached": [
+        "AmazonS3FullAccess",
+        "AWSLambdaBasicExecutionRole-a47337f7-14bd-46c5-a018-8ebed4ede477"
+      ],
+      "inline": []
+    }
+  ],
+  "eventbridge": [
+    {
+      "name": "swing-recommender-daily",
+      "state": "ENABLED",
+      "schedule": "cron(55 3 ? * MON-FRI *)",
+      "targets": [
+        {
+          "id": "indian-swing-bot",
+          "arn": "arn:aws:lambda:eu-north-1:001676203103:function:indian-swing-bot",
+          "input": "{\"action\": \"recommender\"}"
+        }
+      ]
+    },
+    {
+      "name": "swing-holdings-monitor",
+      "state": "ENABLED",
+      "schedule": "cron(35 9 ? * MON-FRI *)",
+      "targets": [
+        {
+          "id": "indian-swing-bot",
+          "arn": "arn:aws:lambda:eu-north-1:001676203103:function:indian-swing-bot",
+          "input": "{\"action\": \"monitor\"}"
+        }
+      ]
+    }
+  ],
+  "s3": {
+    "portfolio_state.json": {
+      "etag": "\"a39cf4a3a2bc851035ac369860565c1d\"",
+      "version_id": null,
+      "size": 2396,
+      "last_modified": "2026-10-19 09:35:53+00:00",
+      "sha256": "5ef1f5192c4e20941967842c4ce77af73168553e8eb452749c75b9fa74090c0d"
+    },
+    "models/model.json": {
+      "etag": "\"4bff3a4684e63d7c6cef8f11b125ae36\"",
+      "version_id": null,
+      "size": 96012,
+      "last_modified": "2026-08-11 12:12:22+00:00",
+      "sha256": "fac68a53e0776ac1be739d2c08d5c15981a04150d73c0bfa5fdcbfa09dab1cb9"
+    },
+    "holdings_levels.json": {
+      "etag": "\"ab33a436667935548b16d5e2ad58ea99\"",
+      "version_id": null,
+      "size": 3262,
+      "last_modified": "2026-10-19 09:35:53+00:00",
+      "sha256": "39409aea8c655acd4acc03eaebcbeca1b3f50c8a8114ab266bf840d1576f901c"
+    },
+    "equity_curve.json": {
+      "etag": "\"8e7992527e33b94b351c88fd170a008f\"",
+      "version_id": null,
+      "size": 2879,
+      "last_modified": "2026-10-19 09:35:53+00:00",
+      "sha256": "e9f4d57dfb30ffcb0fbefb6489f5c01c2d7dd9c116ef9f6a0a65bbfd010bb61a"
+    }
+  },
+  "portfolio_summary": {
+    "cash": 15255.5,
+    "status": null,
+    "updated": "2026-10-07T06:09:00+00:00",
+    "keys": [
+      "broker_snapshot",
+      "cash",
+      "closed_trades",
+      "holdings",
+      "last_marked_equity",
+      "policy_version",
+      "reservations",
+      "updated"
+    ],
+    "holdings": [
+      {
+        "symbol": "HAL",
+        "qty": 16,
+        "avg_cost": 5040.63,
+        "classification": "legacy_profit_only",
+        "t1_qty": null,
+        "t2_qty": null,
+        "t3_qty": null,
+        "entry_date": null
+      },
+      {
+        "symbol": "ZENTEC",
+        "qty": 8,
+        "avg_cost": 1711.25,
+        "classification": "legacy_profit_only",
+        "t1_qty": null,
+        "t2_qty": null,
+        "t3_qty": null,
+        "entry_date": null
+      },
+      {
+        "symbol": "CDSL",
+        "qty": 8,
+        "avg_cost": 1363.75,
+        "classification": "legacy_profit_only",
+        "t1_qty": null,
+        "t2_qty": null,
+        "t3_qty": null,
+        "entry_date": null
+      },
+      {
+        "symbol": "INFY",
+        "qty": 5,
+        "avg_cost": 1030.0,
+        "classification": "legacy_profit_only",
+        "t1_qty": null,
+        "t2_qty": null,
+        "t3_qty": null,
+        "entry_date": null
+      },
+      {
+        "symbol": "BPCL",
+        "qty": 6,
+        "avg_cost": 318.65,
+        "classification": "legacy_profit_only",
+        "t1_qty": null,
+        "t2_qty": null,
+        "t3_qty": null,
+        "entry_date": null
+      }
+    ]
+  },
+  "model_summary": {
+    "keys": [
+      "base_score",
+      "feature_names",
+      "logistic",
+      "metrics",
+      "threshold_default",
+      "trees",
+      "type"
+    ],
+    "promoted": null,
+    "schema_id": null,
+    "type": "xgboost_dump",
+    "feature_count": 7,
+    "allowed_live_families": null,
+    "has_promotion_evidence": false
+  }
+}

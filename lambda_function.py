@@ -1715,7 +1715,8 @@ def run_v4_recommender(suppress_alerts: bool = False):
             model = json.loads(shadow_path.read_text())
             model["promoted"] = False
             model["allowed_live_families"] = []
-    result = evaluate_snapshot(
+    from swing_ops.promotion import strip_unapproved_buys
+    result = strip_unapproved_buys(evaluate_snapshot(
         state,
         frames,
         nifty,
@@ -1725,7 +1726,7 @@ def run_v4_recommender(suppress_alerts: bool = False):
         sentiment=overlay,
         policy=policy,
         live_quotes=quotes,
-    )
+    ), model)
     result["feed_health"] = health
     result["sentiment_health"] = overlay["health"]
     if result["BUY"] and not suppress_alerts:
@@ -1800,6 +1801,34 @@ def lambda_handler(event, context):
     print(
         f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}"
     )
+    if action in {"paper", "transport_test", "recommender", "monitor"}:
+        from swing_ops.dispatch import handle_ops
+
+        def _notify(message):
+            send_push_and_email(
+                title=message.title,
+                message_body=message.body,
+                email_subject=message.title,
+                priority=message.priority,
+                tags=message.tags,
+            )
+
+        holdings = []
+        if action == "paper":
+            try:
+                loaded = load_portfolio_state()
+                holdings = [] if loaded.get("status") == "PORTFOLIO_INVALID" else (loaded.get("holdings") or [])
+            except Exception:
+                holdings = []
+        ops = handle_ops(
+            {**event, "holdings": holdings or event.get("holdings")},
+            s3=s3_client,
+            bucket=BUCKET_NAME,
+            notify=_notify,
+            suppress=bool(event.get("suppress_alerts") or event.get("dry_run")),
+        )
+        if ops is not None:
+            return ops
 
     if action == "scraper":
         if not policy["write_state"]:
