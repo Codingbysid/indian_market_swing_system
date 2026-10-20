@@ -112,7 +112,7 @@ def test_unknown_research_counts_are_not_reported_as_zero():
     assert 'Stocks evaluated: Unavailable' in unknown
     assert 'Setups detected: Unavailable' in unknown
     assert 'Open positions: Unavailable' in unknown
-    assert 'Cash after reservations and fills: Unavailable' in unknown
+    assert 'Hypothetical paper cash: Unavailable' in unknown
     empty = research_message({'detections': [], 'paper_orders': []}, {}, {}).body
     assert 'Stocks evaluated: 0' in empty
     assert 'Setups detected: 0' in empty

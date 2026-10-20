@@ -2,8 +2,9 @@
 
 Production function `indian-swing-bot` in eu-north-1.
 
-- Deployed Lambda version **12**. Code sha256 `x7eK7hBJPFplYKuGs26Wk8yLTSGscI9PDuQs2kWOnFE=`.
-- Version 11 (`s3MWLPWE86vinTvMMzmwjD7cFvwj+t3GUN1DPvsIFMw=`) is the package that served the 09:25 schedule. Version 12 adds a same-day dedupe for a repeated holiday notice.
+- Production alias `live` points at Lambda version **13**. Code sha256 `6qXtKrLkXj89DDGlIy1+NRJV+p2Cf4zNVCdxxamMaCM=`.
+- EventBridge targets the alias ARN, not the unqualified function.
+- Version 12 remains available. Version 10 remains the pre-activation rollback package.
 - Rollback version **10**. See `ROLLBACK.md`.
 - Layers unchanged: `AWSSDKPandas-Python312:20` and `quant-dependencies:5`.
 - Timeout 300 seconds, memory 1024 MB, Python 3.12. No sklearn or XGBoost library in the package. The live model remains the pure-Python 7-feature dump.
@@ -34,6 +35,14 @@ Paper writes use `IfMatch` / `IfNoneMatch`. A second identical snapshot is skipp
 S3 still holds the 7 Oct 2026 book: cash ₹15,255.50; HAL 16 @ 5040.63; ZENTEC 8 @ 1711.25; CDSL 8 @ 1363.75; INFY 5 @ 1030; BPCL 6 @ 318.65. All five are `legacy_profit_only`. `broker_reconciled_at` is null. The file's `updated` field is `2026-10-07T06:09:00+00:00`. The object was rewritten by the 19 Oct monitor, but the quantities did not change.
 
 The 17 Oct reference (cash ₹5,748, INFY absent, ZENTEC 10 @ 1669) is not in S3 and was not copied in. There is still no broker-confirmed INFY sale record and no ZENTEC quantity/fill record. New production BUY admission stays blocked until those records exist. Legacy lots stay profit-only. No average-in. No fabricated fills.
+
+## Paper account
+
+The production research account at `research/paper_book.json` is explicitly uninitialized. It is not the broker cash balance and it was not seeded from the 17 Oct reference. The frozen research policy therefore records detections and rejections without admitting orders.
+
+An isolated proof under `research-test/lifecycle.json` used `test_only_mechanics.json` only for that key. The deployed alias admitted one hypothetical order, filled it, exited it, and a repeat did not change cash again. That policy is not the production or research-account policy.
+
+The paper book keeps at most 400 events. Older events are counted in `events_dropped`. Orders, positions, exits, account cash and delivery status stay on the object.
 
 ## What ran
 

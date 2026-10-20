@@ -7,15 +7,17 @@ Captured before the 20 Oct 2026 deployment. The broker book was not modified.
 - Portfolio object `portfolio_state.json` ETag `a39cf4a3a2bc851035ac369860565c1d`. Do not restore an older portfolio over a newer broker book.
 - Model `models/model.json` was not changed. sha256 `fac68a53e0776ac1be739d2c08d5c15981a04150d73c0bfa5fdcbfa09dab1cb9`.
 
-EventBridge still invokes the unqualified function ARN, which uses `$LATEST`. Restoring version 10 means replacing `$LATEST` with that package:
+EventBridge invokes the `live` alias. Restoring an old zip updates `$LATEST` only. Move the alias as well:
 
 ```bash
-aws lambda update-function-code \
+aws lambda update-alias \
   --function-name indian-swing-bot \
-  --region eu-north-1 \
-  --s3-bucket indian-swing-bot-data-2026 \
-  --s3-key ops/rollback/lambda_pre_ops.zip
+  --name live \
+  --function-version 10 \
+  --region eu-north-1
 ```
+
+Version 10 is the code that was published before this activation. If that version must also be reloaded from the saved package, update the code and publish it before pointing the alias at the new version number. The paper-book schema adds `account`, `deliveries` and a 400-event retention cap. An older handler can ignore unknown fields. Do not delete `research/paper_book.json` as part of a code rollback.
 
 The added research rule does not place orders. Disable it without touching the other two schedules:
 

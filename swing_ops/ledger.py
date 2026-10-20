@@ -10,8 +10,25 @@ class LedgerConflict(Exception):
     pass
 
 
+MAX_EVENTS = 400
+
+
 def empty_state() -> dict:
-    return {"events": [], "orders": [], "positions": [], "exits": [], "opening_cash": None}
+    return {
+        "events": [],
+        "orders": [],
+        "positions": [],
+        "exits": [],
+        "events_dropped": 0,
+        "retention_limit": MAX_EVENTS,
+        "account": {
+            "label": "hypothetical_research_account",
+            "initialized": False,
+            "cash": None,
+            "reserved": 0.0,
+        },
+        "deliveries": {},
+    }
 
 
 def event_id(parts: dict) -> str:
@@ -25,16 +42,52 @@ def apply_event(state: dict, event: dict) -> bool:
     state.setdefault("events", []).append(event)
     kind = event.get("kind")
     payload = event.get("payload") or {}
-    if kind == "paper_order":
+    account = state.setdefault("account", empty_state()["account"])
+    if kind == "paper_account_init":
+        account["initialized"] = True
+        account["cash"] = float(payload["cash"])
+        account["label"] = payload.get("label", "hypothetical_research_account")
+        account["reserved"] = float(account.get("reserved") or 0.0)
+    elif kind == "paper_order":
         state.setdefault("orders", []).append(payload)
+        if payload.get("qty") is not None and payload.get("limit") is not None:
+            account["reserved"] = float(account.get("reserved") or 0.0) + float(payload["qty"]) * float(payload["limit"])
     elif kind == "paper_fill":
         state.setdefault("positions", []).append(payload)
+        account["reserved"] = float(account.get("reserved") or 0.0) - float(payload.get("reserved") or 0.0)
+        if account.get("cash") is not None:
+            account["cash"] = float(account["cash"]) - float(payload["debit"])
     elif kind == "paper_exit":
         state.setdefault("exits", []).append(payload)
         state["positions"] = [row for row in state.get("positions") or [] if row.get("order_id") != payload.get("order_id")]
+        if account.get("cash") is not None:
+            account["cash"] = float(account["cash"]) + float(payload["proceeds"])
     elif kind == "paper_expiry":
-        state["orders"] = [row for row in state.get("orders") or [] if row.get("order_id") != payload.get("order_id")]
+        account["reserved"] = float(account.get("reserved") or 0.0) - float(payload.get("reserved") or 0.0)
+    elif kind == "delivery":
+        state.setdefault("deliveries", {})[payload["signal_id"]] = payload
+    if len(state["events"]) > MAX_EVENTS:
+        overflow = len(state["events"]) - MAX_EVENTS
+        state["events"] = state["events"][-MAX_EVENTS:]
+        state["events_dropped"] = int(state.get("events_dropped") or 0) + overflow
     return True
+
+
+def view(state: dict) -> dict:
+    """Pending means not filled, expired, or exited. An exit does not reopen the order."""
+    orders = list(state.get("orders") or [])
+    fills = [row for row in state.get("events") or [] if row.get("kind") == "paper_fill"]
+    expiries = [row for row in state.get("events") or [] if row.get("kind") == "paper_expiry"]
+    exits = list(state.get("exits") or [])
+    closed = {row.get("payload", row).get("order_id") for row in fills + expiries}
+    closed |= {row.get("order_id") for row in exits}
+    pending = []
+    for row in orders:
+        if row.get("order_id") not in closed:
+            pending.append(row)
+    open_positions = [row for row in state.get("positions") or [] if row.get("order_id") not in {item.get("order_id") for item in exits}]
+    account = state.get("account") or empty_state()["account"]
+    return {"orders": len(orders), "pending": pending, "open_positions": open_positions, "exits": len(exits), "account": account}
 
 
 class S3PaperBook:

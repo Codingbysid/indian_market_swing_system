@@ -1,0 +1,818 @@
+{
+  "version": "universe_v1_2026-10-20",
+  "cap": 150,
+  "vendor": "yahoo_chart",
+  "adjustment": "yahoo_split_adjusted_ohlc",
+  "symbols": [
+    {
+      "symbol": "HAL",
+      "role": "protected_holding",
+      "reason": "held_in_unreconciled_broker_book_not_a_new_entry"
+    },
+    {
+      "symbol": "ZENTEC",
+      "role": "protected_holding",
+      "reason": "held_in_unreconciled_broker_book_not_a_new_entry"
+    },
+    {
+      "symbol": "CDSL",
+      "role": "protected_holding",
+      "reason": "held_in_unreconciled_broker_book_not_a_new_entry"
+    },
+    {
+      "symbol": "INFY",
+      "role": "protected_holding",
+      "reason": "held_in_unreconciled_broker_book_not_a_new_entry"
+    },
+    {
+      "symbol": "BPCL",
+      "role": "protected_holding",
+      "reason": "held_in_unreconciled_broker_book_not_a_new_entry"
+    },
+    {
+      "symbol": "CMLL",
+      "role": "verified_screen",
+      "reason": "screener_identity_cross_checked_to_nse_eq"
+    },
+    {
+      "symbol": "SUNTV",
+      "role": "verified_screen",
+      "reason": "screener_identity_cross_checked_to_nse_eq"
+    },
+    {
+      "symbol": "ZOTA",
+      "role": "verified_screen",
+      "reason": "screener_identity_cross_checked_to_nse_eq"
+    },
+    {
+      "symbol": "BHARATFORG",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "EXIDEIND",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HYUNDAI",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "M&M",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MOTHERSON",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TIINDIA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TMPV",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "APLAPOLLO",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ASTRAL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BDL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BEL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BHEL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "CGPOWER",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ENRIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MAZDOCK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PREMIERENE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SUPREMEIND",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SUZLON",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "WAAREEENER",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PIDILITIND",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PIIND",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SRF",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "UPL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "LT",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "RVNL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "AMBUJACEM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GRASIM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BLUESTARCO",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HAVELLS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "KALYANKJIL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "VOLTAS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "DMART",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ETERNAL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "INDHOTEL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "IRCTC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "JUBLFOOD",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NAUKRI",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NYKAA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SWIGGY",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TRENT",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "VMM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "COLPAL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "DABUR",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GODFRYPHLP",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GODREJCP",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HINDUNILVR",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ITC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MARICO",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NESTLEIND",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PATANJALI",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TATACONSUM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "UNITDSPR",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "VBL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ABCAPITAL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "AXISBANK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BSE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "CANBK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "CHOLAFIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "FEDERALBNK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HDFCAMC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HDFCBANK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HDFCLIFE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ICICIBANK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "IDFCFIRSTB",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "INDUSINDBK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "JIOFIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "LICHSGFIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "LICI",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MCX",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MUTHOOTFIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PAYTM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PFC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PNB",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "POLICYBZR",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "RECLTD",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SBILIFE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SBIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "YESBANK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "AUROPHARMA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BIOCON",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "CIPLA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "DIVISLAB",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "DRREDDY",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "FORTIS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GLENMARK",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "LUPIN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MANKIND",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MAXHEALTH",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ZYDUSLIFE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "COFORGE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HCLTECH",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "MPHASIS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TCS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TECHM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "WIPRO",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ADANIENT",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HINDALCO",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HINDCOPPER",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HINDZINC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "JINDALSTEL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NATIONALUM",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NMDC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "SAIL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TATASTEEL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "VEDL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ATGL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "COALINDIA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GAIL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "HINDPETRO",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "IOC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "OIL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ONGC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "RELIANCE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ADANIENSOL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ADANIGREEN",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "JSWENERGY",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NHPC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NLCINDIA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "NTPC",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "POWERGRID",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "TATAPOWER",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "DLF",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GODREJPROP",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "LODHA",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "OBEROIRLTY",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PHOENIXLTD",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "PRESTIGE",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "ADANIPORTS",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "CONCOR",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "GMRAIRPORT",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "role": "supplementary_liquid_nse",
+      "reason": "india_150_candidate_pool"
+    }
+  ],
+  "exclusions": [
+    {
+      "symbol": "KEN",
+      "reason": "unresolved",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "UWCSL",
+      "reason": "unresolved",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "SANGANI",
+      "reason": "unresolved",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "541444",
+      "reason": "fetch_failed",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "531994",
+      "reason": "verified_bse_only",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "VHL",
+      "reason": "fetch_failed",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "542910",
+      "reason": "verified_bse_only",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "SABAR",
+      "reason": "fetch_failed",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "MOMSBELIEF",
+      "reason": "fetch_failed",
+      "source": "golden_crossover"
+    },
+    {
+      "symbol": "IDEA",
+      "reason": "universe_cap_150"
+    },
+    {
+      "symbol": "INDUSTOWER",
+      "reason": "universe_cap_150"
+    },
+    {
+      "symbol": "TATACOMM",
+      "reason": "universe_cap_150"
+    }
+  ],
+  "manifest_sha256": "d4ffbf9091168dbd832a5d1d8961034502b1089ee08da99187ccec5450ae1335"
+}
