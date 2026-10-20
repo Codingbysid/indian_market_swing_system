@@ -10,10 +10,11 @@ from datetime import datetime
 
 from swing_v5.sessions import IST
 
-PARSER_VERSION = "evidence_v1"
+PARSER_VERSION = "evidence_v2"
 HOLIDAY_URL = "https://www.nseindia.com/api/holiday-master?type=trading"
 UDIFF_URL = "https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{ymd}_F_0000.csv.zip"
 ACTIONS_URL = "https://www.nseindia.com/api/corporates-corporateActions?index=equities&from_date={start}&to_date={end}"
+BAND_URL = "https://nsearchives.nseindia.com/content/equities/eq_band_changes.csv"
 RESTRICTION_ATTEMPTS = (
     "https://nsearchives.nseindia.com/content/equities/ASM_Latest_List.csv",
     "https://nsearchives.nseindia.com/content/equities/GSM_Latest_List.csv",
@@ -122,6 +123,50 @@ def parse_corporate_actions(body: bytes, window_start: str, window_end: str) -> 
     return {"parsed": True, "completeness": "parsed_list", "window_start": window_start, "window_end": window_end, "actions": actions, "count": len(actions)}
 
 
+def classify_action(subject: str | None) -> str:
+    """Frozen treatment. Yahoo bars are split-adjusted OHLC, not a clearance for structural events.
+
+    structural_price (split, bonus, consolidation): block. Do not apply another ratio on top of the vendor series.
+    cash_dividend: no price transformation. It is not a split. A short corporate-action window still blocks long histories.
+    rights: block pending review. A rights issue is not a cash dividend and not a split.
+    structural_corporate (merger, demerger, amalgamation, scheme): block. Adjusted vendor prices do not clear it.
+    unrecognized: block pending review.
+    """
+    text = (subject or "").lower()
+    if any(word in text for word in ("split", "sub-division", "subdivision", "consolidation", "bonus")):
+        return "structural_price"
+    if "dividend" in text:
+        return "cash_dividend"
+    if "right" in text:
+        return "rights"
+    if any(word in text for word in ("merger", "demerger", "amalgamat", "scheme of arrangement")):
+        return "structural_corporate"
+    return "unrecognized"
+
+
+def parse_price_band_changes(body: bytes) -> dict:
+    """Recent price-band changes. This file is not the full ASM/GSM universe."""
+    try:
+        text = body.decode()
+    except UnicodeDecodeError:
+        return {"parsed": False, "completeness": "parse_failed"}
+    lines = [line for line in text.splitlines() if line.strip()]
+    if not lines or "Symbol" not in lines[0]:
+        return {"parsed": False, "completeness": "schema_mismatch"}
+    symbols = []
+    for line in lines[1:]:
+        parts = [part.strip() for part in line.split(",")]
+        if len(parts) < 5 or not parts[1]:
+            return {"parsed": False, "completeness": "malformed_row"}
+        symbols.append(parts[1])
+    return {
+        "parsed": True,
+        "completeness": "price_band_changes_not_full_surveillance_universe",
+        "restricted_symbols": symbols,
+        "clear_symbols": [],
+    }
+
+
 def symbol_evidence(*, session: str, symbol: str, calendar: dict, identity: dict, actions: dict, restrictions: dict, bar_start: str | None) -> dict:
     """Per-symbol evidence. One symbol's clear result does not apply to another."""
     blockers = []
@@ -134,14 +179,23 @@ def symbol_evidence(*, session: str, symbol: str, calendar: dict, identity: dict
         identity_status = "missing"
     else:
         identity_status = "verified_session_eq"
-    if not restrictions.get("parsed") or restrictions.get("completeness") != "complete_symbol_list":
-        restriction_status = "unknown"
-        blockers.append("restrictions_unknown")
-    elif symbol in set(restrictions.get("restricted_symbols") or []):
+    partial_restricted = set(restrictions.get("restricted_symbols") or [])
+    effective_end = restrictions.get("effective_end")
+    if effective_end and effective_end < session:
+        restriction_status = "stale"
+        blockers.append("restrictions_stale")
+    elif restrictions.get("parsed") and restrictions.get("completeness") == "complete_symbol_list":
+        if symbol in partial_restricted:
+            restriction_status = "restricted"
+            blockers.append("restricted")
+        elif symbol in set(restrictions.get("clear_symbols") or []):
+            restriction_status = "clear"
+        else:
+            restriction_status = "unknown"
+            blockers.append("restrictions_unknown")
+    elif symbol in partial_restricted:
         restriction_status = "restricted"
         blockers.append("restricted")
-    elif symbol in set(restrictions.get("clear_symbols") or []):
-        restriction_status = "clear"
     else:
         restriction_status = "unknown"
         blockers.append("restrictions_unknown")
@@ -150,9 +204,15 @@ def symbol_evidence(*, session: str, symbol: str, calendar: dict, identity: dict
         blockers.append("corporate_actions_unknown")
     else:
         hits = [row for row in actions.get("actions") or [] if row.get("symbol") == symbol]
-        if hits:
+        kinds = {classify_action(row.get("subject")) for row in hits}
+        structural = kinds & {"structural_price", "structural_corporate", "rights", "unrecognized"}
+        if structural:
             action_status = "adjustment_required"
             blockers.append("corporate_action_adjustment_required")
+        elif "cash_dividend" in kinds:
+            action_status = "cash_dividend_only"
+            if bar_start and actions.get("window_start") and bar_start < actions["window_start"]:
+                blockers.append("corporate_actions_incomplete_history")
         elif bar_start and actions.get("window_start") and bar_start < actions["window_start"]:
             action_status = "incomplete_history"
             blockers.append("corporate_actions_incomplete_history")
@@ -193,7 +253,11 @@ def collect_session_evidence(session: str) -> dict:
     action_meta["completeness"] = actions.get("completeness")
     action_meta["effective_start"] = "2026-01-01"
     action_meta["effective_end"] = session
-    attempts = []
+    band_meta, band_body = fetch_public(BAND_URL)
+    band = parse_price_band_changes(band_body) if band_body else {"parsed": False, "completeness": "unavailable", "restricted_symbols": []}
+    band_meta["parsed"] = bool(band.get("parsed"))
+    band_meta["completeness"] = band.get("completeness")
+    attempts = [band_meta]
     for url in RESTRICTION_ATTEMPTS:
         meta, body = fetch_public(url)
         text = (body or b"")[:120].decode("utf-8", errors="replace")
@@ -201,14 +265,32 @@ def collect_session_evidence(session: str) -> dict:
             meta["parsed"] = False
             meta["completeness"] = "empty_report_not_a_clearance_list"
         attempts.append(meta)
-    restrictions = {"parsed": False, "completeness": "no_complete_list", "attempts": [row["url"] for row in attempts]}
+    restrictions = {
+        "parsed": bool(band.get("parsed")),
+        "completeness": band.get("completeness") or "no_complete_list",
+        "restricted_symbols": band.get("restricted_symbols") or [],
+        "clear_symbols": [],
+        "attempts": attempts,
+        "surveillance_universe": "unavailable",
+        "effective_end": None,
+    }
+    archives = []
+    for name, meta, body in (
+        ("holiday_master", holiday_meta, holiday_body),
+        ("udiff", udiff_meta, udiff_body),
+        ("corporate_actions", action_meta, action_body),
+        ("price_band_changes", band_meta, band_body),
+    ):
+        if body:
+            archives.append({"name": name, "sha256": meta["sha256"], "content_type": meta.get("content_type"), "body": body})
     return {
         "session": session,
         "retrieved_at": _now(),
         "parser_version": PARSER_VERSION,
         "calendar": {**calendar, "source": holiday_meta},
-        "identity": {**identity, "source": udiff_meta},
+        "identity": {**identity, "source": udiff_meta, "symbols": identity.get("symbols") or {}},
         "actions": {**actions, "source": action_meta},
         "restrictions": restrictions,
         "sources": [holiday_meta, udiff_meta, action_meta, *attempts],
+        "archives": archives,
     }

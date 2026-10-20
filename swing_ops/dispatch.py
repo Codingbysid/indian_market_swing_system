@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +15,7 @@ from swing_ops.paper_job import build_snapshot
 from swing_v5.sessions import IST
 
 ROOT = Path(__file__).resolve().parents[1]
-CODE_VERSION = "ops-evidence-v1"
+CODE_VERSION = "ops-evidence-v3"
 PAPER_KEY = "research/paper_book.json"
 BATCH = 8
 
@@ -202,12 +203,16 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
     if advanced:
         stored = _commit_all(book, advanced)
         state = stored["state"]
+    evidence = _symbol_evidence(event, s3, bucket, key, session_text, manifest, panels)
+    config_blob = json.dumps({"policy": policy, "fundamentals": json.loads((ROOT / "config" / "ops" / "fundamentals_snapshots.json").read_text()), "promotion": json.loads((ROOT / "config" / "ops" / "promotion_approval.json").read_text())}, sort_keys=True)
     built = build_snapshot(
         now=now, identities=identities, panels=panels, index_rows=index_rows,
         holdings=event.get("holdings") or [], policy=policy, code_version=CODE_VERSION,
         state=state, manifest=manifest if event.get("panels") is None else {"version": "injected", "symbols": event.get("universe") or [{"symbol": symbol, "role": "injected"} for symbol in panels]},
         metadata=event.get("metadata"),
-        symbol_evidence=_symbol_evidence(event, s3, bucket, key, session_text, manifest, panels),
+        symbol_evidence=evidence,
+        evidence_hash=hashlib.sha256(json.dumps(evidence, sort_keys=True, default=str).encode()).hexdigest() if evidence is not None else None,
+        config_hash=hashlib.sha256(config_blob.encode()).hexdigest(),
     )
     built["snapshot"]["coverage"]["complete"] = bool(coverage_complete and built["snapshot"]["coverage"].get("complete"))
     built["snapshot"]["source_notes"] = source_notes
@@ -254,12 +259,18 @@ def _symbol_evidence(event, s3, bucket, key, session, manifest, panels):
         return event["symbol_evidence"]
     if event.get("panels") is not None or event.get("metadata") is not None or not session:
         return None
-    from swing_ops.evidence import collect_session_evidence, symbol_evidence
+    from swing_ops.evidence import PARSER_VERSION, collect_session_evidence, symbol_evidence
     prefix = key.rsplit("/", 1)[0]
     cache_key = f"{prefix}/evidence/{session}.json"
     store = _read_json(s3, bucket, cache_key)
-    if store is None or store.get("session") != session:
+    if store is None or store.get("session") != session or store.get("parser_version") != PARSER_VERSION:
         store = collect_session_evidence(session)
+        archived = []
+        for item in store.pop("archives", []):
+            raw_key = f"{prefix}/evidence/{session}/raw/{item['name']}-{item['sha256'][:16]}"
+            s3.put_object(Bucket=bucket, Key=raw_key, Body=item["body"], ContentType=item.get("content_type") or "application/octet-stream")
+            archived.append({"name": item["name"], "sha256": item["sha256"], "archive_key": raw_key})
+        store["raw_archives"] = archived
         s3.put_object(Bucket=bucket, Key=cache_key, Body=json.dumps(store).encode(), ContentType="application/json")
     found = {}
     for item in manifest.get("symbols") or []:
