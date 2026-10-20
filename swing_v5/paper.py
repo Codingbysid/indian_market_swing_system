@@ -16,7 +16,7 @@ def policy_hash(policy: dict) -> str:
     return hashlib.sha256(repr(sorted(policy.get("risk", {}).items())).encode()).hexdigest()[:16]
 
 
-def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: float, metadata_ok: bool, mode: str, cash: float, policy: dict, piotroski=None, ebit=None, equity=None, snapshot_date=None, signal_date=None, aggregate_left: float | None = None) -> dict:
+def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: float, metadata_ok: bool, mode: str, cash: float, policy: dict, piotroski=None, ebit=None, equity=None, snapshot_date=None, signal_date=None, aggregate_left: float | None = None, launch_nav: float | None = None, sleeve_nav: float | None = None, external_inflows: float = 0.0, circuit_latched: bool = False) -> dict:
     if family == "quality_continuation":
         detected = quality_continuation(frame, index, member=member, rel63=rel63)
     elif family == "trend_transition":
@@ -45,8 +45,11 @@ def evaluate_session(frame, index: int, *, family: str, member: bool, rel63: flo
     if not metadata_ok:
         funnel["admission"] = "blocked_missing_metadata"
         return {"action": "DETECTION", "paper_action": "REJECTED", "production_action": "DISABLED", "funnel": funnel}
-    limits = limits_for(cash, policy, sleeve_p=0)
-    if is_latched({"cash": cash, "launch_nav": cash, "sleeve_nav": cash, "external_inflows": 0, "circuit_latched": False}, policy):
+    launch = cash if launch_nav is None else launch_nav
+    nav = cash if sleeve_nav is None else sleeve_nav
+    sleeve_p = float(nav) - float(launch) - float(external_inflows)
+    limits = limits_for(cash, policy, sleeve_p=sleeve_p)
+    if is_latched({"cash": cash, "launch_nav": launch, "sleeve_nav": nav, "external_inflows": external_inflows, "circuit_latched": circuit_latched}, policy):
         funnel["admission"] = "latched"
         return {"action": "DETECTION", "paper_action": "REJECTED", "production_action": "DISABLED", "funnel": funnel}
     price = float(frame["Close"].iloc[index])

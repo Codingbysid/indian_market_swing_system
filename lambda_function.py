@@ -1100,7 +1100,8 @@ def send_push_and_email(
     email_subject: str,
     priority: str = "default",
     tags: str = "grey_question",
-) -> None:
+) -> dict:
+    ntfy_ok = True
     parts = push_parts(message_body)
     for index, part in enumerate(parts, 1):
         suffix = f" ({index}/{len(parts)})" if len(parts) > 1 else ""
@@ -1116,8 +1117,10 @@ def send_push_and_email(
             response.raise_for_status()
             print(f"Push notification part {index}/{len(parts)} sent.")
         except Exception as e:
+            ntfy_ok = False
             print(f"Failed to send push part {index}/{len(parts)}: {e}")
 
+    email_status = "failed"
     try:
         sender_email = os.getenv("GMAIL_ADDRESS", "")
         sender_app_password = os.getenv("GMAIL_APP_PASSWORD", "").replace(" ", "")
@@ -1129,6 +1132,7 @@ def send_push_and_email(
             or not sender_app_password
         ):
             print("Email skipped: set GMAIL_ADDRESS / GMAIL_APP_PASSWORD env vars.")
+            email_status = "skipped"
         else:
             msg = MIMEMultipart("alternative")
             msg.attach(MIMEText(message_body, "plain", "utf-8"))
@@ -1140,8 +1144,11 @@ def send_push_and_email(
                 server.login(sender_email, sender_app_password)
                 server.send_message(msg)
             print("Email alert sent successfully.")
+            email_status = "sent"
     except Exception as e:
         print(f"Failed to send email: {e}")
+        email_status = "failed"
+    return {"ntfy": "sent" if ntfy_ok else "failed", "email": email_status}
 
 
 def run_scraper():
@@ -1575,6 +1582,8 @@ def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
         "missing_symbols": [h["symbol"] for h in holdings if h["symbol"] not in {r["symbol"] for r in rows}],
         "dry_run": suppress_alerts,
     }
+    from swing_ops.reconciliation import guard_monitor, status_for
+    levels_payload = guard_monitor(levels_payload, status_for(latest_state))
     if not suppress_alerts and complete_marks:
         write_json_to_s3(levels_payload, HOLDINGS_LEVELS_KEY)
 
@@ -1715,7 +1724,8 @@ def run_v4_recommender(suppress_alerts: bool = False):
             model = json.loads(shadow_path.read_text())
             model["promoted"] = False
             model["allowed_live_families"] = []
-    result = evaluate_snapshot(
+    from swing_ops.promotion import strip_unapproved_buys
+    result = strip_unapproved_buys(evaluate_snapshot(
         state,
         frames,
         nifty,
@@ -1725,7 +1735,7 @@ def run_v4_recommender(suppress_alerts: bool = False):
         sentiment=overlay,
         policy=policy,
         live_quotes=quotes,
-    )
+    ), model)
     result["feed_health"] = health
     result["sentiment_health"] = overlay["health"]
     if result["BUY"] and not suppress_alerts:
@@ -1790,16 +1800,59 @@ def lambda_handler(event, context):
     event = event or {}
     from swing_core.scoring import output_policy
 
-    policy = output_policy(event)
-    event = {
-        **event,
-        "suppress_alerts": not policy["emit_alerts"],
-        "dry_run": not policy["write_state"],
-    }
+    isolated = event.get("isolated") is True
+    if isolated and not str(event.get("book_key") or "").startswith("research-test/"):
+        return {"statusCode": 400, "body": "isolated runs require a research-test book key"}
+    silent = isolated and event.get("alerts") is False and not event.get("dry_run") and not event.get("suppress_alerts")
+    if silent:
+        policy = {"emit_alerts": False, "write_state": True, "destination": "isolated"}
+        event = {**event, "suppress_alerts": False, "dry_run": False}
+    else:
+        policy = output_policy(event)
+        event = {
+            **event,
+            "suppress_alerts": not policy["emit_alerts"],
+            "dry_run": not policy["write_state"],
+        }
     action = event.get("action", "recommender")  # Default to recommender
     print(
         f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}"
     )
+    if action in {"paper", "transport_test", "initialize_paper_account", "recommender", "monitor"}:
+        from swing_ops.dispatch import handle_ops
+
+        def _notify(message, channels=None):
+            _notify.channel_aware = True
+            result = send_push_and_email(
+                title=message.title,
+                message_body=message.body,
+                email_subject=message.title,
+                priority=message.priority,
+                tags=message.tags,
+            )
+            if silent:
+                return {"ntfy": "skipped", "email": "skipped"}
+            if channels:
+                return {channel: result.get(channel, "failed") for channel in channels}
+            return result
+        _notify.channel_aware = True
+
+        holdings = []
+        if action == "paper":
+            try:
+                loaded = load_portfolio_state()
+                holdings = [] if loaded.get("status") == "PORTFOLIO_INVALID" else (loaded.get("holdings") or [])
+            except Exception:
+                holdings = []
+        ops = handle_ops(
+            {**event, "holdings": holdings or event.get("holdings")},
+            s3=s3_client,
+            bucket=BUCKET_NAME,
+            notify=_notify,
+            suppress=bool(event.get("suppress_alerts") or event.get("dry_run")),
+        )
+        if ops is not None:
+            return ops
 
     if action == "scraper":
         if not policy["write_state"]:

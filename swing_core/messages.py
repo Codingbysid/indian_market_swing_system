@@ -188,7 +188,9 @@ def monitor_message(doc: dict) -> Message:
             lines.append('Reminder: same unconfirmed signal; check fills before acting again.')
         lines.append('Confirm remaining quantity in Zerodha before selling.')
         blocks.append('\n'.join(lines))
-    if not intents:
+    if doc.get('reconciliation_status') == 'unreconciled':
+        blocks.append('Broker check\nQuantities are unverified. No executable sell was issued. This is not an all-clear.')
+    elif not intents:
         blocks.append('No sell instruction was generated for the priced holdings.')
     mark_status = doc.get('mark_status', 'unavailable')
     if mark_status != 'current complete':
@@ -231,7 +233,12 @@ def research_message(snapshot: dict, book: dict, reconciliation: dict) -> Messag
         evaluated = len({r.get('symbol') for r in rows if r.get('symbol')})
     detected_text = str(detected) if isinstance(snapshot.get('detections'), list) else 'Unavailable'
     snapshot_orders = snapshot.get('paper_orders')
-    admitted = str(len(snapshot_orders)) if isinstance(snapshot_orders, list) else 'Unavailable'
+    if isinstance(snapshot_orders, int):
+        admitted = str(snapshot_orders)
+    elif isinstance(snapshot_orders, list):
+        admitted = str(len(snapshot_orders))
+    else:
+        admitted = 'Unavailable'
     blocks = ['PAPER RESEARCH · No live orders\n' + when(snapshot.get('decision_created_at')),
               'Data\nCompleted price session: ' + clean(snapshot.get('price_session')) +
               '\nNext research window: ' + when(snapshot.get('earliest_execution_at')),
@@ -244,11 +251,24 @@ def research_message(snapshot: dict, book: dict, reconciliation: dict) -> Messag
             for r in rows))
     if ready:
         blocks.append(f'Not evaluated · {len(ready)} records\n' + '\n'.join(clean(r.get('symbol')) + ': ' + reason(r.get('stage')) for r in ready))
-    blocks.append('Paper book · cumulative\nOrders recorded: ' + clean(book.get('orders')) +
-                  '\nOpen positions: ' + (str(len(book['open_positions'])) if isinstance(book.get('open_positions'), list) else 'Unavailable') +
-                  '\nPending orders: ' + (str(len(book['pending'])) if isinstance(book.get('pending'), list) else 'Unavailable') +
-                  '\nCash after reservations and fills: ' + rupees(reconciliation.get('cash_after_reservations_and_fills')))
-    blocks.append('Research status\nStrategies are unpromoted. Paper results are not broker fills or validated forward returns.')
+    def _count(value):
+        if isinstance(value, int):
+            return str(value)
+        if isinstance(value, list):
+            return str(len(value))
+        return 'Unavailable'
+    cash = reconciliation.get('cash_after_reservations_and_fills')
+    if reconciliation.get('paper_account') == 'uninitialized':
+        cash_text = 'uninitialized'
+    elif cash is None:
+        cash_text = 'Unavailable'
+    else:
+        cash_text = rupees(cash)
+    blocks.append('Paper book · cumulative\nOrders recorded: ' + _count(book.get('orders')) +
+                  '\nOpen positions: ' + _count(book.get('open_positions')) +
+                  '\nPending orders: ' + _count(book.get('pending')) +
+                  '\nHypothetical paper cash: ' + cash_text)
+    blocks.append('Research status\nThis is a hypothetical paper account, not the broker account. Strategies are unpromoted. A repeated message uses the same signal and is not a second order.\nSignal ' + clean(snapshot.get('signal_id')))
     return Message('PAPER | Research update', '\n\n'.join(blocks))
 
 
