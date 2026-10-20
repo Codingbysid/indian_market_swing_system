@@ -1,9 +1,10 @@
 {
   "rollback_version": "10",
   "rollback_code_sha256": "TOeunud6CMQm+iDnmWNa0FH30+gp5RedddyS8JPxgJg=",
-  "deployed_version": "13",
+  "deployed_version": "14",
   "deployed_alias": "live",
-  "deployed_code_sha256": "6qXtKrLkXj89DDGlIy1+NRJV+p2Cf4zNVCdxxamMaCM=",
+  "deployed_code_sha256": "OhTM8uv1+5qmD+5ZYzVbmU0lDPkI8/0pkYaggOZ7HaQ=",
+  "paper_account_initialized": false,
   "tests_passed_before_deploy": 129,
   "scheduled_0925_version_sha256": "s3MWLPWE86vinTvMMzmwjD7cFvwj+t3GUN1DPvsIFMw=",
   "scheduled_0925_invocations": 2,

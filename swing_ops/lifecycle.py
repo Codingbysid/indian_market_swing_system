@@ -2,13 +2,27 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, timedelta
 
+from swing_ops.calendar import holiday_dates
 from swing_ops.ledger import event_id, view
 from swing_v5.costs import buy_fees, sell_fees
 
 EXECUTION_PROXY = "next_session_open_not_verified_0925"
 VERTICAL = {"short": 15, "long": 40}
+
+
+def exchange_sessions(start: str, end: str) -> list[str]:
+    """Entry date is session 1. Weekends and the verified holiday list are not sessions."""
+    holidays = holiday_dates()
+    cursor = date.fromisoformat(start)
+    last = date.fromisoformat(end)
+    found = []
+    while cursor <= last:
+        if cursor.weekday() < 5 and cursor not in holidays:
+            found.append(cursor.isoformat())
+        cursor += timedelta(days=1)
+    return found
 
 
 def _bars(panels: dict, symbol: str, session: str) -> list[dict]:
@@ -49,17 +63,29 @@ def advance_events(state: dict, panels: dict, session: str | None) -> list[dict]
             events.append({
                 "event_id": event_id({"expiry": order["order_id"]}),
                 "kind": "paper_expiry",
-                "payload": {"order_id": order["order_id"], "symbol": order["symbol"], "status": "unfilled", "session": bar["Date"], "reserved": reserved, "execution_proxy": EXECUTION_PROXY},
+                "payload": {"order_id": order["order_id"], "symbol": order["symbol"], "status": "unfilled", "session": bar["Date"], "reserved": reserved, "stressed_risk": order.get("stressed_risk") or 0.0, "execution_proxy": EXECUTION_PROXY},
             })
             continue
         debit = opened * int(order["qty"]) + buy_fees(opened, int(order["qty"]), day=bar["Date"])
+        account = (state.get("account") or {})
+        available = None if account.get("cash") is None else float(account["cash"]) - float(account.get("reserved") or 0.0) + reserved
+        if available is not None and debit - available > 1e-6:
+            events.append({
+                "event_id": event_id({"expiry": order["order_id"], "reason": "insufficient_cash_at_fill"}),
+                "kind": "paper_expiry",
+                "payload": {"order_id": order["order_id"], "symbol": order["symbol"], "status": "unfilled", "reason": "insufficient_cash_at_fill", "session": bar["Date"], "reserved": reserved, "stressed_risk": order.get("stressed_risk") or 0.0, "execution_proxy": EXECUTION_PROXY},
+            })
+            continue
         fill = {
             "order_id": order["order_id"], "symbol": order["symbol"], "qty": order["qty"], "fill": opened,
             "stop": stop, "target": order["target"], "horizon": order["horizon"], "family": order["family"],
-            "session": bar["Date"], "debit": debit, "reserved": reserved, "execution_proxy": EXECUTION_PROXY,
+            "session": bar["Date"], "debit": debit, "reserved": reserved,
+            "stressed_risk": order.get("stressed_risk") or 0.0,
+            "vertical_sessions": VERTICAL.get(order.get("horizon"), 40),
+            "execution_proxy": EXECUTION_PROXY,
         }
         events.append({"event_id": event_id({"fill": order["order_id"]}), "kind": "paper_fill", "payload": fill})
-        exit_event = _exit_after(fill, upcoming, include_entry_bar=True)
+        exit_event = _exit_after(fill, rows, session)
         if exit_event:
             events.append(exit_event)
             exited.add(order["order_id"])
@@ -67,33 +93,33 @@ def advance_events(state: dict, panels: dict, session: str | None) -> list[dict]
         if position["order_id"] in exited:
             continue
         rows = _bars(panels, position["symbol"], session)
-        later = _between(rows, position["session"], session)
-        exit_event = _exit_after(position, later, include_entry_bar=False)
+        exit_event = _exit_after(position, rows, session)
         if exit_event:
             events.append(exit_event)
     return events
 
 
-def _exit_after(position: dict, bars: list[dict], *, include_entry_bar: bool) -> dict | None:
-    usable = bars if include_entry_bar else bars
-    start = 0 if include_entry_bar else 0
-    if not include_entry_bar:
-        usable = [row for row in bars if row["Date"] > position["session"]]
-    else:
-        usable = list(bars)
-    held = 0
-    for bar in usable:
-        held += 1
+def _exit_after(position: dict, bars: list[dict], through: str) -> dict | None:
+    """Session 1 is the fill date. A missing exchange session stops the walk."""
+    by_date = {row["Date"]: row for row in bars}
+    sessions = exchange_sessions(position["session"], through)
+    vertical = int(position.get("vertical_sessions") or VERTICAL.get(position.get("horizon"), 40))
+    for held, day in enumerate(sessions, start=1):
+        bar = by_date.get(day)
+        if bar is None:
+            return None
         opened = float(bar["Open"])
         low = float(bar["Low"])
         high = float(bar["High"])
         stop = float(position["stop"])
         target = float(position["target"])
-        if low <= stop:
+        if low <= stop and high >= target:
+            exit_px, reason = min(opened, stop), "stop"
+        elif low <= stop:
             exit_px, reason = min(opened, stop), "stop"
         elif high >= target:
             exit_px, reason = (opened if opened >= target else target), "target"
-        elif held >= VERTICAL.get(position.get("horizon"), 40):
+        elif held >= vertical:
             exit_px, reason = float(bar["Close"]), "vertical"
         else:
             continue
@@ -104,6 +130,7 @@ def _exit_after(position: dict, bars: list[dict], *, include_entry_bar: bool) ->
             "payload": {
                 "order_id": position["order_id"], "symbol": position["symbol"], "qty": position["qty"],
                 "exit": exit_px, "reason": reason, "session": bar["Date"], "proceeds": proceeds,
+                "debit": position.get("debit"), "stressed_risk": position.get("stressed_risk") or 0.0,
                 "horizon": position.get("horizon"), "execution_proxy": EXECUTION_PROXY,
                 "signal_id": position["order_id"],
             },

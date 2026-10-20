@@ -159,9 +159,9 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
         state, etag = stored["state"], stored["etag"]
     identities = _identities()
     manifest = json.loads((ROOT / "config" / "ops" / "universe_manifest.json").read_text())
-    panels, index_rows, source_notes, coverage_complete = _panels(event, s3, bucket, key)
     session = clock_for(now).latest_completed_session()
     session_text = None if session is None else session.isoformat()
+    panels, index_rows, source_notes, coverage_complete = _panels(event, s3, bucket, key, session_text, manifest, state)
     advanced = advance_events(state, panels, session_text)
     if advanced:
         stored = _commit_all(book, advanced)
@@ -169,7 +169,8 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
     built = build_snapshot(
         now=now, identities=identities, panels=panels, index_rows=index_rows,
         holdings=event.get("holdings") or [], policy=policy, code_version=CODE_VERSION,
-        state=state, manifest=manifest if event.get("panels") is None else {"symbols": event.get("universe") or [{"symbol": symbol, "role": "injected"} for symbol in panels]},
+        state=state, manifest=manifest if event.get("panels") is None else {"version": "injected", "symbols": event.get("universe") or [{"symbol": symbol, "role": "injected"} for symbol in panels]},
+        metadata=event.get("metadata"),
     )
     built["snapshot"]["coverage"]["complete"] = bool(coverage_complete and built["snapshot"]["coverage"].get("complete"))
     built["snapshot"]["source_notes"] = source_notes
@@ -187,6 +188,8 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
         {"cash_after_reservations_and_fills": account.get("cash"), "paper_account": "uninitialized" if not account.get("initialized") else account.get("label")},
     )
     message = Message(message.title, message.body + "\n\nSignal " + signal + "\nA repeat of this message is the same signal, not a second order.", message.priority, message.tags)
+    if event.get("panels") is None and not coverage_complete:
+        return {"statusCode": 200, "body": json.dumps({"status": "continuation", "logical_id": signal, "notified": False, "production_eligibility": "disabled", "coverage": built["snapshot"]["coverage"]})}
     prior = (stored["state"].get("deliveries") or {}).get(signal) or {}
     terminal = prior.get("ntfy") in {"sent", "skipped"} and prior.get("email") in {"sent", "skipped"}
     if signal in before and terminal:
@@ -215,37 +218,56 @@ def _identities() -> list[dict]:
         return list(csv.DictReader(handle))
 
 
-def _panels(event, s3, bucket, book_key):
+def _read_json(s3, bucket, key):
+    try:
+        return json.loads(s3.get_object(Bucket=bucket, Key=key)["Body"].read())
+    except Exception:
+        return None
+
+
+def _panels(event, s3, bucket, book_key, session: str | None, manifest: dict, state: dict):
     if event.get("panels") is not None:
         return event["panels"], event.get("index_rows") or [], [{"source": "injected"}], False
+    from swing_ops.paper_job import metadata_blockers
+    if session and metadata_blockers(event.get("metadata"), session):
+        return {}, [], [{"status": "metadata_blocked"}], True
     from swing_ops.sources import yahoo_bars, yahoo_index_close
-    manifest = json.loads((ROOT / "config" / "ops" / "universe_manifest.json").read_text())
     prefix = book_key.rsplit("/", 1)[0]
-    checkpoint_key = prefix + "/fetch_checkpoint.json"
-    try:
-        current = json.loads(s3.get_object(Bucket=bucket, Key=checkpoint_key)["Body"].read())
-        start = int(current.get("next") or 0)
-    except Exception:
-        start = 0
+    work_key = f"{prefix}/work/{session}/{manifest.get('manifest_sha256')}.json"
+    work = _read_json(s3, bucket, work_key)
     symbols = [row["symbol"] for row in manifest["symbols"] if row.get("role") != "protected_holding"]
-    if start >= len(symbols):
-        start = 0
-    batch = symbols[start:start + BATCH]
+    priority = [row.get("symbol") for row in (state.get("positions") or []) + (state.get("orders") or [])]
+    if work is None or work.get("session") != session or work.get("manifest") != manifest.get("manifest_sha256"):
+        ordered = [symbol for symbol in priority if symbol in symbols] + [symbol for symbol in symbols if symbol not in priority]
+        work = {"session": session, "manifest": manifest.get("manifest_sha256"), "order": ordered, "items": {symbol: {"status": "pending"} for symbol in ordered}}
     notes = []
-    panels = {}
     try:
         index_rows = yahoo_index_close()
     except Exception as exc:
         return {}, [], [{"symbol": "^NSEI", "status": "fetch_failed", "error": type(exc).__name__}], False
-    for symbol in batch:
-        cache_key = f"{prefix}/cache/{symbol}.json"
+    pending = [symbol for symbol in work["order"] if work["items"].get(symbol, {}).get("status") == "pending"]
+    for symbol in pending[:BATCH]:
+        cache_key = f"{prefix}/bars/{session}/{symbol}.json"
         try:
             fetched = yahoo_bars(symbol)
-            panels[symbol] = [{**row, "vendor": fetched["vendor"]} for row in fetched["rows"]]
-            s3.put_object(Bucket=bucket, Key=cache_key, Body=json.dumps({"vendor": fetched["vendor"], "adjustment": fetched["adjustment"], "retrieved_at": fetched["retrieved_at"], "bars": len(fetched["rows"])}).encode(), ContentType="application/json")
-            notes.append({"symbol": symbol, "status": "fetched", "vendor": fetched["vendor"], "retrieved_at": fetched["retrieved_at"], "bars": len(fetched["rows"])})
+            rows = [row for row in fetched["rows"] if row["Date"] <= session]
+            if not rows or rows[-1]["Date"] != session:
+                work["items"][symbol] = {"status": "failed", "reason": "stale_or_partial_session"}
+            else:
+                body = {"vendor": fetched["vendor"], "adjustment": fetched["adjustment"], "retrieved_at": fetched["retrieved_at"], "session": session, "rows": rows}
+                s3.put_object(Bucket=bucket, Key=cache_key, Body=json.dumps(body).encode(), ContentType="application/json")
+                work["items"][symbol] = {"status": "validated", "cache": cache_key, "bars": len(rows), "retrieved_at": fetched["retrieved_at"]}
+            notes.append({"symbol": symbol, **work["items"][symbol]})
         except Exception as exc:
-            notes.append({"symbol": symbol, "status": "fetch_failed", "error": type(exc).__name__})
-    nxt = start + len(batch)
-    s3.put_object(Bucket=bucket, Key=checkpoint_key, Body=json.dumps({"next": 0 if nxt >= len(symbols) else nxt, "total": len(symbols), "batch": BATCH, "manifest_sha256": manifest.get("manifest_sha256")}).encode(), ContentType="application/json")
-    return panels, index_rows, notes, nxt >= len(symbols) and start == 0
+            work["items"][symbol] = {"status": "failed", "reason": type(exc).__name__}
+            notes.append({"symbol": symbol, "status": "failed", "reason": type(exc).__name__})
+    s3.put_object(Bucket=bucket, Key=work_key, Body=json.dumps(work).encode(), ContentType="application/json")
+    panels = {}
+    for symbol, item in work["items"].items():
+        if item.get("status") != "validated":
+            continue
+        cached = _read_json(s3, bucket, item["cache"])
+        if cached and cached.get("session") == session:
+            panels[symbol] = cached["rows"]
+    remaining = sum(1 for item in work["items"].values() if item.get("status") == "pending")
+    return panels, index_rows, notes, remaining == 0

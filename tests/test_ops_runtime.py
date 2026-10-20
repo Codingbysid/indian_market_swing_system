@@ -117,6 +117,7 @@ def test_verified_trend_panel_is_evaluated_and_rerun_does_not_notify_twice():
         holdings=[{"symbol": "INFY", "qty": 5}],
         policy=_policy(),
         code_version="test",
+        metadata=_metadata(),
     )
     assert built["snapshot"]["price_session"] == "2026-10-19"
     assert built["snapshot"]["evaluated_count"] == 1
@@ -138,6 +139,14 @@ def test_verified_trend_panel_is_evaluated_and_rerun_does_not_notify_twice():
     assert json.loads(second["body"])["status"] == "duplicate_skipped"
     assert notes == ["PAPER | Research update"]
     assert "BUY" not in notes[0]
+
+
+def _metadata():
+    return {
+        "calendar_verified": True,
+        "corporate_actions": {"status": "none_in_window", "as_of": "2020-01-01", "source": "fixture"},
+        "restrictions": {"status": "clear", "as_of": "2020-01-01", "source": "fixture"},
+    }
 
 
 def _admitting_rows():
@@ -177,6 +186,7 @@ def test_isolated_policy_admits_fills_and_exits_without_duplicating_cash():
         "alerts": False, "mode": "replay", "panels": { "SUNTV": [row for row in later if row["Date"] <= signal_day] },
         "index_rows": [row for row in index if row["Date"] <= signal_day],
         "universe": [{"symbol": "SUNTV", "role": "verified_screen"}],
+        "metadata": _metadata(),
         "clock": signal_day + "T16:00:00+05:30",
     }
     notes = []
@@ -209,6 +219,7 @@ def test_research_policy_rejects_without_manufacturing_an_order():
         "action": "paper", "mode": "replay", "clock": signal_day + "T16:00:00+05:30",
         "panels": {"SUNTV": panel}, "index_rows": [{"Date": row["Date"], "Close": 100.0} for row in panel],
         "universe": [{"symbol": "SUNTV", "role": "verified_screen"}],
+        "metadata": _metadata(),
     }, s3=client, bucket="t", notify=lambda message, channels=None: None, suppress=False)
     body = json.loads(result["body"])
     assert body["paper_orders"] == 0
@@ -259,3 +270,87 @@ def test_failed_email_is_retried_and_partial_coverage_is_not_complete():
         "action": "transport_test", "mode": "replay", "clock": "2026-10-20T10:00:00+05:30",
     }, s3=client, bucket="t", notify=notify, suppress=False)
     assert calls[0] == [] or "email" in calls[-1]
+
+
+def test_retention_does_not_revive_an_expired_order_or_replay_cash():
+    state = empty_state() if False else __import__("swing_ops.ledger", fromlist=["empty_state"]).empty_state()
+    from swing_ops.ledger import apply_event, empty_state
+    state = empty_state()
+    apply_event(state, {"event_id": "init", "kind": "paper_account_init", "payload": {"cash": 1000, "assumption_note": "test"}})
+    apply_event(state, {"event_id": "order", "kind": "paper_order", "payload": {"order_id": "o1", "qty": 1, "limit": 10, "reserved": 10, "stressed_risk": 1}})
+    apply_event(state, {"event_id": "expiry", "kind": "paper_expiry", "payload": {"order_id": "o1", "reserved": 10, "stressed_risk": 1}})
+    for index in range(401):
+        apply_event(state, {"event_id": f"noise-{index}", "kind": "note", "payload": {"n": index}})
+    assert view(state)["pending"] == []
+    assert state["order_status"]["o1"] == "expired"
+    cash = state["account"]["cash"]
+    assert apply_event(state, {"event_id": "init", "kind": "paper_account_init", "payload": {"cash": 5}}) is False
+    assert state["account"]["cash"] == cash
+    assert apply_event(state, {"event_id": "expiry", "kind": "paper_expiry", "payload": {"order_id": "o1", "reserved": 10, "stressed_risk": 1}}) is False
+    assert state["account"]["cash"] == cash
+    ambiguous = {"orders": [{"order_id": "o1"}], "events": [], "events_dropped": 3, "exits": [], "positions": []}
+    assert view(ambiguous)["migration"]["status"] == "ambiguous"
+    assert view(ambiguous)["pending"] == []
+
+
+def test_vertical_exit_is_the_same_for_one_shot_and_incremental_runs():
+    from swing_ops.ledger import apply_event
+    from swing_ops.lifecycle import advance_events, exchange_sessions
+    sessions = exchange_sessions("2026-04-13", "2026-05-08")[:15]
+    bars = [{"Date": day, "Open": 100.0, "High": 101.0, "Low": 99.0, "Close": 100.0} for day in sessions]
+    order = {"order_id": "v1", "symbol": "SUNTV", "qty": 1, "limit": 100.0, "atr": 1.0, "stop": 50.0, "target": 500.0, "horizon": "short", "signal_session": "2026-04-10", "reserved": 1.0, "stressed_risk": 1.0, "family": "trend_transition"}
+    one = empty_book(order)
+    one_events = advance_events(one, {"SUNTV": bars}, sessions[-1])
+    assert one_events[-1]["payload"]["reason"] == "vertical"
+    one_session = one_events[-1]["payload"]["session"]
+    incremental = empty_book(order)
+    first = advance_events(incremental, {"SUNTV": bars[:1]}, sessions[0])
+    for event in first:
+        apply_event(incremental, event)
+    rest = advance_events(incremental, {"SUNTV": bars}, sessions[-1])
+    assert rest[-1]["payload"]["reason"] == "vertical"
+    assert rest[-1]["payload"]["session"] == one_session
+    assert rest[-1]["payload"]["proceeds"] == one_events[-1]["payload"]["proceeds"]
+    gap = bars[:8] + bars[9:]
+    blocked = empty_book(order)
+    for event in advance_events(blocked, {"SUNTV": bars[:1]}, sessions[0]):
+        apply_event(blocked, event)
+    assert advance_events(blocked, {"SUNTV": gap}, sessions[-1]) == []
+
+
+def empty_book(order):
+    from swing_ops.ledger import apply_event, empty_state
+    state = empty_state()
+    apply_event(state, {"event_id": "init", "kind": "paper_account_init", "payload": {"cash": 100000, "assumption_note": "isolated"}})
+    apply_event(state, {"event_id": order["order_id"], "kind": "paper_order", "payload": order})
+    return state
+
+
+def test_distinct_batches_do_not_share_a_snapshot_id_and_quality_detector_is_called():
+    from swing_ops.paper_job import build_snapshot
+    rows = [{"Date": "2026-04-13", "Open": 100, "High": 101, "Low": 99, "Close": 100, "Volume": 1000, "IndexClose": 100}]
+    common = dict(now=datetime(2026, 4, 13, 16, tzinfo=IST), identities=[{"nse_symbol": "AAA", "status": "verified_nse"}, {"nse_symbol": "BBB", "status": "verified_nse"}], index_rows=[{"Date": "2026-04-13", "Close": 100}], holdings=[], policy=_policy(), code_version="t", metadata=_metadata())
+    first = build_snapshot(**common, panels={"AAA": rows}, manifest={"version": "m", "symbols": [{"symbol": "AAA", "role": "verified_screen"}]})
+    second = build_snapshot(**common, panels={"BBB": rows}, manifest={"version": "m", "symbols": [{"symbol": "BBB", "role": "verified_screen"}]})
+    assert first["events"][-1]["event_id"] != second["events"][-1]["event_id"]
+    same = build_snapshot(**common, panels={"AAA": rows}, manifest={"version": "m", "symbols": [{"symbol": "AAA", "role": "verified_screen"}]})
+    assert first["events"][-1]["event_id"] == same["events"][-1]["event_id"]
+    dated = [{"symbol": "AAA", "as_of": "2026-04-01", "member": False, "financial": False, "piotroski": 2, "ebit": 1, "equity": 1}]
+    import swing_ops.paper_job as job
+    original = job._fundamentals
+    job._fundamentals = lambda: {"AAA": dated}
+    long_rows = _admitting_rows()
+    signal = [row for row in long_rows if row["Date"] <= long_rows[221]["Date"]]
+    try:
+        built = build_snapshot(
+            now=datetime.fromisoformat(long_rows[221]["Date"] + "T16:00:00+05:30"),
+            identities=common["identities"], holdings=[], policy=_policy(), code_version="t", metadata=_metadata(),
+            panels={"AAA": signal}, index_rows=[{"Date": row["Date"], "Close": 100.0} for row in signal],
+            manifest={"version": "m", "symbols": [{"symbol": "AAA", "role": "verified_screen"}]},
+        )
+        quality = next(row for row in built["snapshot"]["families"] if row["family"] == "quality_continuation")
+        assert quality["names_evaluated"] == 1
+        direct = job._fundamental_detector("quality_continuation", [{**row, "IndexClose": 100} for row in signal], signal[-1]["Date"], dated[0])
+        assert direct is False
+    finally:
+        job._fundamentals = original

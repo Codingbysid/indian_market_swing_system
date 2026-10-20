@@ -45,27 +45,28 @@ def _snapshot_for(rows: list[dict], session: str) -> dict | None:
     return usable[-1] if usable else None
 
 
+def metadata_blockers(metadata: dict | None, session: str) -> list[str]:
+    """A vendor name is not eligibility. Unknown required fields stay blocked."""
+    meta = metadata or {}
+    reasons = []
+    if meta.get("calendar_verified") is not True:
+        reasons.append("calendar_unverified")
+    actions = meta.get("corporate_actions") or {}
+    if actions.get("status") not in {"none_in_window", "present"} or str(actions.get("as_of") or "") > session or not actions.get("source"):
+        reasons.append("corporate_actions_unknown")
+    restrictions = meta.get("restrictions") or {}
+    if restrictions.get("status") not in {"clear", "restricted"} or str(restrictions.get("as_of") or "") > session or not restrictions.get("source"):
+        reasons.append("restrictions_unknown")
+    return reasons
+
+
 def _v4_flags(rows: list[dict]) -> dict:
     import pandas as pd
 
+    from swing_core.indicators import enrich_ohlcv
     from swing_core.strategies import ema_cross, failed_breakdown, range_breakout, trend_pullback
 
-    frame = pd.DataFrame(rows)
-    close = frame["Close"].astype(float)
-    frame["EMA_9"] = close.ewm(span=9, adjust=False).mean()
-    frame["EMA_21"] = close.ewm(span=21, adjust=False).mean()
-    delta = close.diff()
-    gain = delta.clip(lower=0).rolling(14).mean()
-    loss = (-delta.clip(upper=0)).rolling(14).mean()
-    frame["RSI"] = 100 - (100 / (1 + gain / loss.replace(0, pd.NA)))
-    mid = close.rolling(20).mean()
-    std = close.rolling(20).std()
-    frame["Upper_Band"] = mid + 2 * std
-    frame["Lower_Band"] = mid - 2 * std
-    frame["SMA_50"] = close.rolling(50).mean()
-    previous = close.shift(1)
-    true_range = pd.concat([(frame["High"] - frame["Low"]), (frame["High"] - previous).abs(), (frame["Low"] - previous).abs()], axis=1).max(axis=1)
-    frame["ATR"] = true_range.rolling(14).mean()
+    frame = enrich_ohlcv(pd.DataFrame(rows))
     index = len(frame) - 1
     flags = {}
     for name, fn in (
@@ -81,7 +82,7 @@ def _v4_flags(rows: list[dict]) -> dict:
     return flags
 
 
-def _trend_outcome(rows: list[dict], session: str, policy: dict, cash: float | None, metadata_ok: bool) -> dict:
+def _trend_outcome(rows: list[dict], session: str, policy: dict, account: dict, metadata_ok: bool) -> dict:
     import pandas as pd
 
     from swing_v5.paper import evaluate_session
@@ -96,14 +97,18 @@ def _trend_outcome(rows: list[dict], session: str, policy: dict, cash: float | N
     index = len(featured) - 1
     detected = bool(trend_transition(featured, index, rel63=rel63))
     if not detected:
-        return {"stage": "evaluated_no_setup", "detected": False, "reasons": []}
-    if cash is None:
-        return {"stage": "evaluated", "detected": True, "reasons": ["paper_account_uninitialized"], "order": None, "paper_action": "REJECTED"}
+        return {"stage": "evaluated_no_setup", "detected": False, "reasons": [], "detector": "trend_transition"}
+    if not account.get("initialized") or account.get("cash") is None:
+        return {"stage": "evaluated", "detected": True, "reasons": ["paper_account_uninitialized"], "order": None, "paper_action": "REJECTED", "detector": "trend_transition"}
     if not metadata_ok:
-        return {"stage": "evaluated", "detected": True, "reasons": ["blocked_missing_metadata"], "order": None, "paper_action": "REJECTED"}
+        return {"stage": "evaluated", "detected": True, "reasons": ["blocked_missing_metadata"], "order": None, "paper_action": "REJECTED", "detector": "trend_transition"}
+    available = float(account["cash"]) - float(account.get("reserved") or 0.0)
+    aggregate_left = float(account.get("aggregate_limit") or 0.0) - float(account.get("open_stressed") or 0.0) - float(account.get("reserved_stressed") or 0.0)
     outcome = evaluate_session(
         featured, index, family="trend_transition", member=False, rel63=rel63,
-        metadata_ok=True, mode="research", cash=float(cash), policy=policy, signal_date=session,
+        metadata_ok=True, mode="research", cash=available, policy=policy, signal_date=session,
+        aggregate_left=aggregate_left, launch_nav=account.get("launch_nav"), sleeve_nav=account.get("sleeve_nav"),
+        external_inflows=float(account.get("external_inflows") or 0.0), circuit_latched=bool(account.get("circuit_latched")),
     )
     funnel = outcome.get("funnel") or {}
     reasons = [funnel["admission"]] if funnel.get("admission") else []
@@ -117,7 +122,29 @@ def _trend_outcome(rows: list[dict], session: str, policy: dict, cash: float | N
     }
 
 
-def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index_rows: list[dict], holdings: list[dict], policy: dict, code_version: str, state: dict | None = None, manifest: dict | None = None) -> dict:
+def _fundamental_detector(name: str, rows: list[dict], session: str, snap: dict):
+    import pandas as pd
+
+    from swing_v5.pipeline import _features
+    from swing_v5.strategies import improving_value, quality_continuation
+
+    frame = pd.DataFrame(rows)
+    closes = frame["IndexClose"].tolist() if "IndexClose" in frame.columns else None
+    prepared = _features(frame.drop(columns=["IndexClose"], errors="ignore"), closes)
+    if prepared is None:
+        return None
+    featured, rel63 = prepared
+    index = len(featured) - 1
+    if name == "quality_continuation":
+        return bool(quality_continuation(featured, index, member=bool(snap.get("member")), rel63=rel63))
+    return bool(improving_value(
+        featured, index, member=bool(snap.get("member")), financial=bool(snap.get("financial")), rel63=rel63,
+        piotroski=snap.get("piotroski"), ebit=snap.get("ebit"), equity=snap.get("equity"),
+        snapshot_date=snap.get("as_of"), signal_date=session,
+    ))
+
+
+def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index_rows: list[dict], holdings: list[dict], policy: dict, code_version: str, state: dict | None = None, manifest: dict | None = None, metadata: dict | None = None) -> dict:
     if now.tzinfo is None:
         now = now.replace(tzinfo=IST)
     clock = clock_for(now)
@@ -125,10 +152,11 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
     earliest = clock.next_execution()
     session_text = None if session is None else session.isoformat()
     families = family_inventory()
-    account = _account(state or {})
-    available = None
+    account = dict(_account(state or {}))
     if account.get("initialized") and account.get("cash") is not None:
-        available = float(account["cash"]) - float(account.get("reserved") or 0.0)
+        from swing_v5.risk import limits_for
+        sleeve_p = float(account.get("sleeve_nav") or account["cash"]) - float(account.get("launch_nav") or account["cash"]) - float(account.get("external_inflows") or 0.0)
+        account["aggregate_limit"] = limits_for(float(account["cash"]), policy, sleeve_p=sleeve_p)["aggregate_risk"]
     fundamentals = _fundamentals()
     detections = []
     blocked = []
@@ -155,6 +183,11 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         if not identity or identity.get("status") not in {"verified_nse", "verified_nse_link"}:
             blocked.append({"symbol": symbol, "stage": "blocked_unresolved_instrument", "identity_status": None if not identity else identity.get("status")})
             continue
+        if session_text:
+            meta_reasons = metadata_blockers(metadata, session_text)
+            if meta_reasons:
+                blocked.append({"symbol": symbol, "stage": meta_reasons[0]})
+                continue
         panel = panels.get(symbol)
         if not panel or session_text is None:
             blocked.append({"symbol": symbol, "stage": "blocked_prices"})
@@ -166,8 +199,7 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         if aligned is None or len(aligned) < MIN_BARS:
             blocked.append({"symbol": symbol, "stage": "stale_or_partial_session" if aligned is None else "blocked_prices", "bars": 0 if aligned is None else len(aligned)})
             continue
-        provenance = bool(panel and panel[0].get("vendor", "yahoo_chart"))
-        outcome = _trend_outcome(aligned, session_text, policy, available, provenance)
+        outcome = _trend_outcome(aligned, session_text, policy, account, True)
         family_counts["trend_transition"]["selected"] += 1
         if outcome["stage"] == "blocked_prices":
             blocked.append({"symbol": symbol, "stage": "blocked_prices"})
@@ -179,11 +211,19 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
                 family_counts["trend_transition"]["setups"] += 1
             detections.append({"symbol": symbol, "family": "trend_transition", "funnel": {"detected": detected, "admission": (outcome.get("reasons") or [None])[0]}, "paper_action": outcome.get("paper_action") or "NO_SIGNAL"})
             if outcome.get("order"):
+                from swing_v5.costs import buy_fees
                 order = {**outcome["order"], "symbol": symbol, "horizon": "long", "signal_session": session_text, "execution_proxy": "next_session_open_not_verified_0925"}
-                order["order_id"] = event_id({"order": symbol, "session": session_text, "family": "trend_transition", "policy": policy.get("version")})
-                orders.append(order)
-                family_counts["trend_transition"]["admitted"] += 1
-                available = None if available is None else available - float(order["qty"]) * float(order["limit"])
+                worst = float(order["limit"]) + 0.25 * float(order["atr"])
+                order["reserved"] = worst * int(order["qty"]) + buy_fees(worst, int(order["qty"]), day=session_text)
+                affordable = account.get("cash") is not None and float(account["cash"]) - float(account.get("reserved") or 0.0) + 1e-6 >= float(order["reserved"])
+                if not affordable:
+                    rejections.append({"symbol": symbol, "family": "trend_transition", "reasons": ["insufficient_cash_at_fill"]})
+                else:
+                    order["order_id"] = event_id({"order": symbol, "session": session_text, "family": "trend_transition", "policy": policy.get("version")})
+                    orders.append(order)
+                    family_counts["trend_transition"]["admitted"] += 1
+                    account["reserved"] = float(account.get("reserved") or 0.0) + float(order["reserved"])
+                    account["reserved_stressed"] = float(account.get("reserved_stressed") or 0.0) + float(order.get("stressed_risk") or 0.0)
             elif outcome.get("reasons"):
                 rejections.append({"symbol": symbol, "family": "trend_transition", "reasons": outcome["reasons"]})
                 family_counts["trend_transition"]["rejections"].append({"symbol": symbol, "reasons": outcome["reasons"]})
@@ -205,8 +245,14 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
             snap = _snapshot_for(fundamentals.get(symbol) or [], session_text or "")
             if snap is None:
                 family_counts[name]["data_blockers"].append("not_evaluated_no_point_in_time_snapshot")
-            else:
-                family_counts[name]["evaluated"] += 1
+                continue
+            detected = _fundamental_detector(name, aligned, session_text, snap)
+            if detected is None:
+                family_counts[name]["data_blockers"].append("features_unavailable")
+                continue
+            family_counts[name]["evaluated"] += 1
+            if detected:
+                family_counts[name]["setups"] += 1
     for row in families:
         counts = family_counts[row["family"]]
         row["names_selected"] = counts["selected"]
@@ -227,7 +273,9 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
             row["detection"] = "not_evaluated"
         if row["family"] == "trend_transition" and counts["evaluated"]:
             row["production_status"] = "PAPER"
-    coverage_complete = bool(selected) and not blocked and all(panels.get(item["symbol"]) for item in selected if item.get("role") != "protected_holding")
+    failure_stages = {"stale_or_partial_session", "blocked_prices", "corporate_actions_unknown", "restrictions_unknown", "calendar_unverified", "blocked_unresolved_instrument"}
+    terminal_failures = [row for row in blocked if row.get("stage") in failure_stages]
+    coverage_complete = bool(selected) and not terminal_failures
     snapshot = {
         "kind": "paper_snapshot",
         "decision_created_at": now.astimezone(IST).isoformat(timespec="seconds"),
@@ -241,7 +289,18 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         "paper_orders": len(orders),
         "rejections": rejections,
         "families": families,
-        "coverage": {"selected": len(seen), "evaluated": len(detections), "blocked": len(blocked), "universe_cap": 150, "complete": coverage_complete},
+        "coverage": {
+            "selected": len(seen),
+            "protected_holdings": sum(1 for item in selected if item.get("role") == "protected_holding"),
+            "eligible_candidates": len(detections),
+            "fetched_validated": len(detections),
+            "evaluated": len(detections),
+            "terminal_failures": len(terminal_failures),
+            "remaining": 0,
+            "blocked": len(blocked),
+            "universe_cap": 150,
+            "complete": coverage_complete,
+        },
         "advance": {"status": "noop", "reason": "no pending orders or open positions"},
         "production_eligibility": "disabled",
         "paper_account": "uninitialized" if not account.get("initialized") else account.get("label"),
@@ -255,5 +314,6 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         events.append({"event_id": order["order_id"], "kind": "paper_order", "payload": order})
     for rejection in rejections:
         events.append({"event_id": event_id({"rejection": rejection["symbol"], "family": rejection["family"], "session": session_text, "reasons": rejection["reasons"]}), "kind": "paper_rejection", "payload": rejection})
-    events.append({"event_id": event_id({"run": "paper_snapshot", "session": session_text, "orders": [row["order_id"] for row in orders], "code": code_version}), "kind": "paper_snapshot", "payload": snapshot})
+    source_hash = {symbol: [len(rows), rows[-1]["Date"], rows[-1]["Close"]] for symbol, rows in sorted(panels.items()) if rows}
+    events.append({"event_id": event_id({"run": "paper_snapshot", "session": session_text, "manifest": (manifest or {}).get("version"), "policy": policy.get("version"), "code": code_version, "symbols": sorted(seen), "sources": source_hash}), "kind": "paper_snapshot", "payload": snapshot})
     return {"snapshot": snapshot, "events": events, "orders": orders}

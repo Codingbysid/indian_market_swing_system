@@ -2,7 +2,7 @@
 
 Production function `indian-swing-bot` in eu-north-1.
 
-- Production alias `live` points at Lambda version **13**. Code sha256 `6qXtKrLkXj89DDGlIy1+NRJV+p2Cf4zNVCdxxamMaCM=`.
+- Production alias `live` points at Lambda version **14**. Code sha256 `OhTM8uv1+5qmD+5ZYzVbmU0lDPkI8/0pkYaggOZ7HaQ=`.
 - EventBridge targets the alias ARN, not the unqualified function.
 - Version 12 remains available. Version 10 remains the pre-activation rollback package.
 - Rollback version **10**. See `ROLLBACK.md`.
