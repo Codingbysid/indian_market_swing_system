@@ -1725,7 +1725,8 @@ def run_v4_recommender(suppress_alerts: bool = False):
             model["promoted"] = False
             model["allowed_live_families"] = []
     from swing_ops.promotion import strip_unapproved_buys
-    result = strip_unapproved_buys(evaluate_snapshot(
+    from swing_core.fundamental_screen import filter_new_buys, load_snapshots
+    result = strip_unapproved_buys(filter_new_buys(evaluate_snapshot(
         state,
         frames,
         nifty,
@@ -1735,7 +1736,7 @@ def run_v4_recommender(suppress_alerts: bool = False):
         sentiment=overlay,
         policy=policy,
         live_quotes=quotes,
-    ), model)
+    ), load_snapshots(s3_client, BUCKET_NAME)), model)
     result["feed_health"] = health
     result["sentiment_health"] = overlay["health"]
     if result["BUY"] and not suppress_alerts:

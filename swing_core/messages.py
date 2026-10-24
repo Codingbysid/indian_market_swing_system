@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 
 IST = ZoneInfo('Asia/Kolkata')
 REASONS = {
+    'fundamental_screen_fail': 'Stock does not pass the ROE/FII quality screen',
+    'fundamental_screen_unverified': 'ROE/FII financial inputs need verification',
     'RISK_OFF': 'Market filter blocks new buys',
     'RISK_ON': 'Long entries permitted by the market filter',
     'DATA_INVALID': 'Market data could not be validated',
@@ -152,6 +154,8 @@ def scan_message(result: dict) -> Message:
         blocks.append('Scan status\n' + reason(result['reason']))
     elif not buys:
         blocks.append('No order to place\nNo candidate passed all entry checks.')
+    if result.get('fundamental_screen'):
+        blocks.append(screen_summary(result['fundamental_screen']))
     limits = result.get('limits') or {}
     if 'cash' in limits:
         blocks.append('Cash\nAvailable: ' + rupees(limits['cash']))
@@ -245,6 +249,8 @@ def research_message(snapshot: dict, book: dict, reconciliation: dict) -> Messag
               'This snapshot\nStocks evaluated: ' + clean(evaluated) +
               f'\nSetups detected: {detected_text}\nPaper orders recorded this snapshot: {admitted}' +
               '\nStatus: ' + reason(snapshot.get('evaluation_stage', 'unavailable'))]
+    if snapshot.get('fundamental_screen'):
+        blocks.append(screen_summary(snapshot['fundamental_screen']))
     if rows:
         blocks.append('Evaluated stocks\n' + '\n'.join(
             clean(r.get('symbol')) + ': ' + ('setup detected' if (r.get('funnel') or {}).get('detected') else 'no setup')
@@ -270,6 +276,13 @@ def research_message(snapshot: dict, book: dict, reconciliation: dict) -> Messag
                   '\nHypothetical paper cash: ' + cash_text)
     blocks.append('Research status\nThis is a hypothetical paper account, not the broker account. Strategies are unpromoted. A repeated message uses the same signal and is not a second order.\nSignal ' + clean(snapshot.get('signal_id')))
     return Message('PAPER | Research update', '\n\n'.join(blocks))
+
+
+def screen_summary(summary: dict) -> str:
+    return ('ROE / FII quality screen · new entries only\n'
+            '0 < P/E <30; ROE >20%; EPS >0; annual profit growth >20%; FII ownership increased.\n'
+            f"Pass: {clean(summary.get('pass'))} · Fail: {clean(summary.get('fail'))} · Unverified: {clean(summary.get('unverified'))}\n"
+            'Reported ownership change is not confirmation of a recent purchase.')
 
 
 def email_html(title: str, body: str) -> str:

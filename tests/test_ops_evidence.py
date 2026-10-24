@@ -163,7 +163,7 @@ def test_paper_families_share_one_account_and_detection_only_orders_nothing(monk
     assert built["orders"] == []
     statuses = {row["family"]: row["status"] for row in built["snapshot"]["signals"]}
     assert statuses.get("ema_cross") == "DETECTION_ONLY"
-    assert built["snapshot"]["signals"][0]["admission_blockers"] == ["detection_only_no_execution_rules", "restrictions_unknown"]
+    assert built["snapshot"]["signals"][0]["admission_blockers"] == ["detection_only_no_execution_rules", "restrictions_unknown", "fundamental_screen_unverified", "fundamental_store_invalid"]
     assert all(row["order_id"] is None for row in built["snapshot"]["signals"])
     second = build_snapshot(
         now=datetime.fromisoformat(session + "T16:00:00+05:30"), identities=[{"nse_symbol": "AAA", "status": "verified_nse"}],
