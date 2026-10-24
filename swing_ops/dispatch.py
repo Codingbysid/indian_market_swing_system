@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from swing_core.messages import Message, research_message
+from swing_core.fundamental_screen import load_snapshots
 from swing_ops.calendar import clock_for
 from swing_ops.ledger import S3PaperBook, event_id, view
 from swing_ops.lifecycle import advance_events
@@ -213,6 +214,7 @@ def _paper(event: dict, now: datetime, s3, bucket: str, notify) -> dict:
         symbol_evidence=evidence,
         evidence_hash=hashlib.sha256(json.dumps(evidence, sort_keys=True, default=str).encode()).hexdigest() if evidence is not None else None,
         config_hash=hashlib.sha256(config_blob.encode()).hexdigest(),
+        quality_snapshots=load_snapshots(s3, bucket),
     )
     built["snapshot"]["coverage"]["complete"] = bool(coverage_complete and built["snapshot"]["coverage"].get("complete"))
     built["snapshot"]["source_notes"] = source_notes

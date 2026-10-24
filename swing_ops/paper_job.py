@@ -10,6 +10,7 @@ from swing_ops.calendar import clock_for
 from swing_ops.families import family_inventory
 from swing_ops.ledger import event_id, view
 from swing_v5.sessions import IST
+from swing_core.fundamental_screen import (evaluate_screen, screen_blockers, summarize, digest, RULES)
 
 ROOT = Path(__file__).resolve().parents[1]
 MIN_BARS = 220
@@ -280,7 +281,7 @@ def _take_order(account: dict, orders: list, symbol: str, family: str, session_t
     return order["order_id"]
 
 
-def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index_rows: list[dict], holdings: list[dict], policy: dict, code_version: str, state: dict | None = None, manifest: dict | None = None, metadata: dict | None = None, symbol_evidence: dict | None = None, evidence_hash: str | None = None, config_hash: str | None = None) -> dict:
+def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index_rows: list[dict], holdings: list[dict], policy: dict, code_version: str, state: dict | None = None, manifest: dict | None = None, metadata: dict | None = None, symbol_evidence: dict | None = None, evidence_hash: str | None = None, config_hash: str | None = None, quality_snapshots: dict | None = None) -> dict:
     if now.tzinfo is None:
         now = now.replace(tzinfo=IST)
     clock = clock_for(now)
@@ -299,6 +300,7 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
     rejections = []
     orders = []
     signals = []
+    quality_results = {}
     seen = set()
     selected = list((manifest or {}).get("symbols") or [])
     if not selected:
@@ -344,6 +346,9 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         if aligned is None or len(aligned) < MIN_BARS:
             blocked.append({"symbol": symbol, "stage": "stale_or_partial_session" if aligned is None else "blocked_prices", "bars": 0 if aligned is None else len(aligned)})
             continue
+        screen = evaluate_screen(symbol, float(aligned[-1]["Close"]), now, quality_snapshots)
+        quality_results[symbol] = screen
+        admission_extra.extend(screen_blockers(screen))
         outcome = _trend_outcome(aligned, session_text, policy, account, True)
         family_counts["trend_transition"]["selected"] += 1
         if outcome["stage"] == "blocked_prices":
@@ -495,6 +500,9 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
         "phase": clock.phase(),
         "evaluation_stage": "evaluated" if signals else "evaluated_no_setup" if any(row.get("names_evaluated") for row in families) else "blocked_prices",
         "signals": signals,
+        "fundamental_screen": summarize(quality_results),
+        "fundamental_screen_results": quality_results,
+        "fundamental_screen_hash": digest({"rules": RULES, "snapshots": quality_snapshots}),
         "evaluated_count": len(detections),
         "detections": detections,
         "blocked": blocked,
@@ -525,9 +533,10 @@ def build_snapshot(*, now: datetime, identities: list[dict], panels: dict, index
     }
     events = []
     for order in orders:
+        order["fundamental_screen"] = quality_results[order["symbol"]]
         events.append({"event_id": order["order_id"], "kind": "paper_order", "payload": order})
     for rejection in rejections:
         events.append({"event_id": event_id({"rejection": rejection["symbol"], "family": rejection["family"], "session": session_text, "reasons": rejection["reasons"]}), "kind": "paper_rejection", "payload": rejection})
     source_hash = {symbol: [len(rows), rows[-1]["Date"], rows[-1]["Close"]] for symbol, rows in sorted(panels.items()) if rows}
-    events.append({"event_id": event_id({"run": "paper_snapshot", "session": session_text, "manifest": (manifest or {}).get("version"), "policy": policy.get("version"), "code": code_version, "symbols": sorted(seen), "sources": source_hash, "evidence": evidence_hash, "config": config_hash}), "kind": "paper_snapshot", "payload": snapshot})
+    events.append({"event_id": event_id({"run": "paper_snapshot", "session": session_text, "manifest": (manifest or {}).get("version"), "policy": policy.get("version"), "code": code_version, "symbols": sorted(seen), "sources": source_hash, "evidence": evidence_hash, "config": config_hash, "quality_screen": snapshot["fundamental_screen_hash"]}), "kind": "paper_snapshot", "payload": snapshot})
     return {"snapshot": snapshot, "events": events, "orders": orders}

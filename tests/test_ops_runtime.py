@@ -162,7 +162,7 @@ def _admitting_rows():
     return rows
 
 
-def test_isolated_policy_admits_fills_and_exits_without_duplicating_cash():
+def test_isolated_policy_admits_fills_and_exits_without_duplicating_cash(fundamental_payload):
     rows = _admitting_rows()
     signal = rows[221]
     later = rows[:222] + [
@@ -180,6 +180,9 @@ def test_isolated_policy_admits_fills_and_exits_without_duplicating_cash():
     ]
     index = [{"Date": row["Date"], "Close": 100.0} for row in later]
     client = FakeS3()
+    from swing_core.fundamental_screen import S3_KEY
+    evidence = fundamental_payload('SUNTV', signal_day + 'T09:00:00+05:30')
+    client.put_object(Bucket='t', Key=S3_KEY, Body=json.dumps(evidence).encode())
     base = {
         "action": "paper", "isolated": True, "policy_name": "test_only_mechanics",
         "book_key": "research-test/lifecycle.json", "hypothetical_cash": 200000,
