@@ -23,23 +23,17 @@ def _scale(observations: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray
 
 
 def _initialize(scaled: np.ndarray, seed: int, states: int = 3) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Seeded starts. Quantile labels alone made every seed identical."""
     rng = np.random.default_rng(seed)
     length, dims = scaled.shape
-    centers = np.quantile(scaled[:, 0], [0.2, 0.5, 0.8])
-    labels = np.argmin(np.abs(scaled[:, 0:1] - centers), axis=1)
-    if len(set(labels)) < states:
-        labels = rng.integers(0, states, length)
-    pi = np.full(states, 1.0 / states)
-    transition = np.full((states, states), 0.05 / (states - 1))
-    np.fill_diagonal(transition, 0.95)
-    means = np.zeros((states, dims))
-    variances = np.ones((states, dims))
-    for state in range(states):
-        rows = scaled[labels == state]
-        if len(rows) == 0:
-            rows = scaled[rng.integers(0, length, 10)]
-        means[state] = rows.mean(axis=0)
-        variances[state] = np.maximum(rows.var(axis=0), VARIANCE_FLOOR)
+    picks = rng.choice(length, size=states, replace=False)
+    means = scaled[picks] + rng.normal(0.0, 0.15, size=(states, dims))
+    variances = np.maximum(1.0 + rng.normal(0.0, 0.05, size=(states, dims)), VARIANCE_FLOOR)
+    stay = 0.75 + 0.05 * float(seed % 5)
+    off = (1.0 - stay) / (states - 1)
+    transition = np.full((states, states), off)
+    np.fill_diagonal(transition, stay)
+    pi = rng.dirichlet(np.ones(states))
     return pi, transition, means, variances
 
 

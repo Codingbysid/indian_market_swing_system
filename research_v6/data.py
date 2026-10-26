@@ -211,7 +211,11 @@ def load_study(sector_cache: Path | None = None) -> dict:
         "provider": "tvDatafeed_cache",
         "adjustment": "tvdatafeed_as_returned",
         "universe_as_of": "2026-10-13",
-        "bars": {"symbol": {day: {"open": float(panel["open"][index]), "high": float(panel["high"][index]), "low": float(panel["low"][index]), "close": float(panel["close"][index])}
-                            for index, day in enumerate(dates) if np.isfinite(panel["close"][index])}
-                 for symbol, panel in panels.items()},
+        "bars": {
+            symbol: {
+                day: {"open": float(panel["open"][index]), "high": float(panel["high"][index]), "low": float(panel["low"][index]), "close": float(panel["close"][index])}
+                for index, day in enumerate(dates) if np.isfinite(panel["close"][index])
+            }
+            for symbol, panel in panels.items()
+        },
     }

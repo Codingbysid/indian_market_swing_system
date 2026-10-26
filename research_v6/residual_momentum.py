@@ -11,6 +11,7 @@ import numpy as np
 FIT = 120
 RANK = 60
 SKIP = 5
+VOL_FLOOR = 1e-4
 
 
 def window_bounds(index: int) -> tuple[int, int, int, int] | None:
@@ -108,10 +109,20 @@ def prediction_errors(
 
 
 def residual_score(stock: np.ndarray, market: np.ndarray, sector: np.ndarray | None, index: int, lam: float) -> float | None:
-    errors = prediction_errors(stock, market, sector, index, lam)
-    if errors is None or not np.isfinite(errors).all():
+    pair = residual_pair(stock, market, sector, index, lam)
+    if pair is None:
         return None
-    return float(errors.sum())
+    return pair["sum"]
+
+
+def residual_pair(stock: np.ndarray, market: np.ndarray, sector: np.ndarray | None, index: int, lam: float) -> dict | None:
+    """Summed residual return, and that sum divided by a floored residual volatility."""
+    errors = prediction_errors(stock, market, sector, index, lam)
+    if errors is None or not np.isfinite(errors).all() or len(errors) < 2:
+        return None
+    total = float(errors.sum())
+    scale = float(np.std(errors, ddof=1))
+    return {"sum": total, "vol_normalized": total / max(scale, VOL_FLOOR), "volatility": scale}
 
 
 def raw_momentum(stock: np.ndarray, index: int) -> float | None:

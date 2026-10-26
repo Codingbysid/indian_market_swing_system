@@ -68,6 +68,10 @@ def log_emission(observation: np.ndarray, model: dict) -> np.ndarray:
 def forward_filter(model: dict, observations: np.ndarray) -> np.ndarray:
     """Each row is P(S_t | observations through t) in the exported state order."""
     checked = _as_model(model)
+    checked["pi"] = np.maximum(checked["pi"], 1e-12)
+    checked["pi"] = checked["pi"] / checked["pi"].sum()
+    checked["transition"] = np.maximum(checked["transition"], 1e-12)
+    checked["transition"] = checked["transition"] / checked["transition"].sum(axis=1, keepdims=True)
     frame = np.asarray(observations, dtype=float)
     if frame.ndim != 2 or frame.shape[1] != checked["means"].shape[1]:
         raise ValueError("hmm observation matrix rejected")

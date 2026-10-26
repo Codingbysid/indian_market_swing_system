@@ -21,6 +21,32 @@
     ],
     "selection": "train_mean_square_prediction_error"
   },
+  "folds_definition": [
+    {
+      "name": "fold_2023h2",
+      "train_end": "2022-12-31",
+      "cal_start": "2023-01-01",
+      "cal_end": "2023-06-30",
+      "test_start": "2023-07-01",
+      "test_end": "2023-12-31"
+    },
+    {
+      "name": "fold_2024h2",
+      "train_end": "2023-12-31",
+      "cal_start": "2024-01-01",
+      "cal_end": "2024-06-30",
+      "test_start": "2024-07-01",
+      "test_end": "2024-12-31"
+    },
+    {
+      "name": "fold_2025",
+      "train_end": "2024-12-31",
+      "cal_start": "2025-01-01",
+      "cal_end": "2025-06-30",
+      "test_start": "2025-07-01",
+      "test_end": "2026-10-08"
+    }
+  ],
   "sample": {
     "start": "2018-09-11",
     "end": "2026-10-08",
@@ -31,15 +57,16 @@
     "duplicate_dates": []
   },
   "data_status": "reused_development_cache_not_untouched_holdout",
+  "v4_baseline": "unreproduced_historical_reference_event_file_gitignored",
   "provider": "tvDatafeed_cache",
   "adjustment": "tvdatafeed_as_returned",
   "sector_attempts": [
     {
       "symbol": "^CNXAUTO",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXAUTO?interval=1d&range=10y",
-      "sha256": "3590bd534a19fbee640496eb98da1300d44b8f255f2a297f6d358020251a343c",
+      "sha256": "b2653391fdfaf1c758461380d13169d6a53ec6c02163913b00da911a9fdc31fe",
       "parsed": true,
-      "bytes": 223087,
+      "bytes": 223079,
       "rows": 2452,
       "sector": "Automobile and Auto Components",
       "archive": "artifacts/research_v6/sectors/Automobile_and_Auto_Components.csv"
@@ -47,9 +74,9 @@
     {
       "symbol": "^CNXPHARMA",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXPHARMA?interval=1d&range=10y",
-      "sha256": "dd7e4668a474c94c92082580ffa154939f3e534e63002e15afd55d6a617698bd",
+      "sha256": "4c21ac11bad8ded1cfe7750fb113e12cbdfe1e237d77ef3a93359846557cfcdb",
       "parsed": true,
-      "bytes": 228502,
+      "bytes": 228482,
       "rows": 2466,
       "sector": "Healthcare",
       "archive": "artifacts/research_v6/sectors/Healthcare.csv"
@@ -57,9 +84,9 @@
     {
       "symbol": "^CNXFMCG",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXFMCG?interval=1d&range=10y",
-      "sha256": "b8c03f27f5ebdc0e00caa4578a53e263349210d9dc4639e52d2ccc5409dbe4fd",
+      "sha256": "b29f94aae8fe2c15a3562c138fbfd02a2aa574827ab325573e0508102a0979ad",
       "parsed": true,
-      "bytes": 212672,
+      "bytes": 212657,
       "rows": 2451,
       "sector": "Fast Moving Consumer Goods",
       "archive": "artifacts/research_v6/sectors/Fast_Moving_Consumer_Goods.csv"
@@ -67,9 +94,9 @@
     {
       "symbol": "^CNXMETAL",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXMETAL?interval=1d&range=10y",
-      "sha256": "434e8da752d51e26d7a582a16b655aad9d6ca10835f2e0ab17e5507d15783c93",
+      "sha256": "57fc27a397003ac3d11173236a7601d9c1f3072607dc509f0b60aac6f099f70f",
       "parsed": true,
-      "bytes": 232326,
+      "bytes": 232349,
       "rows": 2452,
       "sector": "Metals & Mining",
       "archive": "artifacts/research_v6/sectors/Metals_&_Mining.csv"
@@ -77,9 +104,9 @@
     {
       "symbol": "^CNXENERGY",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXENERGY?interval=1d&range=10y",
-      "sha256": "251884f7a76398a6ccb6d818587474425d7b3ab7801c1da79b8938e40364fe22",
+      "sha256": "003308026961df59c5e71df758a0cbcf3cf5b0a153410a8e1e275997345592b1",
       "parsed": true,
-      "bytes": 221360,
+      "bytes": 221357,
       "rows": 2452,
       "sector": "Oil Gas & Consumable Fuels",
       "archive": "artifacts/research_v6/sectors/Oil_Gas_&_Consumable_Fuels.csv"
@@ -87,9 +114,9 @@
     {
       "symbol": "^CNXIT",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXIT?interval=1d&range=10y",
-      "sha256": "bb9921bd6a9a8a10e80b68760bcf16b1d839b23b30317d6e8265e04e1741e1cf",
+      "sha256": "51bb41ab23e75aab0f2c38fc3d48234db231d6d19b0f5e2f065bb06b97b48713",
       "parsed": true,
-      "bytes": 213913,
+      "bytes": 213916,
       "rows": 2467,
       "sector": "Information Technology",
       "archive": "artifacts/research_v6/sectors/Information_Technology.csv"
@@ -97,7 +124,7 @@
     {
       "symbol": "^CNXREALTY",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXREALTY?interval=1d&range=10y",
-      "sha256": "6b5e1e1353f3c6e936e37e6e6c3ae8a3ad951295ffbf298f459e1cf588776a36",
+      "sha256": "e98a946487586053f1ba533755d043dc89d20a0cb5d368e595f5cdbea5cc54cf",
       "parsed": true,
       "bytes": 242676,
       "rows": 2452,
@@ -107,377 +134,2724 @@
     {
       "symbol": "^CNXFIN",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXFIN?interval=1d&range=10y",
-      "sha256": "859413a836c447ea7c8b064a27cdcbefe8526e3dc4da651e965c9dfb94790960",
+      "sha256": "92e8a0fe61451a4aa172343e83e4e709d42b31c78c50914624b505c71fc19ee7",
       "parsed": false,
-      "bytes": 1226,
+      "bytes": 1224,
       "rows": 1,
       "sector": "Financial Services"
     },
     {
       "symbol": "NIFTY_FIN_SERVICE.NS",
       "url": "https://query1.finance.yahoo.com/v8/finance/chart/NIFTY_FIN_SERVICE.NS?interval=1d&range=10y",
-      "sha256": "d09b579821ac058848efc464b5ecc081f8339bd97b7b44661a329a77ac87ebb0",
+      "sha256": "920f19ae4476a00ad0df63502e0b2150a85a94157907a9ef7eaa27318f8a4355",
       "parsed": true,
-      "bytes": 223244,
+      "bytes": 223245,
       "rows": 2452,
       "sector": "Financial Services",
       "archive": "artifacts/research_v6/sectors/Financial_Services.csv"
     }
   ],
   "experiments": {
-    "A": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
+    "fold_2023h2": {
+      "A": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1474,
+          "completed": 1277,
+          "unfilled": 197,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.021067681417923964,
+          "mean_mae_r": -0.7371988102553311,
+          "mean_mfe_r": 1.2451856213116892,
+          "time_exits": 501,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1277,
+          "unique_names": 54,
+          "net_pnl": 1765671.7658351292,
+          "expectancy_pnl": 1382.6717038646275,
+          "expectancy_net_r": 0.2771186774205055,
+          "profit_factor": 1.6616549661463496,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 1.0,
+            "zero": 0.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 27,
+            "low": 0.010339854218739272,
+            "mid": 0.26470446464964675,
+            "high": 0.5344970766770022,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.08787600149158836
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1474,
+          "completed": 1277,
+          "reference_quantity_zero": 0,
+          "unfilled": 197,
+          "censored": 0,
+          "account_would_reject": 1277,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1474,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1474
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
+      "C_market_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1414,
+          "completed": 1201,
+          "unfilled": 213,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.0177458979999426,
+          "mean_mae_r": -0.7697420363870779,
+          "mean_mfe_r": 1.1832920164912297,
+          "time_exits": 483,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1201,
+          "unique_names": 69,
+          "net_pnl": 1182727.4105752078,
+          "expectancy_pnl": 984.7855208786076,
+          "expectancy_net_r": 0.19731061453730478,
+          "profit_factor": 1.447662332252025,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 1.0,
+            "zero": 0.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 27,
+            "low": -0.016891951976077495,
+            "mid": 0.18113291747181665,
+            "high": 0.3985054270253913,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.09297613585257722
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1414,
+          "completed": 1201,
+          "reference_quantity_zero": 0,
+          "unfilled": 213,
+          "censored": 0,
+          "account_would_reject": 1201,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1414,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1414
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "concentration": null,
-      "candidates": 2512,
-      "admitted": 0,
-      "unfilled_or_rejected": 2512,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 15845,
-        "censored": 0
+      "C_market_vol": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1414,
+          "completed": 1173,
+          "unfilled": 241,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.010820585697600835,
+          "mean_mae_r": -0.8025344038760049,
+          "mean_mfe_r": 1.1369767403801079,
+          "time_exits": 464,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1173,
+          "unique_names": 93,
+          "net_pnl": 438884.3271641361,
+          "expectancy_pnl": 374.155436627567,
+          "expectancy_net_r": 0.07472750319015652,
+          "profit_factor": 1.1509466368407442,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 1.0,
+            "zero": 0.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 27,
+            "low": -0.18457902421174027,
+            "mid": 0.05663768319091678,
+            "high": 0.326957461020445,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.09325112858646442
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1414,
+          "completed": 1173,
+          "reference_quantity_zero": 0,
+          "unfilled": 241,
+          "censored": 0,
+          "account_would_reject": 1173,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1414,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1414
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "unit_completed_test": 0
+      "C_market_raw_for_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1414,
+          "completed": 1226,
+          "unfilled": 188,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.022267453794950046,
+          "mean_mae_r": -0.7315442867237109,
+          "mean_mfe_r": 1.2626470854089356,
+          "time_exits": 473,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1226,
+          "unique_names": 53,
+          "net_pnl": 1831639.8709757035,
+          "expectancy_pnl": 1493.9966321172133,
+          "expectancy_net_r": 0.299439489608977,
+          "profit_factor": 1.7203052448209872,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 1.0,
+            "zero": 0.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 27,
+            "low": 0.03290669758728958,
+            "mid": 0.28635820855144045,
+            "high": 0.5528898488138618,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.09023173115389571
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1414,
+          "completed": 1226,
+          "reference_quantity_zero": 0,
+          "unfilled": 188,
+          "censored": 0,
+          "account_would_reject": 1226,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1414,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1414
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "C_market_raw_for_vol": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1414,
+          "completed": 1226,
+          "unfilled": 188,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.022267453794950046,
+          "mean_mae_r": -0.7315442867237109,
+          "mean_mfe_r": 1.2626470854089356,
+          "time_exits": 473,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1226,
+          "unique_names": 53,
+          "net_pnl": 1831639.8709757035,
+          "expectancy_pnl": 1493.9966321172133,
+          "expectancy_net_r": 0.299439489608977,
+          "profit_factor": 1.7203052448209872,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 1.0,
+            "zero": 0.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 27,
+            "low": 0.03290669758728958,
+            "mid": 0.28635820855144045,
+            "high": 0.5528898488138618,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.09023173115389571
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1414,
+          "completed": 1226,
+          "reference_quantity_zero": 0,
+          "unfilled": 188,
+          "censored": 0,
+          "account_would_reject": 1226,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1414,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1414
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "C_sector_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 160,
+          "completed": 142,
+          "unfilled": 18,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.009995277739240558,
+          "mean_mae_r": -0.8990978361126896,
+          "mean_mfe_r": 1.048642056120384,
+          "time_exits": 42,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 142,
+          "unique_names": 20,
+          "net_pnl": -30407.73451173287,
+          "expectancy_pnl": -214.1389754347385,
+          "expectancy_net_r": -0.04248372733692516,
+          "profit_factor": 0.9279971149682256,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.42857142857142855,
+            "zero": 0.5714285714285714,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 10,
+            "low": -0.41886552471203253,
+            "mid": -0.06256756726774505,
+            "high": 0.671865980581622,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.15625607472774145
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 160,
+          "completed": 142,
+          "reference_quantity_zero": 0,
+          "unfilled": 18,
+          "censored": 0,
+          "account_would_reject": 142,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 160,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 160
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "C_sector_raw_matched": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 160,
+          "completed": 148,
+          "unfilled": 12,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.019546810487476415,
+          "mean_mae_r": -0.7960166019193579,
+          "mean_mfe_r": 1.2301884865760444,
+          "time_exits": 44,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 148,
+          "unique_names": 21,
+          "net_pnl": 136461.32504471234,
+          "expectancy_pnl": 922.0359800318402,
+          "expectancy_net_r": 0.18513696796259668,
+          "profit_factor": 1.364900611965122,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.42857142857142855,
+            "zero": 0.5714285714285714,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 10,
+            "low": -0.255864613141793,
+            "mid": 0.21741144065771928,
+            "high": 0.9981550250646476,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.14385652678446992
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 160,
+          "completed": 148,
+          "reference_quantity_zero": 0,
+          "unfilled": 12,
+          "censored": 0,
+          "account_would_reject": 148,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 160,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 160
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "D_hysteresis": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1488,
+          "completed": 1282,
+          "unfilled": 206,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.021053570738384632,
+          "mean_mae_r": -0.7416846933813924,
+          "mean_mfe_r": 1.2421422024163624,
+          "time_exits": 498,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1282,
+          "unique_names": 54,
+          "net_pnl": 1747416.3164257545,
+          "expectancy_pnl": 1363.0392483820237,
+          "expectancy_net_r": 0.27315110919955227,
+          "profit_factor": 1.650252839389502,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.9285714285714286,
+            "zero": 0.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 27,
+            "low": 0.006890135852862349,
+            "mid": 0.2647766111778598,
+            "high": 0.548459255259963,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "BSE",
+            "share": 0.08749534914473224
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1488,
+          "completed": 1282,
+          "reference_quantity_zero": 0,
+          "unfilled": 206,
+          "censored": 0,
+          "account_would_reject": 1282,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1488,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1488
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "H2": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 14,
+          "completed": 11,
+          "unfilled": 3,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.0700562125481368,
+          "mean_mae_r": -0.6348581748952273,
+          "mean_mfe_r": 1.567568434136367,
+          "time_exits": 2,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 11,
+          "unique_names": 6,
+          "net_pnl": 46120.06448291384,
+          "expectancy_pnl": 4192.733134810349,
+          "expectancy_net_r": 0.8394147590410396,
+          "profit_factor": 3.747092306695747,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.21428571428571427,
+            "zero": 0.5714285714285714,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 7,
+            "low": -0.3817569213659366,
+            "mid": 0.8002790401189943,
+            "high": 1.7722297056159464,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "KALYANKJIL",
+            "share": 0.6053479522724781
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 14,
+          "completed": 11,
+          "reference_quantity_zero": 0,
+          "unfilled": 3,
+          "censored": 0,
+          "account_would_reject": 11,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 14,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 14
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "meta_model": {
+        "status": "fitted",
+        "label_population": "reference_risk_budget_5000_not_admitted_fills",
+        "selected_model": "logistic_1.0",
+        "m": 10,
+        "train_rows": 5714,
+        "calibration_rows": 706,
+        "calibration_attempts": [
+          {
+            "model": "prior",
+            "calibration_brier": 0.25188788741008367,
+            "calibration_log_loss": 0.6969309476305797
+          },
+          {
+            "model": "logistic_10.0",
+            "calibration_brier": 0.24991881816818406,
+            "calibration_log_loss": 0.6929287633762302
+          },
+          {
+            "model": "logistic_1.0",
+            "calibration_brier": 0.24990944112522576,
+            "calibration_log_loss": 0.6929090518698802
+          },
+          {
+            "model": "xgboost",
+            "calibration_brier": 0.2513747336196364,
+            "calibration_log_loss": 0.6958320013891718
+          }
+        ],
+        "test_brier": 0.24775806923660312,
+        "test_log_loss": 0.6886738000199509,
+        "experts": "not_attempted_below_200_family_trades",
+        "dependence": {
+          "pairs": [
+            {
+              "left": "atr_compression",
+              "right": "cost_over_risk",
+              "correlation": -0.04223213723874431
+            },
+            {
+              "left": "atr_compression",
+              "right": "volume_impulse",
+              "correlation": 0.32257936169975726
+            },
+            {
+              "left": "atr_compression",
+              "right": "rank_percentile",
+              "correlation": 0.02421099791511613
+            },
+            {
+              "left": "atr_compression",
+              "right": "adverse_gap_tail",
+              "correlation": 0.0673773766255369
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "volume_impulse",
+              "correlation": 0.005240408569906254
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "rank_percentile",
+              "correlation": 0.04431913246416056
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "adverse_gap_tail",
+              "correlation": -0.29159376771384
+            },
+            {
+              "left": "volume_impulse",
+              "right": "rank_percentile",
+              "correlation": 0.0028220038230399682
+            },
+            {
+              "left": "volume_impulse",
+              "right": "adverse_gap_tail",
+              "correlation": 0.023878750328889208
+            },
+            {
+              "left": "rank_percentile",
+              "right": "adverse_gap_tail",
+              "correlation": -0.05386239390881011
+            }
+          ],
+          "orthogonal_claim": false
+        },
+        "note": "probabilities describe reference trades, not admitted \u20b95,748 fills"
+      }
     },
-    "C_market_residual": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
+    "fold_2024h2": {
+      "A": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1165,
+          "completed": 1001,
+          "unfilled": 164,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.006410502119642005,
+          "mean_mae_r": -0.88697759051427,
+          "mean_mfe_r": 0.8999394403996783,
+          "time_exits": 390,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1001,
+          "unique_names": 63,
+          "net_pnl": -964619.9576011638,
+          "expectancy_pnl": -963.6563012998639,
+          "expectancy_net_r": -0.1949140302171598,
+          "profit_factor": 0.6712470562888457,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.8571428571428571,
+            "zero": 0.14285714285714285,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.45336605191680135,
+            "mid": -0.18684454927993957,
+            "high": 0.04748022624480433,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "KALYANKJIL",
+            "share": 0.057232348093612266
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1165,
+          "completed": 1001,
+          "reference_quantity_zero": 0,
+          "unfilled": 164,
+          "censored": 0,
+          "account_would_reject": 1001,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1165,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1165
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
+      "C_market_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1170,
+          "completed": 1021,
+          "unfilled": 149,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.0031081639370460247,
+          "mean_mae_r": -0.8626441065689501,
+          "mean_mfe_r": 0.9240198293639812,
+          "time_exits": 413,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1021,
+          "unique_names": 70,
+          "net_pnl": -861373.3345043749,
+          "expectancy_pnl": -843.6565470170175,
+          "expectancy_net_r": -0.17022932800446924,
+          "profit_factor": 0.7059693696310142,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.8571428571428571,
+            "zero": 0.14285714285714285,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.39820485985660475,
+            "mid": -0.1549727097275285,
+            "high": 0.09373734223559511,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "PAYTM",
+            "share": 0.07539683330311474
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1170,
+          "completed": 1021,
+          "reference_quantity_zero": 0,
+          "unfilled": 149,
+          "censored": 0,
+          "account_would_reject": 1021,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1170,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1170
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "concentration": null,
-      "candidates": 2520,
-      "admitted": 0,
-      "unfilled_or_rejected": 2520,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 15139,
-        "censored": 0
+      "C_market_vol": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1170,
+          "completed": 1016,
+          "unfilled": 154,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.00135334157292869,
+          "mean_mae_r": -0.8611485068748171,
+          "mean_mfe_r": 0.9506641397321748,
+          "time_exits": 405,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1016,
+          "unique_names": 74,
+          "net_pnl": -815691.7031340239,
+          "expectancy_pnl": -802.846164501992,
+          "expectancy_net_r": -0.16190297383124197,
+          "profit_factor": 0.7224377420449932,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.8571428571428571,
+            "zero": 0.14285714285714285,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.3761474453193749,
+            "mid": -0.1497718304971669,
+            "high": 0.11585235438078749,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "PAYTM",
+            "share": 0.0620675165012509
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1170,
+          "completed": 1016,
+          "reference_quantity_zero": 0,
+          "unfilled": 154,
+          "censored": 0,
+          "account_would_reject": 1016,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1170,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1170
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "unit_completed_test": 0
+      "C_market_raw_for_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1170,
+          "completed": 1006,
+          "unfilled": 164,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.006466125811841762,
+          "mean_mae_r": -0.887108549729192,
+          "mean_mfe_r": 0.8987958594932335,
+          "time_exits": 394,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1006,
+          "unique_names": 64,
+          "net_pnl": -975352.6126509106,
+          "expectancy_pnl": -969.5354002494141,
+          "expectancy_net_r": -0.1961056832778213,
+          "profit_factor": 0.6688007135302754,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.8571428571428571,
+            "zero": 0.14285714285714285,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.4536217736321476,
+            "mid": -0.18898210778897578,
+            "high": 0.04616475878791235,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "KALYANKJIL",
+            "share": 0.05710735903428527
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1170,
+          "completed": 1006,
+          "reference_quantity_zero": 0,
+          "unfilled": 164,
+          "censored": 0,
+          "account_would_reject": 1006,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1170,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1170
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "C_market_raw_for_vol": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1170,
+          "completed": 1006,
+          "unfilled": 164,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.006466125811841762,
+          "mean_mae_r": -0.887108549729192,
+          "mean_mfe_r": 0.8987958594932335,
+          "time_exits": 394,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1006,
+          "unique_names": 64,
+          "net_pnl": -975352.6126509106,
+          "expectancy_pnl": -969.5354002494141,
+          "expectancy_net_r": -0.1961056832778213,
+          "profit_factor": 0.6688007135302754,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.8571428571428571,
+            "zero": 0.14285714285714285,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.4536217736321476,
+            "mid": -0.18898210778897578,
+            "high": 0.04616475878791235,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "KALYANKJIL",
+            "share": 0.05710735903428527
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1170,
+          "completed": 1006,
+          "reference_quantity_zero": 0,
+          "unfilled": 164,
+          "censored": 0,
+          "account_would_reject": 1006,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1170,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1170
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "C_sector_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 0,
+          "completed": 0,
+          "unfilled": 0,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": null,
+          "mean_mae_r": null,
+          "mean_mfe_r": null,
+          "time_exits": 0,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 0,
+          "completed": 0,
+          "reference_quantity_zero": 0,
+          "unfilled": 0,
+          "censored": 0,
+          "account_would_reject": 0,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 0,
+          "admitted": 0,
+          "rejection_reasons": {},
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "C_sector_raw_matched": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 0,
+          "completed": 0,
+          "unfilled": 0,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": null,
+          "mean_mae_r": null,
+          "mean_mfe_r": null,
+          "time_exits": 0,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 0,
+          "completed": 0,
+          "reference_quantity_zero": 0,
+          "unfilled": 0,
+          "censored": 0,
+          "account_would_reject": 0,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 0,
+          "admitted": 0,
+          "rejection_reasons": {},
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "D_hysteresis": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 1179,
+          "completed": 1016,
+          "unfilled": 163,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.007628882126731127,
+          "mean_mae_r": -0.8975378312717418,
+          "mean_mfe_r": 0.8841645460740464,
+          "time_exits": 392,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 1016,
+          "unique_names": 65,
+          "net_pnl": -1093679.767577991,
+          "expectancy_pnl": -1076.4564641515658,
+          "expectancy_net_r": -0.217517880651587,
+          "profit_factor": 0.6390435064897728,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.8571428571428571,
+            "zero": 0.14285714285714285,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.4621352246846466,
+            "mid": -0.20902521341169736,
+            "high": 0.03193270503839845,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "KALYANKJIL",
+            "share": 0.05599596664170105
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 1179,
+          "completed": 1016,
+          "reference_quantity_zero": 0,
+          "unfilled": 163,
+          "censored": 0,
+          "account_would_reject": 1016,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 1179,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 1179
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "H2": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 27,
+          "completed": 18,
+          "unfilled": 9,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.004917043944082063,
+          "mean_mae_r": -0.8789580655294361,
+          "mean_mfe_r": 0.9812375670381565,
+          "time_exits": 7,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 18,
+          "unique_names": 13,
+          "net_pnl": -16474.84219968977,
+          "expectancy_pnl": -915.2690110938761,
+          "expectancy_net_r": -0.19020646514862494,
+          "profit_factor": 0.6920255558445442,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.2857142857142857,
+            "zero": 0.5,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 9,
+            "low": -0.8450939845479883,
+            "mid": -0.1881125744644194,
+            "high": 0.44282493278476465,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "COCHINSHIP",
+            "share": 0.11548170830172894
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 27,
+          "completed": 18,
+          "reference_quantity_zero": 0,
+          "unfilled": 9,
+          "censored": 0,
+          "account_would_reject": 18,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 14,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 27,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 27
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
+      },
+      "meta_model": {
+        "status": "fitted",
+        "label_population": "reference_risk_budget_5000_not_admitted_fills",
+        "selected_model": "prior",
+        "m": 10,
+        "train_rows": 7734,
+        "calibration_rows": 1331,
+        "calibration_attempts": [
+          {
+            "model": "prior",
+            "calibration_brier": 0.2458611677748979,
+            "calibration_log_loss": 0.6848630900302413
+          },
+          {
+            "model": "logistic_10.0",
+            "calibration_brier": 0.24797620705538836,
+            "calibration_log_loss": 0.6890951834350436
+          },
+          {
+            "model": "logistic_1.0",
+            "calibration_brier": 0.24798598404368283,
+            "calibration_log_loss": 0.6891146970897895
+          },
+          {
+            "model": "xgboost",
+            "calibration_brier": 0.24681083798527373,
+            "calibration_log_loss": 0.6867316950575069
+          }
+        ],
+        "test_brier": 0.24444750668518425,
+        "test_log_loss": 0.6820333922926132,
+        "experts": "not_attempted_below_200_family_trades",
+        "dependence": {
+          "pairs": [
+            {
+              "left": "atr_compression",
+              "right": "cost_over_risk",
+              "correlation": -0.04207034403429655
+            },
+            {
+              "left": "atr_compression",
+              "right": "volume_impulse",
+              "correlation": 0.3405867294974261
+            },
+            {
+              "left": "atr_compression",
+              "right": "rank_percentile",
+              "correlation": 0.014536555330667337
+            },
+            {
+              "left": "atr_compression",
+              "right": "adverse_gap_tail",
+              "correlation": 0.06562707335195771
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "volume_impulse",
+              "correlation": -0.0005641594639679828
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "rank_percentile",
+              "correlation": 0.04178086769310915
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "adverse_gap_tail",
+              "correlation": -0.25505996437609196
+            },
+            {
+              "left": "volume_impulse",
+              "right": "rank_percentile",
+              "correlation": -0.01132720955849351
+            },
+            {
+              "left": "volume_impulse",
+              "right": "adverse_gap_tail",
+              "correlation": 0.0194730594893197
+            },
+            {
+              "left": "rank_percentile",
+              "right": "adverse_gap_tail",
+              "correlation": -0.054995901396629555
+            }
+          ],
+          "orthogonal_claim": false
+        },
+        "note": "probabilities describe reference trades, not admitted \u20b95,748 fills"
+      }
     },
-    "C_market_raw_matched": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
+    "fold_2025": {
+      "A": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 2512,
+          "completed": 2229,
+          "unfilled": 283,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.003172580799988396,
+          "mean_mae_r": -0.8628399442505853,
+          "mean_mfe_r": 0.9068066516393106,
+          "time_exits": 904,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 2229,
+          "unique_names": 98,
+          "net_pnl": -1843405.856447408,
+          "expectancy_pnl": -827.0102541262486,
+          "expectancy_net_r": -0.16662855154333894,
+          "profit_factor": 0.7118306253130665,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.8529411764705882,
+            "zero": 0.11764705882352941,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 55,
+            "low": -0.3176521652977901,
+            "mid": -0.15588109885993554,
+            "high": -0.01220433469599049,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "IDEA",
+            "share": 0.04792785768299171
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 2512,
+          "completed": 2229,
+          "reference_quantity_zero": 0,
+          "unfilled": 283,
+          "censored": 0,
+          "account_would_reject": 2229,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 2512,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 2512
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
+      "C_market_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 2520,
+          "completed": 2252,
+          "unfilled": 268,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.005010819222525658,
+          "mean_mae_r": -0.8794584701667014,
+          "mean_mfe_r": 0.8801238438296843,
+          "time_exits": 935,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 2252,
+          "unique_names": 116,
+          "net_pnl": -2547636.5507023335,
+          "expectancy_pnl": -1131.2773315729721,
+          "expectancy_net_r": -0.22787797326505518,
+          "profit_factor": 0.6178669964752997,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.8823529411764706,
+            "zero": 0.11764705882352941,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 56,
+            "low": -0.3786639126797764,
+            "mid": -0.2217307612198693,
+            "high": -0.05774539583064266,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "NATIONALUM",
+            "share": 0.04386995057076678
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 2520,
+          "completed": 2252,
+          "reference_quantity_zero": 0,
+          "unfilled": 268,
+          "censored": 0,
+          "account_would_reject": 2252,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 2520,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 2520
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "concentration": null,
-      "candidates": 2520,
-      "admitted": 0,
-      "unfilled_or_rejected": 2520,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 0,
-        "censored": 0
+      "C_market_vol": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 2520,
+          "completed": 2234,
+          "unfilled": 286,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.003910738647629942,
+          "mean_mae_r": -0.8743998981813653,
+          "mean_mfe_r": 0.8905086123196447,
+          "time_exits": 952,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 2234,
+          "unique_names": 131,
+          "net_pnl": -2453489.6333145415,
+          "expectancy_pnl": -1098.249612047691,
+          "expectancy_net_r": -0.22081622135421816,
+          "profit_factor": 0.6264117431514904,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.8823529411764706,
+            "zero": 0.11764705882352941,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 56,
+            "low": -0.355527808403503,
+            "mid": -0.2114792591753321,
+            "high": -0.05111841433518852,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "NATIONALUM",
+            "share": 0.03685025176633855
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 2520,
+          "completed": 2234,
+          "reference_quantity_zero": 0,
+          "unfilled": 286,
+          "censored": 0,
+          "account_would_reject": 2234,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 2520,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 2520
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "unit_completed_test": 0
-    },
-    "C_sector_residual": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
+      "C_market_raw_for_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 2520,
+          "completed": 2237,
+          "unfilled": 283,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.0034438304537733324,
+          "mean_mae_r": -0.8666785633421089,
+          "mean_mfe_r": 0.9042556377546123,
+          "time_exits": 896,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 2237,
+          "unique_names": 98,
+          "net_pnl": -1918796.6100260124,
+          "expectancy_pnl": -857.7544077004973,
+          "expectancy_net_r": -0.17282455840224206,
+          "profit_factor": 0.7038213409708625,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.8529411764705882,
+            "zero": 0.11764705882352941,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 55,
+            "low": -0.3217425545353698,
+            "mid": -0.16045000829643746,
+            "high": -0.013105237734526322,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "IDEA",
+            "share": 0.04754695552775597
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 2520,
+          "completed": 2237,
+          "reference_quantity_zero": 0,
+          "unfilled": 283,
+          "censored": 0,
+          "account_would_reject": 2237,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 2520,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 2520
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
+      "C_market_raw_for_vol": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 2520,
+          "completed": 2237,
+          "unfilled": 283,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.0034438304537733324,
+          "mean_mae_r": -0.8666785633421089,
+          "mean_mfe_r": 0.9042556377546123,
+          "time_exits": 896,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 2237,
+          "unique_names": 98,
+          "net_pnl": -1918796.6100260124,
+          "expectancy_pnl": -857.7544077004973,
+          "expectancy_net_r": -0.17282455840224206,
+          "profit_factor": 0.7038213409708625,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.8529411764705882,
+            "zero": 0.11764705882352941,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 55,
+            "low": -0.3217425545353698,
+            "mid": -0.16045000829643746,
+            "high": -0.013105237734526322,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "IDEA",
+            "share": 0.04754695552775597
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 2520,
+          "completed": 2237,
+          "reference_quantity_zero": 0,
+          "unfilled": 283,
+          "censored": 0,
+          "account_would_reject": 2237,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 2520,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 2520
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "concentration": null,
-      "candidates": 450,
-      "admitted": 0,
-      "unfilled_or_rejected": 450,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 1716,
-        "censored": 0
+      "C_sector_sum": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 450,
+          "completed": 377,
+          "unfilled": 73,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.01607009347728468,
+          "mean_mae_r": -0.6898765695793128,
+          "mean_mfe_r": 1.234025916307039,
+          "time_exits": 178,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 377,
+          "unique_names": 25,
+          "net_pnl": 545296.7534219997,
+          "expectancy_pnl": 1446.4104865305032,
+          "expectancy_net_r": 0.2903528397562556,
+          "profit_factor": 1.7683579163085117,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.17647058823529413,
+            "zero": 0.8235294117647058,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 12,
+            "low": 0.01216947679679931,
+            "mid": 0.2884908766640055,
+            "high": 0.5239409295914382,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "HINDCOPPER",
+            "share": 0.11512881849482168
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 450,
+          "completed": 377,
+          "reference_quantity_zero": 0,
+          "unfilled": 73,
+          "censored": 0,
+          "account_would_reject": 377,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 450,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 450
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "unit_completed_test": 0
-    },
-    "C_sector_raw_matched": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
+      "C_sector_raw_matched": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 450,
+          "completed": 372,
+          "unfilled": 78,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": 0.014810873554112716,
+          "mean_mae_r": -0.7281885370554805,
+          "mean_mfe_r": 1.2266451661364652,
+          "time_exits": 163,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 372,
+          "unique_names": 26,
+          "net_pnl": 415383.0650431969,
+          "expectancy_pnl": 1116.621142589239,
+          "expectancy_net_r": 0.2238507531608525,
+          "profit_factor": 1.5363227294658601,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.17647058823529413,
+            "zero": 0.8235294117647058,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 11,
+            "low": -0.06948413727190464,
+            "mid": 0.20940500376022986,
+            "high": 0.5784451750645012,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "HINDCOPPER",
+            "share": 0.1247315672540282
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 450,
+          "completed": 372,
+          "reference_quantity_zero": 0,
+          "unfilled": 78,
+          "censored": 0,
+          "account_would_reject": 372,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 450,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 450
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
+      "D_hysteresis": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 2557,
+          "completed": 2290,
+          "unfilled": 267,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.0027813383381566563,
+          "mean_mae_r": -0.8610588537549683,
+          "mean_mfe_r": 0.9107079813104958,
+          "time_exits": 938,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 2290,
+          "unique_names": 94,
+          "net_pnl": -1811946.2021318069,
+          "expectancy_pnl": -791.24288302699,
+          "expectancy_net_r": -0.1594062021874487,
+          "profit_factor": 0.7220014525919735,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.7941176470588235,
+            "zero": 0.20588235294117646,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 51,
+            "low": -0.3109905125280293,
+            "mid": -0.15648945810732323,
+            "high": -0.007692500110244934,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "IDEA",
+            "share": 0.047830795959597244
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 2557,
+          "completed": 2290,
+          "reference_quantity_zero": 0,
+          "unfilled": 267,
+          "censored": 0,
+          "account_would_reject": 2290,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 2557,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 2557
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "concentration": null,
-      "candidates": 450,
-      "admitted": 0,
-      "unfilled_or_rejected": 450,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 0,
-        "censored": 0
+      "H2": {
+        "gross": {
+          "population": "gross_signal_diagnostic",
+          "candidates": 49,
+          "completed": 42,
+          "unfilled": 7,
+          "censored": 0,
+          "invalid": 0,
+          "mean_gross_return": -0.005112716920339801,
+          "mean_mae_r": -0.9366514131129504,
+          "mean_mfe_r": 0.7925238352640126,
+          "time_exits": 18,
+          "note": "hypothetical price paths, not recommendations and not a profitability claim"
+        },
+        "reference": {
+          "completed_fills": 42,
+          "unique_names": 25,
+          "net_pnl": -41850.95752852848,
+          "expectancy_pnl": -996.4513697268686,
+          "expectancy_net_r": -0.20200790584175904,
+          "profit_factor": 0.6402316573688069,
+          "marked_drawdown": null,
+          "capital_utilization": null,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.29411764705882354,
+            "zero": 0.5294117647058824,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "weeks": 23,
+            "low": -0.49064649158446766,
+            "mid": -0.22785837599479547,
+            "high": 0.15094764885748466,
+            "draws": 400
+          },
+          "concentration": {
+            "symbol": "HYUNDAI",
+            "share": 0.10676840090997262
+          },
+          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "candidates": 49,
+          "completed": 42,
+          "reference_quantity_zero": 0,
+          "unfilled": 7,
+          "censored": 0,
+          "account_would_reject": 42,
+          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+        },
+        "account": {
+          "completed_fills": 0,
+          "unique_names": 0,
+          "net_pnl": 0.0,
+          "expectancy_pnl": null,
+          "expectancy_net_r": null,
+          "profit_factor": null,
+          "marked_drawdown": 0.0,
+          "capital_utilization": 0.0,
+          "fortnight": {
+            "windows": 34,
+            "two_or_more": 0.0,
+            "zero": 1.0,
+            "overlapping_windows": "not_used_as_independent_trials"
+          },
+          "net_r_interval": {
+            "status": "insufficient_weeks",
+            "weeks": 0
+          },
+          "concentration": null,
+          "population": "frozen_5748_account",
+          "candidates": 49,
+          "admitted": 0,
+          "rejection_reasons": {
+            "risk_or_cost": 49
+          },
+          "latched": false,
+          "not_modeled": [
+            "pair_correlation",
+            "defence_cap_without_tag",
+            "psu_cap_without_tag",
+            "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
+          ],
+          "missing_price_marks": 0,
+          "note": "zero admitted orders is an account result, not an alpha estimate"
+        }
       },
-      "unit_completed_test": 0
-    },
-    "D_hysteresis": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
-      },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
-      },
-      "concentration": null,
-      "candidates": 2557,
-      "admitted": 0,
-      "unfilled_or_rejected": 2557,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 0,
-        "censored": 0
-      },
-      "unit_completed_test": 0
-    },
-    "H2": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": 0.0,
-      "capital_utilization": 0.0,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
-      },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
-      },
-      "concentration": null,
-      "candidates": 49,
-      "admitted": 0,
-      "unfilled_or_rejected": 49,
-      "censored": 0,
-      "open_positions": 0,
-      "slippage_bps": 10.0,
-      "launch_cash": 5748.0,
-      "cash_after_completed": 5748.0,
-      "account": "hypothetical_5748_restarted_at_outer_test",
-      "unit_path_status": {
-        "completed": 0,
-        "unfilled": 0,
-        "rejected": 0,
-        "censored": 0
-      },
-      "unit_completed_test": 0
-    },
-    "B": {
-      "status": "BLOCKED",
-      "reason": "fewer_than_30_training_trades",
-      "attempts": []
-    },
-    "E": {
-      "checked_sessions": 1999,
-      "invalid_sessions": 641,
-      "invalid_fraction": 0.32066033016508255,
-      "retained": 1358,
-      "denominator": 150,
-      "status": "BLOCKED",
-      "reason": "breadth_coverage_below_gate"
-    },
-    "F": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": null,
-      "capital_utilization": null,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
-      },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
-      },
-      "concentration": null,
-      "status": "reaction_measured_admission_blocked",
-      "sue": false,
-      "vwap": "daily_range_not_used",
-      "clock": "nse_sort_date_interpreted_as_ist",
-      "filings": 11771,
-      "paths": {
-        "symbol_not_in_price_panel": 11047,
-        "reaction_session_unavailable": 3,
-        "positive_volume_reaction": 280,
-        "confirmed": 152,
-        "confirmed_rejected": 152,
-        "consolidation_failed": 128,
-        "reaction_not_confirmed": 441
-      },
-      "admission": "BLOCKED_fundamental_snapshot_unavailable",
-      "fetch": {
-        "bytes": 167728012,
-        "sha256": "ed5f7cc510a0a7009a1619fd98a3b4ba6704bee6b8b751c1e612ca11761506b5",
-        "cached": true,
-        "url": "https://www.nseindia.com/api/corporate-announcements?index=equities&from_date=01-07-2025&to_date=08-10-2026"
-      },
-      "production": "disabled"
-    },
-    "G": {
-      "completed_fills": 0,
-      "unique_names": 0,
-      "net_pnl": 0.0,
-      "expectancy_pnl": null,
-      "expectancy_net_r": null,
-      "profit_factor": null,
-      "marked_drawdown": null,
-      "capital_utilization": null,
-      "fortnight": {
-        "windows": 34,
-        "two_or_more": 0.0,
-        "zero": 1.0,
-        "overlapping_windows": "not_used_as_independent_trials"
-      },
-      "net_r_interval": {
-        "status": "insufficient_weeks",
-        "weeks": 0
-      },
-      "concentration": null,
-      "status": "research_only",
-      "production": "disabled",
-      "entries": 154,
-      "rejections": {
-        "stationarity_screen_failed": 39325,
-        "phi_outside_unit_interval": 3564,
-        "rejected": 154,
-        "half_life_outside_predeclared_band": 50
-      },
-      "exit": "stop_or_residual_mean_or_fixed_vertical"
-    },
-    "fundamental": {
-      "status": "BLOCKED",
-      "reason": "no_point_in_time_fundamental_history",
-      "conjunction": "AND",
-      "rules_hash": "c752a32e7642b81675d5f4da1b263caf6137ea5af9382b0eb65cc720c19403c8"
+      "meta_model": {
+        "status": "fitted",
+        "label_population": "reference_risk_budget_5000_not_admitted_fills",
+        "selected_model": "prior",
+        "m": 10,
+        "train_rows": 10343,
+        "calibration_rows": 717,
+        "calibration_attempts": [
+          {
+            "model": "prior",
+            "calibration_brier": 0.2428249873093484,
+            "calibration_log_loss": 0.6787687155684967
+          },
+          {
+            "model": "logistic_10.0",
+            "calibration_brier": 0.2438275448760237,
+            "calibration_log_loss": 0.6807702381486047
+          },
+          {
+            "model": "logistic_1.0",
+            "calibration_brier": 0.2438342610604602,
+            "calibration_log_loss": 0.6807835788956395
+          },
+          {
+            "model": "xgboost",
+            "calibration_brier": 0.2428893809524965,
+            "calibration_log_loss": 0.6788792729387573
+          }
+        ],
+        "test_brier": 0.24184886858988722,
+        "test_log_loss": 0.6768120964814629,
+        "experts": "not_attempted_below_200_family_trades",
+        "dependence": {
+          "pairs": [
+            {
+              "left": "atr_compression",
+              "right": "cost_over_risk",
+              "correlation": -0.030501448171273298
+            },
+            {
+              "left": "atr_compression",
+              "right": "volume_impulse",
+              "correlation": 0.3296475697785708
+            },
+            {
+              "left": "atr_compression",
+              "right": "rank_percentile",
+              "correlation": -0.002132396706208681
+            },
+            {
+              "left": "atr_compression",
+              "right": "adverse_gap_tail",
+              "correlation": 0.04502268954622649
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "volume_impulse",
+              "correlation": 0.0013474883436226733
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "rank_percentile",
+              "correlation": 0.02791213400372586
+            },
+            {
+              "left": "cost_over_risk",
+              "right": "adverse_gap_tail",
+              "correlation": -0.2787136070594803
+            },
+            {
+              "left": "volume_impulse",
+              "right": "rank_percentile",
+              "correlation": -0.01815786049285126
+            },
+            {
+              "left": "volume_impulse",
+              "right": "adverse_gap_tail",
+              "correlation": 0.010622871156554676
+            },
+            {
+              "left": "rank_percentile",
+              "right": "adverse_gap_tail",
+              "correlation": -0.01024036540128882
+            }
+          ],
+          "orthogonal_claim": false
+        },
+        "note": "probabilities describe reference trades, not admitted \u20b95,748 fills"
+      }
     }
   },
-  "kelly": false
+  "hmm": {
+    "full_window": {
+      "full_window_status": "BLOCKED",
+      "full_window_reason": "breadth_coverage_below_gate",
+      "invalid_fraction": 0.345,
+      "invalid_sessions": 690,
+      "failure_counts": {
+        "pre_listing": 19853,
+        "warmup": 13631,
+        "missing_vendor_bar": 170,
+        "not_in_cache": 2000
+      },
+      "denominator": 150
+    },
+    "suffix": {
+      "status": "BLOCKED",
+      "reason": "hmm fit failed at observation 492",
+      "window": [
+        "2021-06-29",
+        "2026-10-08"
+      ]
+    }
+  },
+  "earnings": {
+    "completed_fills": 135,
+    "unique_names": 87,
+    "net_pnl": -148579.08428094062,
+    "expectancy_pnl": -1100.585809488449,
+    "expectancy_net_r": -0.22095364160891234,
+    "profit_factor": 0.6261645571061034,
+    "marked_drawdown": null,
+    "capital_utilization": null,
+    "fortnight": {
+      "windows": 34,
+      "two_or_more": 0.4411764705882353,
+      "zero": 0.5294117647058824,
+      "overlapping_windows": "not_used_as_independent_trials"
+    },
+    "net_r_interval": {
+      "weeks": 29,
+      "low": -0.46062843857160923,
+      "mid": -0.22765752038416998,
+      "high": 0.029661496604156855,
+      "draws": 400
+    },
+    "concentration": {
+      "symbol": "MOTHERSON",
+      "share": 0.04126811549304748
+    },
+    "status": "reaction_measured_admission_blocked",
+    "sue": false,
+    "vwap": "daily_range_not_used",
+    "clock": "nse_sort_date_interpreted_as_ist",
+    "filings": 11771,
+    "paths": {
+      "symbol_not_in_price_panel": 11047,
+      "reaction_session_unavailable": 3,
+      "positive_volume_reaction": 280,
+      "confirmed": 152,
+      "confirmed_completed": 135,
+      "consolidation_failed": 128,
+      "reaction_not_confirmed": 441,
+      "confirmed_unfilled": 17
+    },
+    "admission": "BLOCKED_fundamental_snapshot_unavailable",
+    "fetch": {
+      "bytes": 167728012,
+      "sha256": "ed5f7cc510a0a7009a1619fd98a3b4ba6704bee6b8b751c1e612ca11761506b5",
+      "cached": true,
+      "url": "https://www.nseindia.com/api/corporate-announcements?index=equities&from_date=01-07-2025&to_date=08-10-2026"
+    },
+    "production": "disabled"
+  },
+  "ou": {
+    "completed_fills": 18,
+    "unique_names": 6,
+    "net_pnl": -2075.2619312391025,
+    "expectancy_pnl": -115.29232951328348,
+    "expectancy_net_r": -0.6502123205352023,
+    "profit_factor": 0.2102789099262408,
+    "marked_drawdown": null,
+    "capital_utilization": null,
+    "fortnight": {
+      "windows": 34,
+      "two_or_more": 0.17647058823529413,
+      "zero": 0.7941176470588235,
+      "overlapping_windows": "not_used_as_independent_trials"
+    },
+    "net_r_interval": {
+      "weeks": 10,
+      "low": -1.1894263390665691,
+      "mid": -0.6944949391558374,
+      "high": 0.2945630307356964,
+      "draws": 400
+    },
+    "concentration": {
+      "symbol": "MAZDOCK",
+      "share": 0.24643996606502094
+    },
+    "status": "research_only",
+    "production": "disabled",
+    "entries": 154,
+    "rejections": {
+      "stationarity_screen_failed": 39325,
+      "phi_outside_unit_interval": 3564,
+      "rejected": 131,
+      "half_life_outside_predeclared_band": 50,
+      "completed": 18,
+      "unfilled": 5
+    },
+    "exit": "stop_or_residual_mean_or_fixed_vertical"
+  },
+  "fundamental": {
+    "status": "BLOCKED",
+    "reason": "no_point_in_time_fundamental_history",
+    "conjunction": "AND",
+    "rules_hash": "c752a32e7642b81675d5f4da1b263caf6137ea5af9382b0eb65cc720c19403c8"
+  },
+  "feasibility_rows": 2512,
+  "feasibility_zero_quantity": 2512,
+  "kelly": false,
+  "conclusion_limit": "account infeasibility is not an alpha estimate; gross returns are not a profitability claim"
 }

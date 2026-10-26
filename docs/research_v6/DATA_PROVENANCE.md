@@ -23,3 +23,10 @@ The v4 reference blob is `34ce678:backtest/artifacts/v4/metrics.json`. It was re
 The NSE announcement body is local only, at `artifacts/research_v6/earnings_archive/nse_response.bin`, and is gitignored. URL `https://www.nseindia.com/api/corporate-announcements?index=equities&from_date=01-07-2025&to_date=08-10-2026`. sha256 `ed5f7cc510a0a7009a1619fd98a3b4ba6704bee6b8b751c1e612ca11761506b5`.
 
 `config/ops/promotion_approval.json` still has an empty approval list. No Lambda alias, EventBridge rule, notification, broker book, or paper book was written.
+
+The 20be013 run stored every symbol's bars under one dict key, so its path statistics never saw prices. Those files are kept in `artifacts/research_v6_superseded_20be013/`. The corrected command is:
+
+```bash
+python -m pytest -q
+python -m research_v6 --out artifacts/research_v6
+```

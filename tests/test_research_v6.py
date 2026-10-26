@@ -157,25 +157,123 @@ def test_legacy_loss_does_not_become_a_sell():
     assert legacy_exit_intent({**holding, "classification": "system_atr"}, 150, 2) is None
 
 
-def test_replay_distinguishes_unfilled_stop_and_target():
-    from research_v6.replay import _bar_exit, isolate_path
+def _wide_policy():
+    policy = json.loads((ROOT / "config" / "v5" / "research_policy.json").read_text())
+    risk = dict(policy["risk"])
+    risk.update({
+        "trade_risk_rupee_cap": 100000, "aggregate_risk_rupee_cap": 100000,
+        "trade_risk_fraction": 1, "aggregate_risk_fraction": 1,
+        "cash_reserve_fraction": 0, "position_debit_fraction": 1,
+        "max_cost_fraction_initial_price_risk": 1, "loss_headroom_trade_divisor": 1,
+        "loss_headroom_aggregate_fraction": 1, "cumulative_net_loss_pause": 500,
+        "max_new_and_pending_positions": 2,
+    })
+    policy["risk"] = risk
+    return policy
+
+
+def _book(sessions, opens, highs, lows, closes=None):
+    closes = closes or [100.0] * len(sessions)
+    return {"AAA": {day: {"open": opens[i], "high": highs[i], "low": lows[i], "close": closes[i]} for i, day in enumerate(sessions)}}
+
+
+def test_gap_through_target_exits_at_the_open_and_intrabar_stop_is_first():
+    from research_v6.replay import _bar_exit, gross_path
+    assert _bar_exit({"open": 100.0, "high": 130.0, "low": 90.0, "close": 100.0}, 97.0, 110.0) == (97.0, "stop")
+    assert _bar_exit({"open": 120.0, "high": 125.0, "low": 80.0, "close": 90.0}, 97.0, 110.0) == (120.0, "target")
+    sessions = [f"2026-07-{day:02d}" for day in range(1, 8)]
+    signal = {"symbol": "AAA", "family": "raw_momentum_h1", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0}
+    bars = _book(sessions, [100, 101, 120, 100, 100, 100, 100], [101, 102, 125, 101, 101, 101, 101], [99, 100, 80, 99, 99, 99, 99])
+    path = gross_path(signal, bars, sessions)
+    assert path["status"] == "completed"
+    assert path["reason"] == "target"
+    assert path["exit"] == 120.0
+
+
+def test_admitted_orders_reserve_cash_reject_duplicates_and_keep_the_latch():
+    policy = _wide_policy()
+    policy["risk"]["trade_risk_rupee_cap"] = 200
+    policy["risk"]["cumulative_net_loss_pause"] = 50
+    policy["risk"]["loss_headroom_trade_divisor"] = 0.01
+    policy["risk"]["loss_headroom_aggregate_fraction"] = 100
+    sessions = [f"2026-07-{day:02d}" for day in range(1, 12)]
+    flat = {"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0}
+    bars = {"AAA": {day: dict(flat) for day in sessions}, "BBB": {day: dict(flat) for day in sessions}}
+    bars["AAA"][sessions[1]] = {"open": 100.0, "high": 101.0, "low": 70.0, "close": 80.0}
+    bars["BBB"][sessions[1]] = {"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0}
+    bars["BBB"][sessions[4]] = {"open": 100.0, "high": 140.0, "low": 99.0, "close": 130.0}
+    first = {"symbol": "AAA", "family": "raw", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0}
+    second = {"symbol": "BBB", "family": "raw", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0}
+    duplicate = {"symbol": "AAA", "family": "raw", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0}
+    later = {"symbol": "CCC", "family": "raw", "signal_date": sessions[5], "limit": 100.0, "atr": 4.0}
+    bars["CCC"] = {day: dict(flat) for day in sessions}
+    result = simulate([first, duplicate, second, later], bars, sessions, policy)
+    assert len(result["admitted"]) == 2
+    assert any(row.get("reason") == "duplicate_symbol" and row["symbol"] == "AAA" for row in result["rejected"])
+    assert result["latched"] is True
+    assert any(row.get("reason") == "loss_latch" and row["symbol"] == "CCC" for row in result["rejected"])
+    assert result["completed"]
+    frozen = json.loads((ROOT / "config" / "v5" / "research_policy.json").read_text())
+    blocked = simulate([{"symbol": "AAA", "family": "raw", "signal_date": sessions[0], "limit": 100.0, "atr": 2.0}], bars, sessions, frozen)
+    assert blocked["admitted"] == []
+    assert blocked["cash"] == 5748
+
+
+def test_pending_debit_blocks_the_next_order():
+    policy = _wide_policy()
+    sessions = ["2026-07-01", "2026-07-02"]
+    bar = {"open": 4000.0, "high": 4010.0, "low": 3990.0, "close": 4000.0}
+    bars = {"AAA": {day: dict(bar) for day in sessions}, "BBB": {day: dict(bar) for day in sessions}}
+    signals = [
+        {"symbol": "AAA", "family": "raw", "signal_date": sessions[0], "limit": 4000.0, "atr": 200.0},
+        {"symbol": "BBB", "family": "raw", "signal_date": sessions[0], "limit": 4000.0, "atr": 200.0},
+    ]
+    result = simulate(signals, bars, sessions, policy)
+    assert [row["symbol"] for row in result["admitted"]] == ["AAA"]
+    assert result["rejected"][0]["reason"] == "risk_or_cost"
+
+
+def test_reference_quantity_is_costed_without_the_account_filter():
+    from research_v6.replay import reference_trade
     policy = json.loads((ROOT / "config" / "v5" / "research_policy.json").read_text())
     sessions = [f"2026-07-{day:02d}" for day in range(1, 16)]
-    signal = [{"symbol": "AAA", "family": "raw_momentum_h1", "signal_date": sessions[0], "limit": 100.0, "atr": 2.0, "features": {}}]
-    bars = {"AAA": {day: {"open": 100.2, "high": 101.0, "low": 99.0, "close": 100.0} for day in sessions}}
-    blocked = simulate(signal, bars, sessions, policy)
-    assert blocked["completed"] == []
-    assert blocked["rejected"][0]["reason"] == "risk_or_cost"
-    assert blocked["cash"] == 5748
-    assert _bar_exit({"open": 100.0, "high": 130.0, "low": 90.0, "close": 100.0}, 97.0, 110.0) == (97.0, "stop")
-    wide = {"symbol": "AAA", "family": "raw_momentum_h1", "signal_date": sessions[0], "limit": 100.0, "atr": 80.0, "features": {}}
-    path_bars = {"AAA": {day: {"open": 100.0, "high": 110.0, "low": 95.0, "close": 100.0} for day in sessions}}
-    path_bars["AAA"][sessions[1]] = {"open": 105.0, "high": 110.0, "low": 100.0, "close": 106.0}
-    path_bars["AAA"][sessions[2]] = {"open": 106.0, "high": 400.0, "low": 100.0, "close": 300.0}
-    filled = isolate_path(wide, path_bars, sessions, policy)
-    assert filled["status"] == "completed" and filled["reason"] == "target" and filled["qty"] == 1
-    path_bars["AAA"][sessions[1]] = {"open": 200.0, "high": 210.0, "low": 190.0, "close": 205.0}
-    assert isolate_path(wide, path_bars, sessions, policy)["status"] == "unfilled"
+    signal = {"symbol": "AAA", "family": "raw", "signal_date": sessions[0], "limit": 100.0, "atr": 10.0}
+    bars = _book(sessions, [100.0] * len(sessions), [101.0] * len(sessions), [99.0] * len(sessions))
+    bars["AAA"][sessions[1]] = {"open": 101.0, "high": 102.0, "low": 100.0, "close": 101.0}
+    bars["AAA"][sessions[3]] = {"open": 101.0, "high": 160.0, "low": 100.0, "close": 150.0}
+    trade = reference_trade(signal, bars, sessions, policy)
+    assert trade["population"] == "reference_risk_budget_5000_not_admitted_fills"
+    assert trade["status"] == "completed"
+    assert trade["qty"] == int(5000 // (1.5 * 10))
+    assert trade["fees"] > 0
+    assert trade["account_failed"]
+
+
+def test_ridge_lambda_changes_the_slope_and_hmm_seeds_differ():
+    from research_v6.hmm_fit import _initialize
+    from research_v6.residual_momentum import _ridge
+    rng = np.random.default_rng(4)
+    factor = rng.normal(size=120)
+    target = 2.0 * factor + rng.normal(scale=0.01, size=120)
+    small = _ridge(target, factor, 0.1)
+    large = _ridge(target, factor, 100.0)
+    assert abs(small[0][1]) > abs(large[0][1])
+    scaled = rng.normal(size=(40, 4))
+    first = _initialize(scaled, 0)
+    second = _initialize(scaled, 1)
+    again = _initialize(scaled, 0)
+    assert not np.allclose(first[2], second[2])
+    assert np.allclose(first[2], again[2])
+
+
+def test_price_bars_are_stored_by_symbol():
+    panels = {"AAA": {"close": np.array([1.0, 2.0]), "open": np.array([1.0, 2.0]), "high": np.array([1.0, 2.0]), "low": np.array([1.0, 2.0])}}
+    dates = ["2026-07-01", "2026-07-02"]
+    bars = {
+        symbol: {day: {"close": float(panel["close"][index])} for index, day in enumerate(dates) if np.isfinite(panel["close"][index])}
+        for symbol, panel in panels.items()
+    }
+    assert "AAA" in bars and bars["AAA"]["2026-07-02"]["close"] == 2.0
 
 
 def test_research_package_has_no_production_side_effects():

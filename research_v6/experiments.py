@@ -17,8 +17,8 @@ from research_v6.meta_model import correlations, design_matrix, fit_logistic, fi
 from research_v6.metrics import brier, log_loss, summarize_trades
 from research_v6.ou import entry_allowed, fit_ou
 from research_v6.regime_filter import ema, ema50_state, hysteresis
-from research_v6.replay import BAND_ATR, STOP_ATR, isolate_path, simulate
-from research_v6.residual_momentum import raw_momentum, residual_score, top_decile, window_bounds
+from research_v6.replay import BAND_ATR, STOP_ATR, gross_path, reference_trade, simulate
+from research_v6.residual_momentum import raw_momentum, residual_pair, top_decile, window_bounds
 from research_v6.shrinkage import expected_net_r, family_payoffs
 from swing_core.fundamental_screen import RULES
 from swing_v5.costs import fee_components, round_trip
@@ -101,6 +101,7 @@ def _emit(panel: dict, index: int, day: str, score: float, percentile: float, fa
         "regime_on": regime_on,
         "hysteresis_on": hysteresis_on,
         "h2": bool(np.isfinite(panel["ema20"][index]) and close <= panel["ema20"][index] and panel["volume_impulse"][index] >= 1.2 and panel["atr_compression"][index] <= 1.0),
+        "sector": None,
     }
 
 
@@ -111,32 +112,38 @@ def build_catalog(study: dict, lam: float) -> dict[str, list[dict]]:
     raw_states = [ema50_state(float(price), float(average)) for price, average in zip(study["nifty"]["close"], averages)]
     held_states = hysteresis(raw_states)
     market = study["nifty"]["return"]
-    buckets = {name: [] for name in ("A", "C_market_residual", "C_market_raw_matched", "C_sector_residual", "C_sector_raw_matched", "D_hysteresis", "H2")}
+    buckets = {name: [] for name in (
+        "A", "C_market_sum", "C_market_vol", "C_market_raw_for_sum", "C_market_raw_for_vol",
+        "C_sector_sum", "C_sector_raw_matched", "D_hysteresis", "H2",
+    )}
     for index, day in enumerate(dates):
         if window_bounds(index) is None:
             continue
         if index % 250 == 0:
             print(f"v6 signals {day}", flush=True)
-        raw_scores, market_scores, sector_scores = {}, {}, {}
+        raw_scores, sum_scores, vol_scores, sector_scores = {}, {}, {}, {}
         for symbol, panel in study["panels"].items():
             if not np.isfinite(panel["turnover_prior"][index]) or panel["turnover_prior"][index] < 50_000_000:
                 continue
             raw = raw_momentum(panel["return"], index)
-            residual = residual_score(panel["return"], market, None, index, lam)
+            pair = residual_pair(panel["return"], market, None, index, lam)
             if raw is not None:
                 raw_scores[symbol] = raw
-            if raw is not None and residual is not None:
-                market_scores[symbol] = residual
+            if raw is not None and pair is not None:
+                sum_scores[symbol] = pair["sum"]
+                vol_scores[symbol] = pair["vol_normalized"]
             sector = study["sector_returns"].get(study["sector_of"].get(symbol))
             if sector is not None and raw is not None:
-                sector_residual = residual_score(panel["return"], market, sector, index, lam)
-                if sector_residual is not None:
-                    sector_scores[symbol] = sector_residual
+                sector_pair = residual_pair(panel["return"], market, sector, index, lam)
+                if sector_pair is not None:
+                    sector_scores[symbol] = sector_pair["sum"]
         groups = {
             "A": (raw_scores, "raw_momentum_h1", "regime"),
-            "C_market_residual": (market_scores, "residual_momentum_market_only", "regime"),
-            "C_market_raw_matched": ({symbol: raw_scores[symbol] for symbol in market_scores}, "raw_momentum_h1", "regime"),
-            "C_sector_residual": (sector_scores, "residual_momentum_sector", "regime"),
+            "C_market_sum": (sum_scores, "residual_momentum_market_only", "regime"),
+            "C_market_vol": (vol_scores, "residual_momentum_vol_normalized", "regime"),
+            "C_market_raw_for_sum": ({symbol: raw_scores[symbol] for symbol in sum_scores}, "raw_momentum_h1", "regime"),
+            "C_market_raw_for_vol": ({symbol: raw_scores[symbol] for symbol in vol_scores}, "raw_momentum_h1", "regime"),
+            "C_sector_sum": (sector_scores, "residual_momentum_sector", "regime"),
             "C_sector_raw_matched": ({symbol: raw_scores[symbol] for symbol in sector_scores}, "raw_momentum_h1", "regime"),
             "D_hysteresis": (raw_scores, "raw_momentum_h1", "hysteresis"),
             "H2": (raw_scores, "raw_momentum_h2", "h2"),
@@ -155,6 +162,7 @@ def build_catalog(study: dict, lam: float) -> dict[str, list[dict]]:
                     continue
                 if gate == "h2" and (not regime_on or not signal["h2"]):
                     continue
+                signal["sector"] = study["sector_of"].get(symbol)
                 buckets[name].append(signal)
     return buckets
 
@@ -184,10 +192,13 @@ def choose_lambda(study: dict) -> dict:
 
 
 def _labels(signals: list[dict], study: dict, policy: dict) -> list[dict]:
+    """Reference-budget outcomes. These are not admitted portfolio fills."""
     rows = []
     for signal in signals:
-        outcome = isolate_path(signal, study["bars"], study["dates"], policy)
+        outcome = reference_trade(signal, study["bars"], study["dates"], policy)
+        outcome["features"] = signal.get("features") or {}
         outcome["split"] = _split(signal["signal_date"], outcome.get("exit_date"), study["dates"]) if outcome.get("status") == "completed" else outcome.get("status")
+        outcome["label_population"] = "reference_risk_budget_5000_not_admitted_fills"
         rows.append(outcome)
     return rows
 
@@ -407,7 +418,7 @@ def _earnings_study(study: dict, policy: dict, out: Path) -> dict:
         if not np.isfinite(signal["limit"]) or not np.isfinite(signal["atr"]) or signal["atr"] <= 0:
             counts["consolidation_incomplete"] += 1
             continue
-        outcome = isolate_path(signal, study["bars"], dates, policy)
+        outcome = reference_trade(signal, study["bars"], dates, policy)
         outcome["reaction"] = measure
         outcome["admission"] = "BLOCKED_fundamental_snapshot_unavailable"
         outcomes.append(outcome)
@@ -536,6 +547,206 @@ def _ou(study: dict, policy: dict) -> dict:
     return summary
 
 
+FOLDS = (
+    {"name": "fold_2023h2", "train_end": "2022-12-31", "cal_start": "2023-01-01", "cal_end": "2023-06-30", "test_start": "2023-07-01", "test_end": "2023-12-31"},
+    {"name": "fold_2024h2", "train_end": "2023-12-31", "cal_start": "2024-01-01", "cal_end": "2024-06-30", "test_start": "2024-07-01", "test_end": "2024-12-31"},
+    {"name": "fold_2025", "train_end": "2024-12-31", "cal_start": "2025-01-01", "cal_end": "2025-06-30", "test_start": "2025-07-01", "test_end": "2026-10-08"},
+)
+
+
+def _in_test(row: dict, fold: dict) -> bool:
+    return fold["test_start"] <= row["signal_date"] <= fold["test_end"]
+
+
+def _gross_summary(signals: list[dict], study: dict) -> dict:
+    paths = [gross_path(signal, study["bars"], study["dates"]) for signal in signals]
+    done = [row for row in paths if row.get("status") == "completed"]
+    returns = [row["gross_return"] for row in done]
+    return {
+        "population": "gross_signal_diagnostic",
+        "candidates": len(signals),
+        "completed": len(done),
+        "unfilled": sum(row.get("status") == "unfilled" for row in paths),
+        "censored": sum(row.get("status") == "censored" for row in paths),
+        "invalid": sum(row.get("status") == "invalid" for row in paths),
+        "mean_gross_return": float(np.mean(returns)) if returns else None,
+        "mean_mae_r": float(np.mean([row["mae_r"] for row in done])) if done else None,
+        "mean_mfe_r": float(np.mean([row["mfe_r"] for row in done])) if done else None,
+        "time_exits": sum(row.get("reason") == "vertical" for row in done),
+        "note": "hypothetical price paths, not recommendations and not a profitability claim",
+    }
+
+
+def _reference_summary(signals: list[dict], study: dict, policy: dict, start: str, end: str) -> dict:
+    paths = [reference_trade(signal, study["bars"], study["dates"], policy) for signal in signals]
+    done = [row for row in paths if row.get("status") == "completed" and row.get("net_r") is not None]
+    summary = summarize_trades(done, [], [], [row["exit_date"] for row in done], start, end)
+    summary.update({
+        "population": "reference_risk_budget_5000_not_admitted_fills",
+        "candidates": len(signals),
+        "completed": len(done),
+        "reference_quantity_zero": sum(row.get("status") == "reference_quantity_zero" for row in paths),
+        "unfilled": sum(row.get("status") == "unfilled" for row in paths),
+        "censored": sum(row.get("status") == "censored" for row in paths),
+        "account_would_reject": sum(bool(row.get("account_failed")) for row in done),
+        "note": "costed at the declared reference quantity, not admitted by the ₹5,748 account",
+    })
+    return summary
+
+
+def _rejection_counts(result: dict) -> dict:
+    counts = {}
+    for row in result["rejected"]:
+        counts[row.get("reason", "unknown")] = counts.get(row.get("reason", "unknown"), 0) + 1
+    return counts
+
+
+def _account_window(signals: list[dict], study: dict, policy: dict, start: str, end: str) -> dict:
+    sessions = [day for day in study["dates"] if start <= day <= end]
+    result = simulate([row for row in signals if start <= row["signal_date"] <= end], study["bars"], sessions, policy)
+    summary = summarize_trades(result["completed"], result["equity_curve"], result["occupied"], _intents(result), start, end)
+    summary.update({
+        "population": "frozen_5748_account",
+        "candidates": sum(start <= row["signal_date"] <= end for row in signals),
+        "admitted": len(result["admitted"]),
+        "rejection_reasons": _rejection_counts(result),
+        "latched": result["latched"],
+        "not_modeled": result["not_modeled"],
+        "missing_price_marks": result["missing_price_marks"],
+        "note": "zero admitted orders is an account result, not an alpha estimate",
+    })
+    return summary
+
+
+def _fold_split(signal_date: str, exit_date: str | None, sessions: list[str], fold: dict) -> str:
+    if exit_date is None:
+        return "censored"
+    if signal_date <= fold["train_end"]:
+        boundary = fold["cal_start"]
+        name = "train"
+    elif fold["cal_start"] <= signal_date <= fold["cal_end"]:
+        boundary = fold["test_start"]
+        name = "calibration"
+    elif fold["test_start"] <= signal_date <= fold["test_end"]:
+        return "test"
+    else:
+        return "outside"
+    if exit_date >= boundary:
+        return "purged"
+    signal_index = sessions.index(signal_date)
+    boundary_index = next(index for index, day in enumerate(sessions) if day >= boundary)
+    if boundary_index - signal_index <= 10:
+        return "purged"
+    return name
+
+
+def _layer(signals: list[dict], study: dict, policy: dict, start: str, end: str) -> dict:
+    chosen = [row for row in signals if start <= row["signal_date"] <= end]
+    return {
+        "gross": _gross_summary(chosen, study),
+        "reference": _reference_summary(chosen, study, policy, start, end),
+        "account": _account_window(chosen, study, policy, start, end),
+    }
+
+
+def _meta_for_fold(signals: list[dict], study: dict, policy: dict, fold: dict) -> dict:
+    labelled = _labels(signals, study, policy)
+    train = [row for row in labelled if _fold_split(row["signal_date"], row.get("exit_date"), study["dates"], fold) == "train" and row.get("net_r") is not None]
+    calibration = [row for row in labelled if _fold_split(row["signal_date"], row.get("exit_date"), study["dates"], fold) == "calibration" and row.get("net_r") is not None]
+    bundle = _fit_models(train, calibration)
+    bundle["label_population"] = "reference_risk_budget_5000_not_admitted_fills"
+    if bundle.get("status") != "fitted":
+        return bundle
+    test_rows = [row for row in labelled if row.get("split") == "test" or _fold_split(row["signal_date"], row.get("exit_date"), study["dates"], fold) == "test"]
+    test_rows = [row for row in test_rows if row.get("status") == "completed"]
+    probability = _probability(bundle, test_rows) if test_rows else np.array([])
+    labels = np.asarray([1.0 if row["net_pnl"] > 0 else 0.0 for row in test_rows])
+    return {
+        "status": "fitted",
+        "label_population": bundle["label_population"],
+        "selected_model": bundle["selected"],
+        "m": bundle["m"],
+        "train_rows": bundle["train_rows"],
+        "calibration_rows": bundle["calibration_rows"],
+        "calibration_attempts": bundle["attempts"],
+        "test_brier": brier(labels, probability),
+        "test_log_loss": log_loss(labels, probability),
+        "experts": bundle["experts"],
+        "dependence": bundle["dependence"],
+        "note": "probabilities describe reference trades, not admitted ₹5,748 fills",
+    }
+
+
+def _suffix_frame(study: dict, dates: list[str]) -> np.ndarray | None:
+    index_of = {day: index for index, day in enumerate(study["dates"])}
+    sma = {symbol: _rolling_mean(panel["close"], 50) for symbol, panel in study["panels"].items()}
+    rows = []
+    nifty = study["nifty"]
+    for day in dates:
+        index = index_of[day]
+        previous = nifty["close"][index - 1] if index else np.nan
+        if not np.isfinite(previous) or previous <= 0 or not np.isfinite(nifty["close"][index]) or nifty["low"][index] <= 0:
+            return None
+        log_return = float(np.log(nifty["close"][index] / previous))
+        span = float(np.log(nifty["high"][index] / nifty["low"][index]))
+        usable = 0
+        returns = []
+        above = 0
+        for symbol, panel in study["panels"].items():
+            close = panel["close"][index]
+            ret = panel["return"][index]
+            if np.isfinite(close) and np.isfinite(sma[symbol][index]) and np.isfinite(ret):
+                usable += 1
+                returns.append(ret)
+                if close > sma[symbol][index]:
+                    above += 1
+        if usable / 150 < 0.90 or len(returns) / 150 < 0.90 or not np.isfinite(span) or span <= 0:
+            return None
+        rows.append([log_return, span, above / 150, float(np.std(returns, ddof=1))])
+    return np.asarray(rows, dtype=float)
+
+
+def _hmm_report(study: dict, catalogue: dict, policy: dict, out: Path) -> dict:
+    from research_v6.coverage import audit_coverage
+    from research_v6.hmm_fit import causal_posteriors
+    coverage = audit_coverage(study)
+    report = {"full_window": {key: coverage[key] for key in ("full_window_status", "full_window_reason", "invalid_fraction", "invalid_sessions", "failure_counts", "denominator")}}
+    if coverage["suffix_status"] != "ok":
+        report["suffix"] = {"status": "BLOCKED", "reason": "no_contiguous_valid_suffix", "rule": coverage["suffix_rule"]}
+        return report
+    dates = [day for day in study["dates"] if coverage["suffix_start"] <= day <= coverage["suffix_end"]]
+    built = _suffix_frame(study, dates)
+    if built is None:
+        report["suffix"] = {"status": "BLOCKED", "reason": "suffix_observation_missing", "window": [dates[0], dates[-1]]}
+        return report
+    try:
+        posts, blocks = causal_posteriors(built)
+    except Exception as exc:
+        report["suffix"] = {"status": "BLOCKED", "reason": str(exc), "window": [dates[0], dates[-1]]}
+        return report
+    (out / "hmm_suffix_model.json").write_text(json.dumps(blocks[-1]["model"], indent=2))
+    posterior_on = {day: posts[index] for index, day in enumerate(dates)}
+    baseline = [row for row in catalogue["A"] if dates[0] <= row["signal_date"] <= dates[-1]]
+    gated = []
+    for row in baseline:
+        posterior = posterior_on.get(row["signal_date"])
+        if posterior is None or not np.isfinite(posterior).all():
+            continue
+        if int(np.argmax(posterior)) == 2:
+            gated.append(row)
+    report["suffix"] = {
+        "status": "compared_on_coverage_suffix",
+        "window": [dates[0], dates[-1]],
+        "sessions": len(dates),
+        "model_hash": blocks[-1]["model_hash"],
+        "baseline_ema50": _layer(baseline, study, policy, dates[0], dates[-1]),
+        "hmm_high_mean_state_only": _layer(gated, study, policy, dates[0], dates[-1]),
+        "gate": "argmax posterior equals state_rank_2, the training-mean sort key, not an economic label",
+        "production_risk_off": "unchanged",
+    }
+    return report
+
+
 def run(out: Path) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     policy = _policy()
@@ -543,97 +754,45 @@ def run(out: Path) -> dict:
     lam = choose_lambda(study)
     frozen_lam = lam["chosen"] if lam["chosen"] is not None else 1.0
     catalogue = build_catalog(study, frozen_lam)
-    labelled = {name: _labels(rows, study, policy) for name, rows in catalogue.items() if name in {"A", "C_market_residual", "C_sector_residual"}}
-    train = [row for row in labelled["A"] if row.get("split") == "train" and row.get("net_r") is not None]
-    calibration = [row for row in labelled["A"] if row.get("split") == "calibration" and row.get("net_r") is not None]
-    bundle = _fit_models(train, calibration)
-    reports = {}
-    for name, rows in catalogue.items():
-        test_rows = [row for row in rows if row["signal_date"] >= TEST_START]
-        reports[name] = _account_report(test_rows, study, policy)
-        paths = labelled.get(name, [])
-        reports[name]["unit_path_status"] = {status: sum(row.get("status") == status for row in paths) for status in ("completed", "unfilled", "rejected", "censored")}
-        reports[name]["unit_completed_test"] = sum(row.get("status") == "completed" and row.get("signal_date", "") >= TEST_START for row in paths)
-    if bundle.get("status") == "fitted":
-        test_completed = [row for row in labelled["A"] if row.get("split") == "test"]
-        probability = _probability(bundle, test_completed) if test_completed else np.array([])
-        labels = np.asarray([1.0 if row["net_pnl"] > 0 else 0.0 for row in test_completed])
-        kept = []
-        for signal in catalogue["A"]:
-            if signal["signal_date"] < TEST_START:
-                continue
-            features, _ = design_matrix([signal["features"]], [signal["family"]])
-            if bundle["selected"] == "prior":
-                probability_signal = bundle["prior"]
-            elif bundle["selected"].startswith("logistic"):
-                probability_signal = float(predict_logistic(bundle["logistic"][float(bundle["selected"].split("_")[1])], features)[0])
-            else:
-                probability_signal = float(predict_xgboost(bundle["xgboost"], features)[0])
-            if expected_net_r(probability_signal, signal["family"], bundle["payoffs"]) > 0:
-                kept.append(signal)
-        reports["B"] = _account_report(kept, study, policy)
-        reports["B"]["test_brier"] = brier(labels, probability)
-        reports["B"]["test_log_loss"] = log_loss(labels, probability)
-        reports["B"]["selected_model"] = bundle["selected"]
-        reports["B"]["m"] = bundle["m"]
-        reports["B"]["calibration_attempts"] = bundle["attempts"]
-        reports["B"]["dependence"] = bundle["dependence"]
-        reports["B"]["experts"] = bundle["experts"]
-        stress = _account_report(kept, study, policy, slippage_bps=25)
-        reports["B_stress_25bps"] = {"net_pnl": stress["net_pnl"], "completed_fills": stress["completed_fills"], "admitted": stress["admitted"]}
-    else:
-        reports["B"] = bundle
-    hmm_frame, hmm_dates, hmm_status = _hmm_observations(study)
-    if hmm_status.get("status") == "BLOCKED":
-        reports["E"] = hmm_status
-    else:
-        from research_v6.hmm_fit import causal_posteriors
-        try:
-            posts, blocks = causal_posteriors(hmm_frame)
-            posterior_on = dict(zip(hmm_dates, posts))
-            (out / "hmm_last_block.json").write_text(json.dumps(blocks[-1]["model"], indent=2))
-            reports["E"] = {"status": "features_built", "blocks": len(blocks), "coverage": hmm_status, "model_hash": blocks[-1]["model_hash"], "note": "probabilities are research features; production RISK_OFF is unchanged"}
-            if bundle.get("status") == "fitted":
-                augmented_train = []
-                for row in train:
-                    posterior = posterior_on.get(row["signal_date"])
-                    if posterior is None or not np.isfinite(posterior).all():
-                        continue
-                    features = dict(row["features"])
-                    features["hmm_state_rank_0"] = float(posterior[0])
-                    features["hmm_state_rank_1"] = float(posterior[1])
-                    augmented_train.append({**row, "features": features})
-                reports["E"]["trainable_rows"] = len(augmented_train)
-                reports["E"]["dropped_without_causal_posterior"] = len(train) - len(augmented_train)
-                augmented_cal = []
-                for row in calibration:
-                    posterior = posterior_on.get(row["signal_date"])
-                    if posterior is None or not np.isfinite(posterior).all():
-                        continue
-                    features = dict(row["features"])
-                    features["hmm_state_rank_0"] = float(posterior[0])
-                    features["hmm_state_rank_1"] = float(posterior[1])
-                    augmented_cal.append({**row, "features": features})
-                if len(augmented_train) >= 30 and augmented_cal:
-                    refit = _fit_models(augmented_train, augmented_cal)
-                    reports["E"]["refit_status"] = refit.get("status")
-                    reports["E"]["selected"] = refit.get("selected")
-                    reports["E"]["calibration_attempts"] = refit.get("attempts")
-        except Exception as exc:
-            reports["E"] = {"status": "BLOCKED", "reason": str(exc), "coverage": hmm_status}
-    reports["F"] = _earnings_study(study, policy, out)
-    reports["G"] = _ou(study, policy)
-    reports["fundamental"] = _fundamentals()
+    folds = {}
+    for fold in FOLDS:
+        folds[fold["name"]] = {
+            name: _layer(rows, study, policy, fold["test_start"], fold["test_end"])
+            for name, rows in catalogue.items()
+        }
+        folds[fold["name"]]["meta_model"] = _meta_for_fold(catalogue["A"], study, policy, fold)
+    from research_v6.replay import account_feasibility
+    feasibility = []
+    last = FOLDS[-1]
+    for signal in catalogue["A"]:
+        if not (last["test_start"] <= signal["signal_date"] <= last["test_end"]):
+            continue
+        feasibility.append(account_feasibility(signal, policy, LAUNCH_CASH, LAUNCH_CASH, 0.0, 0.0, set(), False))
+    import csv
+    with (out / "feasibility_fold_2025_raw.csv").open("w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["symbol", "signal_date", "quantity", "debit", "price_risk", "fees", "gap_allowance", "failed"])
+        writer.writeheader()
+        for row in feasibility:
+            writer.writerow({**row, "failed": "; ".join(row["failed"])})
     payload = {
         "seed": SEED,
         "lambda": lam,
+        "folds_definition": list(FOLDS),
         "sample": {"start": study["dates"][0], "end": study["dates"][-1], "symbols": len(study["panels"]), "missing": study["missing"], "duplicate_dates": study["duplicate_dates"]},
         "data_status": "reused_development_cache_not_untouched_holdout",
+        "v4_baseline": "unreproduced_historical_reference_event_file_gitignored",
         "provider": study["provider"],
         "adjustment": study["adjustment"],
         "sector_attempts": study["sector_attempts"],
-        "experiments": reports,
+        "experiments": folds,
+        "hmm": _hmm_report(study, catalogue, policy, out),
+        "earnings": _earnings_study(study, policy, out),
+        "ou": _ou(study, policy),
+        "fundamental": _fundamentals(),
+        "feasibility_rows": len(feasibility),
+        "feasibility_zero_quantity": sum(row["quantity"] == 0 for row in feasibility),
         "kelly": False,
+        "conclusion_limit": "account infeasibility is not an alpha estimate; gross returns are not a profitability claim",
     }
     (out / "results.json").write_text(json.dumps(payload, indent=2, default=str))
     return payload

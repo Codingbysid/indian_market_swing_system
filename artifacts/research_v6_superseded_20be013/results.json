@@ -1,0 +1,483 @@
+{
+  "seed": 20261026,
+  "lambda": {
+    "chosen": 1.0,
+    "attempts": [
+      {
+        "lambda": 0.1,
+        "mean_square": 0.0004352938632340215,
+        "windows": 162872
+      },
+      {
+        "lambda": 1.0,
+        "mean_square": 0.0004352428309269306,
+        "windows": 162872
+      },
+      {
+        "lambda": 10.0,
+        "mean_square": 0.0004352919176520514,
+        "windows": 162872
+      }
+    ],
+    "selection": "train_mean_square_prediction_error"
+  },
+  "sample": {
+    "start": "2018-09-11",
+    "end": "2026-10-08",
+    "symbols": 149,
+    "missing": [
+      "ZENTEC"
+    ],
+    "duplicate_dates": []
+  },
+  "data_status": "reused_development_cache_not_untouched_holdout",
+  "provider": "tvDatafeed_cache",
+  "adjustment": "tvdatafeed_as_returned",
+  "sector_attempts": [
+    {
+      "symbol": "^CNXAUTO",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXAUTO?interval=1d&range=10y",
+      "sha256": "3590bd534a19fbee640496eb98da1300d44b8f255f2a297f6d358020251a343c",
+      "parsed": true,
+      "bytes": 223087,
+      "rows": 2452,
+      "sector": "Automobile and Auto Components",
+      "archive": "artifacts/research_v6/sectors/Automobile_and_Auto_Components.csv"
+    },
+    {
+      "symbol": "^CNXPHARMA",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXPHARMA?interval=1d&range=10y",
+      "sha256": "dd7e4668a474c94c92082580ffa154939f3e534e63002e15afd55d6a617698bd",
+      "parsed": true,
+      "bytes": 228502,
+      "rows": 2466,
+      "sector": "Healthcare",
+      "archive": "artifacts/research_v6/sectors/Healthcare.csv"
+    },
+    {
+      "symbol": "^CNXFMCG",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXFMCG?interval=1d&range=10y",
+      "sha256": "b8c03f27f5ebdc0e00caa4578a53e263349210d9dc4639e52d2ccc5409dbe4fd",
+      "parsed": true,
+      "bytes": 212672,
+      "rows": 2451,
+      "sector": "Fast Moving Consumer Goods",
+      "archive": "artifacts/research_v6/sectors/Fast_Moving_Consumer_Goods.csv"
+    },
+    {
+      "symbol": "^CNXMETAL",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXMETAL?interval=1d&range=10y",
+      "sha256": "434e8da752d51e26d7a582a16b655aad9d6ca10835f2e0ab17e5507d15783c93",
+      "parsed": true,
+      "bytes": 232326,
+      "rows": 2452,
+      "sector": "Metals & Mining",
+      "archive": "artifacts/research_v6/sectors/Metals_&_Mining.csv"
+    },
+    {
+      "symbol": "^CNXENERGY",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXENERGY?interval=1d&range=10y",
+      "sha256": "251884f7a76398a6ccb6d818587474425d7b3ab7801c1da79b8938e40364fe22",
+      "parsed": true,
+      "bytes": 221360,
+      "rows": 2452,
+      "sector": "Oil Gas & Consumable Fuels",
+      "archive": "artifacts/research_v6/sectors/Oil_Gas_&_Consumable_Fuels.csv"
+    },
+    {
+      "symbol": "^CNXIT",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXIT?interval=1d&range=10y",
+      "sha256": "bb9921bd6a9a8a10e80b68760bcf16b1d839b23b30317d6e8265e04e1741e1cf",
+      "parsed": true,
+      "bytes": 213913,
+      "rows": 2467,
+      "sector": "Information Technology",
+      "archive": "artifacts/research_v6/sectors/Information_Technology.csv"
+    },
+    {
+      "symbol": "^CNXREALTY",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXREALTY?interval=1d&range=10y",
+      "sha256": "6b5e1e1353f3c6e936e37e6e6c3ae8a3ad951295ffbf298f459e1cf588776a36",
+      "parsed": true,
+      "bytes": 242676,
+      "rows": 2452,
+      "sector": "Realty",
+      "archive": "artifacts/research_v6/sectors/Realty.csv"
+    },
+    {
+      "symbol": "^CNXFIN",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXFIN?interval=1d&range=10y",
+      "sha256": "859413a836c447ea7c8b064a27cdcbefe8526e3dc4da651e965c9dfb94790960",
+      "parsed": false,
+      "bytes": 1226,
+      "rows": 1,
+      "sector": "Financial Services"
+    },
+    {
+      "symbol": "NIFTY_FIN_SERVICE.NS",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/NIFTY_FIN_SERVICE.NS?interval=1d&range=10y",
+      "sha256": "d09b579821ac058848efc464b5ecc081f8339bd97b7b44661a329a77ac87ebb0",
+      "parsed": true,
+      "bytes": 223244,
+      "rows": 2452,
+      "sector": "Financial Services",
+      "archive": "artifacts/research_v6/sectors/Financial_Services.csv"
+    }
+  ],
+  "experiments": {
+    "A": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 2512,
+      "admitted": 0,
+      "unfilled_or_rejected": 2512,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 15845,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "C_market_residual": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 2520,
+      "admitted": 0,
+      "unfilled_or_rejected": 2520,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 15139,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "C_market_raw_matched": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 2520,
+      "admitted": 0,
+      "unfilled_or_rejected": 2520,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 0,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "C_sector_residual": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 450,
+      "admitted": 0,
+      "unfilled_or_rejected": 450,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 1716,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "C_sector_raw_matched": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 450,
+      "admitted": 0,
+      "unfilled_or_rejected": 450,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 0,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "D_hysteresis": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 2557,
+      "admitted": 0,
+      "unfilled_or_rejected": 2557,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 0,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "H2": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": 0.0,
+      "capital_utilization": 0.0,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "candidates": 49,
+      "admitted": 0,
+      "unfilled_or_rejected": 49,
+      "censored": 0,
+      "open_positions": 0,
+      "slippage_bps": 10.0,
+      "launch_cash": 5748.0,
+      "cash_after_completed": 5748.0,
+      "account": "hypothetical_5748_restarted_at_outer_test",
+      "unit_path_status": {
+        "completed": 0,
+        "unfilled": 0,
+        "rejected": 0,
+        "censored": 0
+      },
+      "unit_completed_test": 0
+    },
+    "B": {
+      "status": "BLOCKED",
+      "reason": "fewer_than_30_training_trades",
+      "attempts": []
+    },
+    "E": {
+      "checked_sessions": 1999,
+      "invalid_sessions": 641,
+      "invalid_fraction": 0.32066033016508255,
+      "retained": 1358,
+      "denominator": 150,
+      "status": "BLOCKED",
+      "reason": "breadth_coverage_below_gate"
+    },
+    "F": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": null,
+      "capital_utilization": null,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "status": "reaction_measured_admission_blocked",
+      "sue": false,
+      "vwap": "daily_range_not_used",
+      "clock": "nse_sort_date_interpreted_as_ist",
+      "filings": 11771,
+      "paths": {
+        "symbol_not_in_price_panel": 11047,
+        "reaction_session_unavailable": 3,
+        "positive_volume_reaction": 280,
+        "confirmed": 152,
+        "confirmed_rejected": 152,
+        "consolidation_failed": 128,
+        "reaction_not_confirmed": 441
+      },
+      "admission": "BLOCKED_fundamental_snapshot_unavailable",
+      "fetch": {
+        "bytes": 167728012,
+        "sha256": "ed5f7cc510a0a7009a1619fd98a3b4ba6704bee6b8b751c1e612ca11761506b5",
+        "cached": true,
+        "url": "https://www.nseindia.com/api/corporate-announcements?index=equities&from_date=01-07-2025&to_date=08-10-2026"
+      },
+      "production": "disabled"
+    },
+    "G": {
+      "completed_fills": 0,
+      "unique_names": 0,
+      "net_pnl": 0.0,
+      "expectancy_pnl": null,
+      "expectancy_net_r": null,
+      "profit_factor": null,
+      "marked_drawdown": null,
+      "capital_utilization": null,
+      "fortnight": {
+        "windows": 34,
+        "two_or_more": 0.0,
+        "zero": 1.0,
+        "overlapping_windows": "not_used_as_independent_trials"
+      },
+      "net_r_interval": {
+        "status": "insufficient_weeks",
+        "weeks": 0
+      },
+      "concentration": null,
+      "status": "research_only",
+      "production": "disabled",
+      "entries": 154,
+      "rejections": {
+        "stationarity_screen_failed": 39325,
+        "phi_outside_unit_interval": 3564,
+        "rejected": 154,
+        "half_life_outside_predeclared_band": 50
+      },
+      "exit": "stop_or_residual_mean_or_fixed_vertical"
+    },
+    "fundamental": {
+      "status": "BLOCKED",
+      "reason": "no_point_in_time_fundamental_history",
+      "conjunction": "AND",
+      "rules_hash": "c752a32e7642b81675d5f4da1b263caf6137ea5af9382b0eb65cc720c19403c8"
+    }
+  },
+  "kelly": false
+}
