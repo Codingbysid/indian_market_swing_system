@@ -27,3 +27,4 @@ backtest/artifacts/v4/events.csv
 backtest/artifacts/v4/oof_predictions.csv
 
 artifacts/v5/nse_raw/
+artifacts/research_v6/earnings_archive/*.bin
