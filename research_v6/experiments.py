@@ -167,14 +167,16 @@ def build_catalog(study: dict, lam: float) -> dict[str, list[dict]]:
     return buckets
 
 
-def choose_lambda(study: dict) -> dict:
+def choose_lambda(study: dict, train_end: str) -> dict:
     from research_v6.residual_momentum import prediction_errors
     totals = {value: [0.0, 0] for value in LAMBDAS}
     market = study["nifty"]["return"]
-    print("v6 choosing residual ridge on training windows", flush=True)
+    first_date = None
+    print(f"v6 choosing residual ridge through {train_end}", flush=True)
     for index, day in enumerate(study["dates"]):
-        if day > TRAIN_END or window_bounds(index) is None:
+        if day > train_end or window_bounds(index) is None:
             continue
+        first_date = day if first_date is None else first_date
         for panel in study["panels"].values():
             for lam in LAMBDAS:
                 errors = prediction_errors(panel["return"], market, None, index, lam)
@@ -188,7 +190,13 @@ def choose_lambda(study: dict) -> dict:
     ranked = [{"lambda": lam, "mean_square": None if count == 0 else total / count, "windows": count} for lam, (total, count) in totals.items()]
     usable = [row for row in ranked if row["mean_square"] is not None]
     chosen = min(usable, key=lambda row: (row["mean_square"], row["lambda"]))["lambda"] if usable else None
-    return {"chosen": chosen, "attempts": ranked, "selection": "train_mean_square_prediction_error"}
+    return {
+        "chosen": chosen,
+        "attempts": ranked,
+        "train_start": first_date,
+        "train_end": train_end,
+        "selection": "fold_training_mean_square_prediction_error",
+    }
 
 
 def _labels(signals: list[dict], study: dict, policy: dict) -> list[dict]:
@@ -198,7 +206,7 @@ def _labels(signals: list[dict], study: dict, policy: dict) -> list[dict]:
         outcome = reference_trade(signal, study["bars"], study["dates"], policy)
         outcome["features"] = signal.get("features") or {}
         outcome["split"] = _split(signal["signal_date"], outcome.get("exit_date"), study["dates"]) if outcome.get("status") == "completed" else outcome.get("status")
-        outcome["label_population"] = "reference_risk_budget_5000_not_admitted_fills"
+        outcome["label_population"] = "reference_initial_price_risk_5000_not_account_capital"
         rows.append(outcome)
     return rows
 
@@ -577,19 +585,48 @@ def _gross_summary(signals: list[dict], study: dict) -> dict:
     }
 
 
+def _reference_paths(signals: list[dict], study: dict, policy: dict, start: str, end: str) -> list[dict]:
+    return [reference_trade(signal, study["bars"], study["dates"], policy) for signal in signals if start <= signal["signal_date"] <= end]
+
+
+def _exposure(paths: list[dict], sessions: list[str]) -> dict:
+    done = [row for row in paths if row.get("status") == "completed" and row.get("notional") is not None]
+    if not done:
+        return {"trades": 0}
+    notionals = np.asarray([row["notional"] for row in done], dtype=float)
+    debits = np.asarray([row["debit"] for row in done], dtype=float)
+    load: dict[str, float] = {}
+    for row in done:
+        for day in sessions:
+            if row["entry_date"] <= day <= row["exit_date"]:
+                load[day] = load.get(day, 0.0) + float(row["notional"])
+    return {
+        "trades": len(done),
+        "median_notional": float(np.median(notionals)),
+        "p90_notional": float(np.quantile(notionals, 0.9)),
+        "max_notional": float(notionals.max()),
+        "median_debit": float(np.median(debits)),
+        "p90_debit": float(np.quantile(debits, 0.9)),
+        "max_debit": float(debits.max()),
+        "max_overlapping_notional": max(load.values()) if load else 0.0,
+        "note": "₹5000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio.",
+    }
+
+
 def _reference_summary(signals: list[dict], study: dict, policy: dict, start: str, end: str) -> dict:
-    paths = [reference_trade(signal, study["bars"], study["dates"], policy) for signal in signals]
+    paths = _reference_paths(signals, study, policy, start, end)
     done = [row for row in paths if row.get("status") == "completed" and row.get("net_r") is not None]
     summary = summarize_trades(done, [], [], [row["exit_date"] for row in done], start, end)
     summary.update({
-        "population": "reference_risk_budget_5000_not_admitted_fills",
+        "population": "reference_initial_price_risk_5000_not_account_capital",
         "candidates": len(signals),
         "completed": len(done),
         "reference_quantity_zero": sum(row.get("status") == "reference_quantity_zero" for row in paths),
         "unfilled": sum(row.get("status") == "unfilled" for row in paths),
         "censored": sum(row.get("status") == "censored" for row in paths),
         "account_would_reject": sum(bool(row.get("account_failed")) for row in done),
-        "note": "costed at the declared reference quantity, not admitted by the ₹5,748 account",
+        "exposure": _exposure(paths, study["dates"]),
+        "note": "costed at the declared initial-price-risk quantity; not admitted by the ₹5,748 account and not a funded sum",
     })
     return summary
 
@@ -612,8 +649,9 @@ def _account_window(signals: list[dict], study: dict, policy: dict, start: str, 
         "rejection_reasons": _rejection_counts(result),
         "latched": result["latched"],
         "not_modeled": result["not_modeled"],
+        "replay_scope": result["replay_scope"],
         "missing_price_marks": result["missing_price_marks"],
-        "note": "zero admitted orders is an account result, not an alpha estimate",
+        "note": "partial account replay; zero admitted orders is not an alpha estimate",
     })
     return summary
 
@@ -649,25 +687,52 @@ def _layer(signals: list[dict], study: dict, policy: dict, start: str, end: str)
     }
 
 
+EXIT_CONVENTION = (
+    "A completed trade is assigned by its signal date. Train and calibration rows whose exit "
+    "is on or after the next boundary are purged, as are signals within 10 sessions of that "
+    "boundary. A test row keeps its own exit, which may fall up to 10 sessions after test_end. "
+    "Those later prices are not training rows and are not test rows of an earlier fold."
+)
+
+
+def select_test_rows(rows: list[dict], sessions: list[str], fold: dict) -> list[dict]:
+    """Test observations for one fold. The stored global split is ignored."""
+    chosen = []
+    for row in rows:
+        if row.get("status") != "completed":
+            continue
+        if _fold_split(row["signal_date"], row.get("exit_date"), sessions, fold) != "test":
+            continue
+        if not (fold["test_start"] <= row["signal_date"] <= fold["test_end"]):
+            continue
+        chosen.append(row)
+    return chosen
+
+
 def _meta_for_fold(signals: list[dict], study: dict, policy: dict, fold: dict) -> dict:
     labelled = _labels(signals, study, policy)
-    train = [row for row in labelled if _fold_split(row["signal_date"], row.get("exit_date"), study["dates"], fold) == "train" and row.get("net_r") is not None]
-    calibration = [row for row in labelled if _fold_split(row["signal_date"], row.get("exit_date"), study["dates"], fold) == "calibration" and row.get("net_r") is not None]
+    sessions = study["dates"]
+    train = [row for row in labelled if _fold_split(row["signal_date"], row.get("exit_date"), sessions, fold) == "train" and row.get("net_r") is not None]
+    calibration = [row for row in labelled if _fold_split(row["signal_date"], row.get("exit_date"), sessions, fold) == "calibration" and row.get("net_r") is not None]
     bundle = _fit_models(train, calibration)
-    bundle["label_population"] = "reference_risk_budget_5000_not_admitted_fills"
+    bundle["label_population"] = "reference_initial_price_risk_5000_not_account_capital"
+    bundle["exit_convention"] = EXIT_CONVENTION
     if bundle.get("status") != "fitted":
         return bundle
-    test_rows = [row for row in labelled if row.get("split") == "test" or _fold_split(row["signal_date"], row.get("exit_date"), study["dates"], fold) == "test"]
-    test_rows = [row for row in test_rows if row.get("status") == "completed"]
+    test_rows = select_test_rows(labelled, sessions, fold)
     probability = _probability(bundle, test_rows) if test_rows else np.array([])
     labels = np.asarray([1.0 if row["net_pnl"] > 0 else 0.0 for row in test_rows])
     return {
         "status": "fitted",
         "label_population": bundle["label_population"],
+        "exit_convention": EXIT_CONVENTION,
         "selected_model": bundle["selected"],
         "m": bundle["m"],
         "train_rows": bundle["train_rows"],
         "calibration_rows": bundle["calibration_rows"],
+        "test_rows": len(test_rows),
+        "test_signal_start": None if not test_rows else min(row["signal_date"] for row in test_rows),
+        "test_signal_end": None if not test_rows else max(row["signal_date"] for row in test_rows),
         "calibration_attempts": bundle["attempts"],
         "test_brier": brier(labels, probability),
         "test_log_loss": log_loss(labels, probability),
@@ -706,65 +771,144 @@ def _suffix_frame(study: dict, dates: list[str]) -> np.ndarray | None:
     return np.asarray(rows, dtype=float)
 
 
+def _paired_sector(sector_paths: list[dict], raw_paths: list[dict]) -> dict:
+    """Difference of weekly mean net R. Separate intervals are not this comparison."""
+    from research_v6.metrics import SEED as metric_seed
+    def grouped(paths: list[dict]) -> dict[str, list[float]]:
+        out: dict[str, list[float]] = {}
+        for row in paths:
+            if row.get("status") != "completed" or row.get("net_r") is None:
+                continue
+            week = datetime.fromisoformat(row["signal_date"]).strftime("%G-W%V")
+            out.setdefault(week, []).append(float(row["net_r"]))
+        return out
+    left = grouped(sector_paths)
+    right = grouped(raw_paths)
+    common = sorted(set(left) & set(right))
+    if len(common) < 2:
+        return {"status": "insufficient_common_weeks", "weeks": len(common), "variants": ["sector_sum_minus_matched_raw"]}
+    weekly = {week: float(np.mean(left[week]) - np.mean(right[week])) for week in common}
+    rng = np.random.default_rng(metric_seed)
+    draws = []
+    for _ in range(400):
+        chosen = rng.choice(common, size=len(common), replace=True)
+        draws.append(float(np.mean([weekly[week] for week in chosen])))
+    low, mid, high = np.quantile(draws, [0.025, 0.5, 0.975])
+    sectors = sorted({row.get("sector") for row in sector_paths if row.get("sector")})
+    leave = {}
+    for sector in sectors:
+        reduced_left = grouped([row for row in sector_paths if row.get("sector") != sector])
+        reduced_right = grouped([row for row in raw_paths if row.get("sector") != sector])
+        shared = sorted(set(reduced_left) & set(reduced_right))
+        if not shared:
+            leave[sector] = None
+            continue
+        leave[sector] = float(np.mean([np.mean(reduced_left[week]) - np.mean(reduced_right[week]) for week in shared]))
+    weights: dict[str, float] = {}
+    for row in sector_paths:
+        if row.get("status") == "completed":
+            weights[row["symbol"]] = weights.get(row["symbol"], 0.0) + abs(float(row["net_pnl"]))
+    total = sum(weights.values())
+    leader = max(weights, key=weights.get) if weights else None
+    return {
+        "status": "exploratory_reused_cache",
+        "comparison": "sector_residual_sum_minus_matched_raw",
+        "common_weeks": len(common),
+        "difference_mean_net_r": float(np.mean(list(weekly.values()))),
+        "low": float(low),
+        "mid": float(mid),
+        "high": float(high),
+        "interval_includes_zero": bool(low <= 0 <= high),
+        "leave_one_sector_out_point": leave,
+        "names": len(weights),
+        "sectors": sectors,
+        "largest_name_share": None if leader is None or total <= 0 else {"symbol": leader, "share": weights[leader] / total},
+        "overlapping_positions": "each reference path is an independent overlapping hypothetical, not one funded account; the bootstrap keeps every name from a signal week inside the same block, while holds that cross weeks can still be split",
+        "separate_intervals_are_not_a_difference_test": True,
+    }
+
+
 def _hmm_report(study: dict, catalogue: dict, policy: dict, out: Path) -> dict:
     from research_v6.coverage import audit_coverage
-    from research_v6.hmm_fit import causal_posteriors
+    from research_v6.hmm_fit import HMMFitFailed, causal_posteriors
     coverage = audit_coverage(study)
-    report = {"full_window": {key: coverage[key] for key in ("full_window_status", "full_window_reason", "invalid_fraction", "invalid_sessions", "failure_counts", "denominator")}}
+    report = {
+        "status_if_unfitted": "NOT EVALUATED",
+        "full_window": {key: coverage[key] for key in ("full_window_status", "full_window_reason", "invalid_fraction", "invalid_sessions", "failure_counts", "denominator")},
+    }
     if coverage["suffix_status"] != "ok":
-        report["suffix"] = {"status": "BLOCKED", "reason": "no_contiguous_valid_suffix", "rule": coverage["suffix_rule"]}
+        report["suffix"] = {"status": "NOT EVALUATED", "reason": "no_contiguous_valid_suffix", "rule": coverage["suffix_rule"]}
         return report
     dates = [day for day in study["dates"] if coverage["suffix_start"] <= day <= coverage["suffix_end"]]
     built = _suffix_frame(study, dates)
     if built is None:
-        report["suffix"] = {"status": "BLOCKED", "reason": "suffix_observation_missing", "window": [dates[0], dates[-1]]}
+        report["suffix"] = {"status": "NOT EVALUATED", "reason": "suffix_observation_missing", "window": [dates[0], dates[-1]]}
         return report
     try:
         posts, blocks = causal_posteriors(built)
-    except Exception as exc:
-        report["suffix"] = {"status": "BLOCKED", "reason": str(exc), "window": [dates[0], dates[-1]]}
+    except HMMFitFailed as exc:
+        report["suffix"] = {
+            "status": "NOT EVALUATED",
+            "reason": str(exc),
+            "failed_observation": exc.index,
+            "window": [dates[0], dates[-1]],
+            "attempts": exc.attempts,
+            "missing_posteriors_filled": False,
+        }
         return report
-    (out / "hmm_suffix_model.json").write_text(json.dumps(blocks[-1]["model"], indent=2))
+    (out / "hmm_suffix_model.json").write_text(json.dumps({key: value for key, value in blocks[-1]["model"].items() if key != "diagnostics"}, indent=2))
     posterior_on = {day: posts[index] for index, day in enumerate(dates)}
-    baseline = [row for row in catalogue["A"] if dates[0] <= row["signal_date"] <= dates[-1]]
-    gated = []
+    usable_dates = {day for day, posterior in posterior_on.items() if posterior is not None and np.isfinite(posterior).all()}
+    baseline = [row for row in catalogue["A"] if row["signal_date"] in usable_dates]
+    gated = [row for row in baseline if int(np.argmax(posterior_on[row["signal_date"]])) == 2]
+    enriched = []
     for row in baseline:
-        posterior = posterior_on.get(row["signal_date"])
-        if posterior is None or not np.isfinite(posterior).all():
-            continue
-        if int(np.argmax(posterior)) == 2:
-            gated.append(row)
+        posterior = posterior_on[row["signal_date"]]
+        features = dict(row.get("features") or {})
+        features["hmm_state_rank_0"] = float(posterior[0])
+        features["hmm_state_rank_1"] = float(posterior[1])
+        enriched.append({**row, "features": features})
     report["suffix"] = {
-        "status": "compared_on_coverage_suffix",
+        "status": "evaluated",
         "window": [dates[0], dates[-1]],
-        "sessions": len(dates),
+        "post_warmup_signals": len(baseline),
+        "warmup_excluded": "signals before the first causal posterior are omitted from both sides",
         "model_hash": blocks[-1]["model_hash"],
-        "baseline_ema50": _layer(baseline, study, policy, dates[0], dates[-1]),
-        "hmm_high_mean_state_only": _layer(gated, study, policy, dates[0], dates[-1]),
-        "gate": "argmax posterior equals state_rank_2, the training-mean sort key, not an economic label",
+        "baseline_on_post_warmup_dates": _layer(baseline, study, policy, dates[0], dates[-1]),
+        "argmax_state_gate": _layer(gated, study, policy, dates[0], dates[-1]),
+        "argmax_is_a_separate_experiment": True,
+        "posterior_features_are_the_planned_meta_model_inputs": True,
         "production_risk_off": "unchanged",
     }
+    report["posterior_meta_model"] = _meta_for_fold(enriched, study, policy, FOLDS[-1])
     return report
 
 
-def run(out: Path) -> dict:
+def run(out: Path, *, refresh_sectors: bool = False) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     policy = _policy()
-    study = load_study(out / "sectors")
-    lam = choose_lambda(study)
-    frozen_lam = lam["chosen"] if lam["chosen"] is not None else 1.0
-    catalogue = build_catalog(study, frozen_lam)
+    study = load_study(out / "sectors", refresh_sectors=refresh_sectors)
     folds = {}
+    lambda_report = {}
+    sector_comparison = {}
     for fold in FOLDS:
+        selected = choose_lambda(study, fold["train_end"])
+        lambda_report[fold["name"]] = selected
+        catalogue = build_catalog(study, selected["chosen"] if selected["chosen"] is not None else 1.0)
         folds[fold["name"]] = {
             name: _layer(rows, study, policy, fold["test_start"], fold["test_end"])
             for name, rows in catalogue.items()
         }
         folds[fold["name"]]["meta_model"] = _meta_for_fold(catalogue["A"], study, policy, fold)
+        sector_paths = _reference_paths(catalogue["C_sector_sum"], study, policy, fold["test_start"], fold["test_end"])
+        raw_paths = _reference_paths(catalogue["C_sector_raw_matched"], study, policy, fold["test_start"], fold["test_end"])
+        sector_comparison[fold["name"]] = _paired_sector(sector_paths, raw_paths)
+        if fold["name"] == FOLDS[-1]["name"]:
+            last_catalogue = catalogue
     from research_v6.replay import account_feasibility
     feasibility = []
     last = FOLDS[-1]
-    for signal in catalogue["A"]:
+    for signal in last_catalogue["A"]:
         if not (last["test_start"] <= signal["signal_date"] <= last["test_end"]):
             continue
         feasibility.append(account_feasibility(signal, policy, LAUNCH_CASH, LAUNCH_CASH, 0.0, 0.0, set(), False))
@@ -776,23 +920,27 @@ def run(out: Path) -> dict:
             writer.writerow({**row, "failed": "; ".join(row["failed"])})
     payload = {
         "seed": SEED,
-        "lambda": lam,
+        "lambda_by_fold": lambda_report,
         "folds_definition": list(FOLDS),
+        "exit_convention": EXIT_CONVENTION,
         "sample": {"start": study["dates"][0], "end": study["dates"][-1], "symbols": len(study["panels"]), "missing": study["missing"], "duplicate_dates": study["duplicate_dates"]},
         "data_status": "reused_development_cache_not_untouched_holdout",
-        "v4_baseline": "unreproduced_historical_reference_event_file_gitignored",
-        "provider": study["provider"],
-        "adjustment": study["adjustment"],
+        "price_provider": study["provider"],
+        "price_adjustment": study["adjustment"],
+        "sector_provider": "yahoo_chart_close",
+        "sector_adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
         "sector_attempts": study["sector_attempts"],
         "experiments": folds,
-        "hmm": _hmm_report(study, catalogue, policy, out),
+        "sector_paired_comparison": sector_comparison,
+        "hmm": _hmm_report(study, last_catalogue, policy, out),
         "earnings": _earnings_study(study, policy, out),
         "ou": _ou(study, policy),
         "fundamental": _fundamentals(),
         "feasibility_rows": len(feasibility),
         "feasibility_zero_quantity": sum(row["quantity"] == 0 for row in feasibility),
         "kelly": False,
-        "conclusion_limit": "account infeasibility is not an alpha estimate; gross returns are not a profitability claim",
+        "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
+        "conclusion_limit": "account infeasibility is not an alpha estimate; gross and reference results are not a funded portfolio",
     }
     (out / "results.json").write_text(json.dumps(payload, indent=2, default=str))
     return payload

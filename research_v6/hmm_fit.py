@@ -65,15 +65,44 @@ def _forward_backward(log_emit: np.ndarray, pi: np.ndarray, transition: np.ndarr
     return np.exp(log_gamma), np.exp(log_xi), logsumexp(log_alpha[-1])
 
 
-def _fit_one(scaled: np.ndarray, seed: int, covariance: str, iterations: int = 40) -> dict | None:
+def _safe_log(probabilities: np.ndarray) -> tuple[np.ndarray, bool]:
+    floored = np.maximum(probabilities, 1e-12)
+    if floored.ndim == 1:
+        floored = floored / floored.sum()
+    else:
+        floored = floored / floored.sum(axis=1, keepdims=True)
+    return np.log(floored), bool(np.any(probabilities < 1e-12))
+
+
+def _fit_one(scaled: np.ndarray, seed: int, covariance: str, iterations: int = 40) -> dict:
     pi, transition, means, variances = _initialize(scaled, seed)
     if covariance == "spherical":
         variances = np.repeat(variances.mean(axis=1)[:, None], scaled.shape[1], axis=1)
     previous = None
-    for _ in range(iterations):
-        gamma, xi, loglik = _forward_backward(_log_gauss(scaled, means, variances), pi, transition)
+    gamma = None
+    floor_applied = False
+    record = {
+        "seed": seed,
+        "covariance": covariance,
+        "iterations": 0,
+        "converged": False,
+        "accepted": False,
+        "reason": None,
+        "probability_floor_applied": False,
+    }
+    for iteration in range(iterations):
+        record["iterations"] = iteration + 1
+        log_pi, floored_pi = _safe_log(pi)
+        log_transition, floored_transition = _safe_log(transition)
+        floor_applied = floor_applied or floored_pi or floored_transition
+        gamma, xi, loglik = _forward_backward(_log_gauss(scaled, means, variances), np.exp(log_pi), np.exp(log_transition))
+        if not np.isfinite(loglik):
+            record["reason"] = "nonfinite_likelihood"
+            record["probability_floor_applied"] = floor_applied
+            return record
         if previous is not None and abs(loglik - previous) < 1e-6:
             previous = loglik
+            record["converged"] = True
             break
         previous = loglik
         pi = gamma[0] / gamma[0].sum()
@@ -81,7 +110,9 @@ def _fit_one(scaled: np.ndarray, seed: int, covariance: str, iterations: int = 4
         transition /= transition.sum(axis=1, keepdims=True)
         weight = gamma.sum(axis=0)
         if np.any(weight <= 1e-8):
-            return None
+            record["reason"] = "state_weight_collapsed"
+            record["probability_floor_applied"] = floor_applied
+            return record
         means = (gamma.T @ scaled) / weight[:, None]
         diff = scaled[:, None, :] - means[None, :, :]
         variances = np.maximum((gamma[:, :, None] * diff ** 2).sum(axis=0) / weight[:, None], VARIANCE_FLOOR)
@@ -89,11 +120,29 @@ def _fit_one(scaled: np.ndarray, seed: int, covariance: str, iterations: int = 4
             shared = variances.mean(axis=1)
             variances = np.repeat(shared[:, None], scaled.shape[1], axis=1)
     else:
-        return None
+        record["reason"] = "not_converged"
+        record["last_loglik"] = None if previous is None else float(previous)
+        record["probability_floor_applied"] = floor_applied
+        if gamma is not None:
+            mass = gamma.mean(axis=0)
+            record["mass"] = [float(value) for value in mass]
+            record["min_variance"] = float(np.min(variances))
+            record["zero_transitions"] = int(np.sum(transition <= 1e-12))
+        return record
     mass = gamma.mean(axis=0)
+    record.update({
+        "mass": [float(value) for value in mass],
+        "min_variance": float(np.min(variances)),
+        "zero_transitions": int(np.sum(transition <= 1e-12)),
+        "probability_floor_applied": floor_applied,
+        "loglik": float(previous),
+    })
     if np.any(mass < MIN_STATE_MASS) or not np.isfinite(previous):
-        return None
-    return {"pi": pi, "transition": transition, "means": means, "variances": variances, "loglik": float(previous), "mass": mass}
+        record["reason"] = "state_occupancy_below_2_percent"
+        return record
+    record["accepted"] = True
+    record["model"] = {"pi": pi, "transition": transition, "means": means, "variances": variances, "loglik": float(previous), "mass": mass}
+    return record
 
 
 def _order_by_training_mean(model: dict, scaled: np.ndarray) -> dict:
@@ -109,19 +158,23 @@ def _order_by_training_mean(model: dict, scaled: np.ndarray) -> dict:
     return model
 
 
-def select_hmm(observations: np.ndarray, seeds: tuple[int, ...] = SEEDS) -> dict | None:
-    """Pick covariance and seed by training likelihood. State order uses the training mean only."""
-    scaled, center, spread = _scale(np.asarray(observations, dtype=float))
+def select_hmm(observations: np.ndarray, seeds: tuple[int, ...] = SEEDS) -> tuple[dict | None, list[dict]]:
+    """Pick an accepted fit by training likelihood. Attempts are returned even when none qualify."""
+    raw = np.asarray(observations, dtype=float)
+    input_hash = hashlib.sha256(raw.tobytes()).hexdigest()
+    scaled, center, spread = _scale(raw)
     best = None
     attempts = []
     for covariance in ("diagonal", "spherical"):
         for seed in seeds:
             fitted = _fit_one(scaled, seed, covariance)
-            attempts.append({"covariance": covariance, "seed": seed, "loglik": None if fitted is None else fitted["loglik"]})
-            if fitted is not None and (best is None or fitted["loglik"] > best["loglik"]):
-                best = {**fitted, "covariance": covariance, "seed": seed}
+            public = {key: value for key, value in fitted.items() if key != "model"}
+            public["input_hash"] = input_hash
+            attempts.append(public)
+            if fitted["accepted"] and (best is None or fitted["loglik"] > best["loglik"]):
+                best = {**fitted["model"], "covariance": covariance, "seed": seed}
     if best is None:
-        return None
+        return None, attempts
     ordered = _order_by_training_mean(best, scaled)
     payload = {
         "schema": "gaussian_hmm_forward_v1",
@@ -140,15 +193,24 @@ def select_hmm(observations: np.ndarray, seeds: tuple[int, ...] = SEEDS) -> dict
         "diagnostics": {
             "seed": best["seed"],
             "loglik": ordered["loglik"],
-            "state_mass": ordered["mass"].tolist(),
+            "state_mass": [float(value) for value in ordered["mass"]],
             "attempts": attempts,
+            "input_hash": input_hash,
             "smoothed_posteriors_exported": False,
+            "acceptance_thresholds_changed_after_results": False,
         },
     }
     encoded = json.dumps(payload, sort_keys=True).encode()
     payload["model_hash"] = hashlib.sha256(encoded).hexdigest()
     forward_filter(payload, observations[:2])
-    return payload
+    return payload, attempts
+
+
+class HMMFitFailed(RuntimeError):
+    def __init__(self, index: int, attempts: list[dict]):
+        super().__init__(f"hmm fit failed at observation {index}")
+        self.index = index
+        self.attempts = attempts
 
 
 def causal_posteriors(observations: np.ndarray, minimum: int = 252, block: int = 60) -> tuple[np.ndarray, list[dict]]:
@@ -158,9 +220,9 @@ def causal_posteriors(observations: np.ndarray, minimum: int = 252, block: int =
     blocks = []
     start = minimum
     while start < len(frame):
-        model = select_hmm(frame[:start])
+        model, attempts = select_hmm(frame[:start])
         if model is None:
-            raise RuntimeError(f"hmm fit failed at observation {start}")
+            raise HMMFitFailed(start, attempts)
         stop = min(len(frame), start + block)
         posts = forward_filter(model, frame[:stop])
         out[start:stop] = posts[start:stop]

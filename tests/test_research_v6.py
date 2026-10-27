@@ -242,7 +242,8 @@ def test_reference_quantity_is_costed_without_the_account_filter():
     bars["AAA"][sessions[1]] = {"open": 101.0, "high": 102.0, "low": 100.0, "close": 101.0}
     bars["AAA"][sessions[3]] = {"open": 101.0, "high": 160.0, "low": 100.0, "close": 150.0}
     trade = reference_trade(signal, bars, sessions, policy)
-    assert trade["population"] == "reference_risk_budget_5000_not_admitted_fills"
+    assert trade["population"] == "reference_initial_price_risk_5000_not_account_capital"
+    assert trade["sizing"] == "initial_price_risk_per_reference_trade"
     assert trade["status"] == "completed"
     assert trade["qty"] == int(5000 // (1.5 * 10))
     assert trade["fees"] > 0
@@ -274,6 +275,80 @@ def test_price_bars_are_stored_by_symbol():
         for symbol, panel in panels.items()
     }
     assert "AAA" in bars and bars["AAA"]["2026-07-02"]["close"] == 2.0
+
+
+def test_fold_metrics_do_not_import_a_later_period():
+    import pandas as pd
+    from research_v6.experiments import FOLDS, _fold_split, select_test_rows
+    sessions = [day.date().isoformat() for day in pd.bdate_range("2022-01-03", "2026-10-08")]
+    rows = [
+        {"status": "completed", "signal_date": "2023-08-01", "exit_date": "2023-08-15", "split": "train"},
+        {"status": "completed", "signal_date": "2025-08-03", "exit_date": "2025-08-15", "split": "test"},
+    ]
+    chosen = select_test_rows(rows, sessions, FOLDS[0])
+    assert [row["signal_date"] for row in chosen] == ["2023-08-01"]
+    assert all(FOLDS[0]["test_start"] <= row["signal_date"] <= FOLDS[0]["test_end"] for row in chosen)
+    assert _fold_split("2022-06-01", "2022-06-15", sessions, FOLDS[0]) == "train"
+    assert _fold_split("2022-12-20", "2023-01-10", sessions, FOLDS[0]) == "purged"
+    boundary = next(index for index, day in enumerate(sessions) if day >= "2023-01-02")
+    embargo_signal = sessions[boundary - 5]
+    assert _fold_split(embargo_signal, sessions[boundary - 1], sessions, FOLDS[0]) == "purged"
+
+
+def test_lambda_selection_ignores_prices_after_the_cutoff():
+    from datetime import timedelta
+    from research_v6.experiments import choose_lambda
+    rng = np.random.default_rng(5)
+    dates = [(datetime(2020, 1, 1).date() + timedelta(days=offset)).isoformat() for offset in range(260)]
+    market = rng.normal(0, 0.01, len(dates))
+    stock = 0.4 * market + rng.normal(0, 0.01, len(dates))
+    study = {"dates": dates, "nifty": {"return": market}, "panels": {"AAA": {"return": stock}}}
+    cutoff = dates[210]
+    original = choose_lambda(study, cutoff)
+    mutated = {"dates": dates, "nifty": {"return": market.copy()}, "panels": {"AAA": {"return": stock.copy()}}}
+    mutated["nifty"]["return"][-1] += 3
+    mutated["panels"]["AAA"]["return"][-1] += 3
+    changed = choose_lambda(mutated, cutoff)
+    assert original["chosen"] == changed["chosen"]
+    assert original["attempts"] == changed["attempts"]
+    assert original["train_end"] == cutoff
+
+
+def test_opening_exit_ignores_later_extremes_and_stop_bar_is_ambiguous():
+    from research_v6.replay import gross_path
+    sessions = [f"2026-07-{day:02d}" for day in range(1, 6)]
+    signal = {"symbol": "AAA", "family": "raw", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0}
+    bars = _book(sessions, [100, 100.5, 130, 100, 100], [101, 102, 140, 101, 101], [99, 100, 40, 99, 99])
+    opened = gross_path(signal, bars, sessions)
+    assert opened["reason"] == "target" and opened["exit"] == 130
+    assert opened["mae_mfe_status"] == "opening_exit_excludes_later_extremes"
+    risk = opened["entry"] - opened["stop"]
+    assert opened["mae_r"] == pytest.approx((100 - opened["entry"]) / risk)
+    assert opened["mae_r"] > (40 - opened["entry"]) / risk
+    held = _book(sessions, [100, 100.5, 100.5, 100, 100], [101, 102, 130, 101, 101], [99, 100, 40, 99, 99])
+    stopped = gross_path(signal, held, sessions)
+    assert stopped["reason"] == "stop"
+    assert stopped["mae_mfe_status"] == "exit_bar_ambiguous_stop_bound"
+    assert stopped["mae_r"] > (40 - stopped["entry"]) / (stopped["entry"] - stopped["stop"])
+
+
+def test_sector_cap_includes_the_candidate():
+    policy = _wide_policy()
+    policy["risk"]["trade_risk_rupee_cap"] = 250
+    policy["risk"]["loss_headroom_trade_divisor"] = 0.01
+    policy["risk"]["loss_headroom_aggregate_fraction"] = 100
+    policy["risk"]["sector_cap_total_equity"] = 0.6
+    sessions = ["2026-07-01", "2026-07-02", "2026-07-03"]
+    bar = {"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.0}
+    bars = {name: {day: dict(bar) for day in sessions} for name in ("AAA", "BBB")}
+    signals = [
+        {"symbol": "AAA", "family": "raw", "sector": "Banks", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0},
+        {"symbol": "BBB", "family": "raw", "sector": "Banks", "signal_date": sessions[0], "limit": 100.0, "atr": 4.0},
+    ]
+    result = simulate(signals, bars, sessions, policy)
+    assert [row["symbol"] for row in result["admitted"]] == ["AAA"]
+    assert result["rejected"][0]["reason"] == "sector_cap"
+    assert result["replay_scope"].startswith("partial_account_replay")
 
 
 def test_research_package_has_no_production_side_effects():

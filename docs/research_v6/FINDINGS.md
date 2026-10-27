@@ -18,9 +18,23 @@ Every outer-test candidate was rejected before a fill. For the 2,512 raw-momentu
 
 The failed line is `no_integer_quantity`. All 34 non-overlapping fortnights in that window had zero admitted entries and zero exits. The same rejection, `risk_or_cost`, covers the residual, hysteresis, and pullback lists. This is account infeasibility. It is not evidence that the signals have no edge, and it is not evidence that they have one.
 
-The replay now reserves pending debit, keeps the loss latch after a later recovery, refuses a second position in the same symbol, and counts fee-and-gap stress in aggregate risk. It does not model pair correlation. Defence and PSU caps are not applied unless a tag is present, and these signals do not carry those tags. Missing closes are marked at the last known price and counted; they are not fills. `largest_quantity` still searches at 10 bps even when a stress run asks for 25 bps, because that helper is shared production code and was not changed.
+The replay reserves pending debit, keeps the loss latch after a later recovery, refuses a second position in the same symbol, and includes a candidate's proposed sector exposure before admission. Held exposure is the marked value. Pending exposure is the reserved debit. This is a partial account replay: pair correlation is not enforced, and defence and PSU caps are not applied because these signals have no theme tag. Missing closes are marked at the last known price and are not fills. `largest_quantity` still searches at 10 bps because that helper is shared production code and was not changed.
 
-## Gross paths and reference trades
+## Sector comparison
+
+The 2025 sector residual mean net R of 0.290 and the matched raw mean of 0.224 do not, by themselves, show a difference. The paired comparison uses the same eligible names and signal weeks. Each week contributes the difference of the two mean net R values. Weeks are resampled together, so names that signaled in the same week stay in one block. Reference paths still overlap in calendar time; a hold that crosses two signal weeks can be split. That remaining dependence is part of the interval, and the result stays exploratory on a reused cache.
+
+| Fold | Common weeks | Sector minus raw | Week-block interval |
+| --- | ---: | ---: | --- |
+| 2023 H2 | 6 | -0.278 | -0.385 to -0.151 |
+| 2024 H2 | none | no eligible names | — |
+| 2025 | 10 | +0.061 | -0.054 to +0.161 |
+
+The 2025 interval includes zero. Dropping Financial Services changes that fold's point difference from +0.061 to -0.257. The largest single name, HINDCOPPER, is about 12 percent of absolute reference P&L. The 2023 interval is entirely negative. Sector residual momentum is not established as better than matched raw momentum.
+
+## Reference size
+
+₹5,000 is the initial price risk of one reference trade, not the cash spent and not the account. In the 2025 raw list the median notional is about ₹1.15 lakh, the 90th percentile about ₹1.53 lakh, and the maximum about ₹2.32 lakh. The peak sum of notionals open on the same day is about ₹1.40 crore. Those overlapping paths are independent hypotheticals. They are not a portfolio that was funded.
 
 Gross paths are price returns with no fees. Reference trades use quantity `floor(5000 / (1.5 * ATR20))` and charge fees at that quantity. Those rupee totals are not ₹5,748 account results. The meta-model, where it fits, is trained on the reference trades and is labelled that way.
 
@@ -36,19 +50,17 @@ Latest fold, signals from 2025-07-01 through 2026-10-08. Week-block intervals ar
 | Raw, same sector names | 372 | +0.0148 | 372 | +0.224 | -0.069 to +0.578 | 0 |
 | Hysteresis | 2,290 | -0.0028 | 2,290 | -0.159 | -0.311 to -0.008 | 0 |
 
-The residual sum and the volatility-normalized score both lost to matched raw momentum on this fold. They also lost on the 2024 fold. The 2023 fold was positive for raw and for the residual sum, and the raw list was stronger there too. Ridge lambda 1.0 won the training mean-squared-error comparison. Lambdas 0.1, 1, and 10 differ only near the eighth digit of that error. A fixture confirms a larger lambda shrinks the slope, so the search is not a no-op. The prediction error is dominated by residual variance, which is why the three errors are close.
+The residual sum and the volatility-normalized score both trail matched raw momentum on the 2024 and 2025 folds. Ridge lambda is now chosen inside each fold. The 2023 and 2024 training windows select 10. The 2025 window selects 1, which is why that fold's residual comparison matches the earlier lambda-1 run. The three training errors still differ only near the eighth digit. A fixture shows a larger lambda shrinks the slope.
 
-The 2025 sector residual interval is above zero, on 25 names and 12 week blocks. The matched raw interval includes zero. The 2023 sector fold was negative, and the 2024 sector test window had no eligible names under the EMA50 gate. That is not a demonstrated strategy.
+The 2025 sector residual interval by itself is above zero, and the matched raw interval includes zero. That pair of statements is not a test of the difference. The paired result is in the section above. Hysteresis did not improve the raw list. The pullback variant had 11 completed reference trades and a high point estimate in 2023, then negative results on 18 and 42 trades in the later folds.
 
-Hysteresis did not improve the raw list. The pullback variant had 11 completed reference trades and a high point estimate in 2023, then negative results on 18 and 42 trades in the later folds.
-
-The meta-model selected logistic on the 2023 fold, where calibration Brier was 0.2499 against a prior of 0.2519. On the 2024 and 2025 folds the calibration choice was the constant prior. Test Brier on the 2025 reference trades was 0.242 for that prior. The logistic and XGBoost controls were slightly worse in calibration on those later folds. This is not evidence for a trading overlay.
+The 2023 meta-model test set is only 2023-07-03 through 2023-12-29. Its logistic test Brier is 0.254. The 2024 and 2025 folds still select the constant prior. The 2025 prior's test Brier is 0.242. This is not evidence for a trading overlay.
 
 ## HMM, earnings, OU, fundamentals
 
 Full-sample HMM coverage is blocked. Of 2,000 Nifty sessions, 690 fail the 90 percent rule with denominator 150. The failures are mostly pre-listing history in the cache (19,853 name-sessions) and SMA50 warmup (13,631), plus 170 missing vendor bars and 2,000 name-sessions for ZENTEC, which has no file. Nothing was imputed.
 
-The coverage suffix from 2021-06-29 through 2026-10-08 meets the predeclared length and coverage rule. A causal HMM fit on that suffix failed at observation 492 because no seed produced an acceptable model. The baseline-versus-HMM comparison on that window was not run. Production RISK_OFF was not changed.
+The coverage suffix from 2021-06-29 through 2026-10-08 meets the predeclared length and coverage rule. The causal fit is NOT EVALUATED. At observation 492, all six seed and covariance runs were still moving after the predeclared 40 iterations. The last state shares were about 18 to 50 percent, so none had fallen through the 2 percent occupancy floor, and the smallest variance was about 0.13. One diagonal fit had a single near-zero transition. The input hash prefix is `fe721bcc3b36`. The iteration cap was not increased, and missing posteriors were not filled. The argmax gate and the posterior meta-model were not run. Production RISK_OFF was not changed.
 
 Earnings remain an announcement reaction, not SUE. Of 11,771 financial-result board outcomes, 135 completed a reference-budget path after the reaction and consolidation rules. Mean net R was -0.221, profit factor 0.626, week-block interval -0.461 to +0.030, 87 names. Seventeen confirmations did not fill. Admission stays blocked because there is no point-in-time fundamental snapshot. Clocks in the file were read as IST.
 

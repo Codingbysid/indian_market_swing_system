@@ -12,13 +12,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run v6 research experiments locally")
     parser.add_argument("--out", default="artifacts/research_v6")
     parser.add_argument("--baseline-tests", type=int, default=171)
+    parser.add_argument("--refresh-sectors", action="store_true")
     args = parser.parse_args()
     destination = Path(args.out)
     blocked = {"portfolio_state.json", "paper_book.json"}
     if destination.name in blocked or any(part in {"portfolio_state.json", "paper_book.json"} for part in destination.parts):
         raise SystemExit("refusing to write a broker or paper book")
     write_baseline(destination, args.baseline_tests)
-    run(destination)
+    run(destination, refresh_sectors=args.refresh_sectors)
 
 
 if __name__ == "__main__":

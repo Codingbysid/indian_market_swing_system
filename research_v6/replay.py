@@ -18,6 +18,7 @@ NOT_MODELED = (
     "psu_cap_without_tag",
     "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity",
 )
+PARTIAL_REPLAY = "partial_account_replay_correlation_and_theme_caps_not_enforced"
 
 
 def _bar_exit(bar: dict, stop: float, target: float) -> tuple[float, str] | None:
@@ -36,28 +37,51 @@ def _bar_exit(bar: dict, stop: float, target: float) -> tuple[float, str] | None
     return None
 
 
+def _extremes(entry: float, risk: float, low: float, high: float, mae: float, mfe: float) -> tuple[float, float]:
+    if risk <= 0:
+        return mae, mfe
+    return min(mae, (low - entry) / risk), max(mfe, (high - entry) / risk)
+
+
 def _walk(entry: float, atr: float, sessions: list[str], start: int, symbol: str, bars: dict) -> dict:
+    """MAE/MFE use only prices while the position is open.
+
+    An opening exit ignores the rest of that bar. An intrabar stop or target
+    uses the barrier, not the day's further extreme, and is marked ambiguous.
+    """
     stop = entry - STOP_ATR * atr
     target = entry + TARGET_ATR * atr
     risk = entry - stop
     mae = 0.0
     mfe = 0.0
     held = 0
+    excursion = "no_completed_bar"
     for session in sessions[start:]:
         bar = bars.get(symbol, {}).get(session)
         if bar is None:
-            return {"status": "censored", "entry": entry, "stop": stop, "target": target, "mae_r": mae, "mfe_r": mfe, "held": held}
+            return {"status": "censored", "entry": entry, "stop": stop, "target": target, "mae_r": mae, "mfe_r": mfe, "mae_mfe_status": excursion, "held": held}
         held += 1
-        if risk > 0:
-            mae = min(mae, (float(bar["low"]) - entry) / risk)
-            mfe = max(mfe, (float(bar["high"]) - entry) / risk)
+        opened = float(bar["open"])
         decision = _bar_exit(bar, stop, target)
         price = None if decision is None else decision[0]
         reason = None if decision is None else decision[1]
         if price is None and held >= VERTICAL:
             price, reason = float(bar["close"]), "vertical"
         if price is None:
+            mae, mfe = _extremes(entry, risk, float(bar["low"]), float(bar["high"]), mae, mfe)
+            excursion = "exact_completed_bars"
             continue
+        if opened >= target or opened <= stop:
+            excursion = "opening_exit_excludes_later_extremes"
+        elif reason == "stop":
+            mae, mfe = _extremes(entry, risk, stop, entry, mae, mfe)
+            excursion = "exit_bar_ambiguous_stop_bound"
+        elif reason == "target":
+            mae, mfe = _extremes(entry, risk, entry, target, mae, mfe)
+            excursion = "exit_bar_ambiguous_target_bound"
+        else:
+            mae, mfe = _extremes(entry, risk, float(bar["low"]), float(bar["high"]), mae, mfe)
+            excursion = "exact_through_close"
         return {
             "status": "completed",
             "entry": entry,
@@ -68,10 +92,11 @@ def _walk(entry: float, atr: float, sessions: list[str], start: int, symbol: str
             "target": target,
             "mae_r": mae,
             "mfe_r": mfe,
+            "mae_mfe_status": excursion,
             "held": held,
             "gross_return": price / entry - 1.0,
         }
-    return {"status": "censored", "entry": entry, "stop": stop, "target": target, "mae_r": mae, "mfe_r": mfe, "held": held}
+    return {"status": "censored", "entry": entry, "stop": stop, "target": target, "mae_r": mae, "mfe_r": mfe, "mae_mfe_status": excursion, "held": held}
 
 
 def _entry_bar(signal: dict, bars: dict, sessions: list[str]) -> tuple[str, dict] | dict:
@@ -105,16 +130,21 @@ def gross_path(signal: dict, bars: dict, sessions: list[str]) -> dict:
 
 
 def reference_trade(signal: dict, bars: dict, sessions: list[str], policy: dict, *, slippage_bps: float = 10.0) -> dict:
-    """Net result at floor(5000 / initial risk per share). Not an admitted portfolio fill."""
+    """Net result at floor(5000 / initial price risk per share).
+
+    ₹5,000 is initial price risk, not account capital and not the cash debit.
+    """
     atr = float(signal["atr"])
     per_share = STOP_ATR * atr
     quantity = int(REFERENCE_RISK_RUPEES // per_share) if per_share > 0 else 0
     base = {
         "symbol": signal["symbol"],
         "family": signal.get("family"),
+        "sector": signal.get("sector"),
         "signal_date": signal["signal_date"],
-        "population": "reference_risk_budget_5000_not_admitted_fills",
-        "reference_risk_rupees": REFERENCE_RISK_RUPEES,
+        "population": "reference_initial_price_risk_5000_not_account_capital",
+        "sizing": "initial_price_risk_per_reference_trade",
+        "reference_initial_price_risk_rupees": REFERENCE_RISK_RUPEES,
         "qty": quantity,
     }
     if quantity < 1:
@@ -128,6 +158,8 @@ def reference_trade(signal: dict, bars: dict, sessions: list[str], policy: dict,
         return {**base, **walked, "entry_date": session}
     costs = fee_components(walked["entry"], walked["exit"], quantity, entry_day=session, exit_day=walked["exit_date"], slippage_bps=slippage_bps)
     price_risk = quantity * (walked["entry"] - walked["stop"])
+    notional = quantity * walked["entry"]
+    debit = notional + buy_fees(walked["entry"], quantity, day=session, slippage_bps=slippage_bps)
     net = (walked["exit"] - walked["entry"]) * quantity - costs["total"]
     account = account_feasibility(signal, policy, LAUNCH_CASH, LAUNCH_CASH, 0.0, 0.0, set(), False)
     return {
@@ -138,6 +170,8 @@ def reference_trade(signal: dict, bars: dict, sessions: list[str], policy: dict,
         "net_r": net / price_risk if price_risk > 0 else None,
         "fees": costs["total"],
         "price_risk": price_risk,
+        "notional": notional,
+        "debit": debit,
         "account_can_execute_reference_quantity": account["quantity"] >= quantity and not account["failed"],
         "account_failed": account["failed"],
     }
@@ -317,13 +351,6 @@ def simulate(signals: list[dict], bars: dict[str, dict[str, dict]], sessions: li
                 rejected.append({**signal, "reason": "slots_full"})
                 continue
             sector = signal.get("sector")
-            if sector:
-                equity = max(mark(session), 1.0)
-                sector_debit = sum(row.get("reserved_debit", row["qty"] * row.get("entry", row["limit"])) for row in positions + pending if row.get("sector") == sector)
-                cap = float(policy["risk"]["sector_cap_total_equity"]) * equity
-                if sector_debit >= cap:
-                    rejected.append({**signal, "reason": "sector_cap"})
-                    continue
             reserved = sum(row["reserved_debit"] for row in pending)
             stressed = sum(_stress(row["entry"], row["stop"], row["atr"], row["qty"], session, slippage_bps) for row in positions)
             stressed += sum(_stress(row["limit_band"], row["limit_band"] - STOP_ATR * row["atr"], row["atr"], row["qty"], session, slippage_bps) for row in pending)
@@ -333,11 +360,20 @@ def simulate(signals: list[dict], bars: dict[str, dict[str, dict]], sessions: li
                 continue
             quantity = check["quantity"]
             worst = float(signal["limit"]) + BAND_ATR * float(signal["atr"])
+            reserved_debit = quantity * worst + buy_fees(worst, quantity, day=session, slippage_bps=slippage_bps)
+            if sector:
+                equity = max(mark(session), 1.0)
+                marked = sum(row["qty"] * row.get("last_close", row["entry"]) for row in positions if row.get("sector") == sector)
+                reserved_exposure = sum(row["reserved_debit"] for row in pending if row.get("sector") == sector)
+                cap = float(policy["risk"]["sector_cap_total_equity"]) * equity
+                if marked + reserved_exposure + reserved_debit > cap + 1e-6:
+                    rejected.append({**signal, "reason": "sector_cap", "sector_exposure": marked + reserved_exposure + reserved_debit, "sector_cap": cap})
+                    continue
             order = {
                 "symbol": signal["symbol"], "family": signal["family"], "signal_date": session, "qty": quantity,
                 "atr": float(signal["atr"]), "limit": float(signal["limit"]), "sector": sector,
                 "stop_gate": float(signal["limit"]) - STOP_ATR * float(signal["atr"]), "limit_band": worst,
-                "reserved_debit": quantity * worst + buy_fees(worst, quantity, day=session, slippage_bps=slippage_bps),
+                "reserved_debit": reserved_debit,
                 "features": signal.get("features") or {},
             }
             pending.append(order)
@@ -358,5 +394,6 @@ def simulate(signals: list[dict], bars: dict[str, dict[str, dict]], sessions: li
         "sessions": sessions,
         "missing_price_marks": missing_marks,
         "not_modeled": list(NOT_MODELED),
+        "replay_scope": PARTIAL_REPLAY,
         "population": "frozen_5748_account",
     }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import hashlib
 import json
 import urllib.parse
@@ -147,32 +148,74 @@ def fetch_chart(symbol: str, timeout: int = 20) -> tuple[dict, pd.DataFrame | No
     return record, frame if record["parsed"] else None
 
 
-def load_sectors(dates: list[str], cache: Path) -> tuple[dict[str, np.ndarray], list[dict]]:
+def load_sectors(dates: list[str], cache: Path, *, refresh: bool = False) -> tuple[dict[str, np.ndarray], list[dict]]:
+    """Read the archived sector files. A refresh writes a new vintage and does not replace them."""
     cache.mkdir(parents=True, exist_ok=True)
+    if refresh:
+        vintage = cache / "vintages" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        vintage.mkdir(parents=True, exist_ok=True)
+        series, attempts = _download_sectors(dates, vintage)
+        manifest = {"retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "attempts": attempts, "note": "new vintage; frozen inputs were not overwritten"}
+        (vintage / "manifest.json").write_text(json.dumps(manifest, indent=2))
+        return series, attempts
+    return _read_sector_archive(dates, cache)
+
+
+def _sector_returns(frame: pd.DataFrame, dates: list[str]) -> np.ndarray:
+    aligned = _align(frame.assign(Open=frame["Close"], High=frame["Close"], Low=frame["Close"], Volume=0), dates)
+    close = aligned["close"]
+    returns = np.full(len(close), np.nan)
+    previous = np.r_[np.nan, close[:-1]]
+    usable = np.isfinite(close) & np.isfinite(previous) & (previous != 0)
+    returns[usable] = close[usable] / previous[usable] - 1.0
+    return returns
+
+
+def _read_sector_archive(dates: list[str], cache: Path) -> tuple[dict[str, np.ndarray], list[dict]]:
     series = {}
     attempts = []
-    for sector, tickers in SECTOR_ATTEMPTS.items():
-        accepted = None
-        for ticker in tickers:
-            record, frame = fetch_chart(ticker)
-            record["sector"] = sector
-            attempts.append(record)
-            if frame is not None:
-                destination = cache / f"{sector.replace(' ', '_')}.csv"
-                frame.to_csv(destination, index=False)
-                aligned = _align(frame.rename(columns={"Close": "Close"}).assign(Open=frame["Close"], High=frame["Close"], Low=frame["Close"], Volume=0), dates)
-                close = aligned["close"]
-                returns = np.full(len(close), np.nan)
-                returns[1:] = close[1:] / np.r_[np.nan, close[:-1]][1:] - 1.0
-                accepted = returns
-                record["archive"] = str(destination)
-                break
-        if accepted is not None:
-            series[sector] = accepted
+    for path in sorted(cache.glob("*.csv")):
+        frame = pd.read_csv(path)
+        if "Date" not in frame.columns or "Close" not in frame.columns:
+            attempts.append({"archive": path.name, "parsed": False, "reason": "schema"})
+            continue
+        frame["Date"] = pd.to_datetime(frame["Date"]).dt.strftime("%Y-%m-%d")
+        series[path.stem.replace("_", " ")] = _sector_returns(frame, dates)
+        attempts.append({
+            "archive": str(path),
+            "sha256": file_sha(path),
+            "parsed": True,
+            "rows": int(len(frame)),
+            "provider": "yahoo_chart_close",
+            "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+            "network": False,
+        })
     return series, attempts
 
 
-def load_study(sector_cache: Path | None = None) -> dict:
+def _download_sectors(dates: list[str], vintage: Path) -> tuple[dict[str, np.ndarray], list[dict]]:
+    series = {}
+    attempts = []
+    raw_dir = vintage / "raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    for sector, tickers in SECTOR_ATTEMPTS.items():
+        for ticker in tickers:
+            record, frame = fetch_chart(ticker)
+            record["sector"] = sector
+            record["retrieved_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            attempts.append(record)
+            if frame is None:
+                continue
+            destination = vintage / f"{sector.replace(' ', '_')}.csv"
+            frame.to_csv(destination, index=False)
+            (raw_dir / f"{sector.replace(' ', '_')}.sha").write_text(record.get("sha256") or "")
+            series[sector] = _sector_returns(frame, dates)
+            record["archive"] = str(destination)
+            break
+    return series, attempts
+
+
+def load_study(sector_cache: Path | None = None, *, refresh_sectors: bool = False) -> dict:
     universe = pd.read_csv(UNIVERSE)
     nifty = _frame(DATA_DIR / "NSE_NIFTY.csv")
     dates = nifty["Date"].tolist()
@@ -195,7 +238,7 @@ def load_study(sector_cache: Path | None = None) -> dict:
         hashes[path.name] = file_sha(path)
     sectors, attempts = ({}, [])
     if sector_cache is not None:
-        sectors, attempts = load_sectors(dates, sector_cache)
+        sectors, attempts = load_sectors(dates, sector_cache, refresh=refresh_sectors)
     sector_of = dict(zip(universe["Symbol"].astype(str).str.upper(), universe["Sector"].astype(str)))
     return {
         "dates": dates,

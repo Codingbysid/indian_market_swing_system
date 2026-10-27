@@ -1,25 +1,75 @@
 {
   "seed": 20261026,
-  "lambda": {
-    "chosen": 1.0,
-    "attempts": [
-      {
-        "lambda": 0.1,
-        "mean_square": 0.0004352938632340215,
-        "windows": 162872
-      },
-      {
-        "lambda": 1.0,
-        "mean_square": 0.0004352428309269306,
-        "windows": 162872
-      },
-      {
-        "lambda": 10.0,
-        "mean_square": 0.0004352919176520514,
-        "windows": 162872
-      }
-    ],
-    "selection": "train_mean_square_prediction_error"
+  "lambda_by_fold": {
+    "fold_2023h2": {
+      "chosen": 10.0,
+      "attempts": [
+        {
+          "lambda": 0.1,
+          "mean_square": 0.000464594883391,
+          "windows": 93053
+        },
+        {
+          "lambda": 1.0,
+          "mean_square": 0.0004645187337309979,
+          "windows": 93053
+        },
+        {
+          "lambda": 10.0,
+          "mean_square": 0.0004644330540696391,
+          "windows": 93053
+        }
+      ],
+      "train_start": "2019-06-17",
+      "train_end": "2022-12-31",
+      "selection": "fold_training_mean_square_prediction_error"
+    },
+    "fold_2024h2": {
+      "chosen": 10.0,
+      "attempts": [
+        {
+          "lambda": 0.1,
+          "mean_square": 0.0004354465357387438,
+          "windows": 127466
+        },
+        {
+          "lambda": 1.0,
+          "mean_square": 0.0004353832341461318,
+          "windows": 127466
+        },
+        {
+          "lambda": 10.0,
+          "mean_square": 0.00043530973547187794,
+          "windows": 127466
+        }
+      ],
+      "train_start": "2019-06-17",
+      "train_end": "2023-12-31",
+      "selection": "fold_training_mean_square_prediction_error"
+    },
+    "fold_2025": {
+      "chosen": 1.0,
+      "attempts": [
+        {
+          "lambda": 0.1,
+          "mean_square": 0.0004352938632340215,
+          "windows": 162872
+        },
+        {
+          "lambda": 1.0,
+          "mean_square": 0.0004352428309269306,
+          "windows": 162872
+        },
+        {
+          "lambda": 10.0,
+          "mean_square": 0.0004352919176520514,
+          "windows": 162872
+        }
+      ],
+      "train_start": "2019-06-17",
+      "train_end": "2024-12-31",
+      "selection": "fold_training_mean_square_prediction_error"
+    }
   },
   "folds_definition": [
     {
@@ -47,6 +97,7 @@
       "test_end": "2026-10-08"
     }
   ],
+  "exit_convention": "A completed trade is assigned by its signal date. Train and calibration rows whose exit is on or after the next boundary are purged, as are signals within 10 sessions of that boundary. A test row keeps its own exit, which may fall up to 10 sessions after test_end. Those later prices are not training rows and are not test rows of an earlier fold.",
   "sample": {
     "start": "2018-09-11",
     "end": "2026-10-08",
@@ -57,98 +108,82 @@
     "duplicate_dates": []
   },
   "data_status": "reused_development_cache_not_untouched_holdout",
-  "v4_baseline": "unreproduced_historical_reference_event_file_gitignored",
-  "provider": "tvDatafeed_cache",
-  "adjustment": "tvdatafeed_as_returned",
+  "price_provider": "tvDatafeed_cache",
+  "price_adjustment": "tvdatafeed_as_returned",
+  "sector_provider": "yahoo_chart_close",
+  "sector_adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
   "sector_attempts": [
     {
-      "symbol": "^CNXAUTO",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXAUTO?interval=1d&range=10y",
-      "sha256": "b2653391fdfaf1c758461380d13169d6a53ec6c02163913b00da911a9fdc31fe",
+      "archive": "artifacts/research_v6/sectors/Automobile_and_Auto_Components.csv",
+      "sha256": "06e4e6cca397ae709e4b6733ffe7e45baf02f28c8c938094c6f204a19394cc0c",
       "parsed": true,
-      "bytes": 223079,
       "rows": 2452,
-      "sector": "Automobile and Auto Components",
-      "archive": "artifacts/research_v6/sectors/Automobile_and_Auto_Components.csv"
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     },
     {
-      "symbol": "^CNXPHARMA",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXPHARMA?interval=1d&range=10y",
-      "sha256": "4c21ac11bad8ded1cfe7750fb113e12cbdfe1e237d77ef3a93359846557cfcdb",
+      "archive": "artifacts/research_v6/sectors/Fast_Moving_Consumer_Goods.csv",
+      "sha256": "0e40c6d3c99cce3bdfa356a5715e45f7aff12dc2892df0da158c816438fcf071",
       "parsed": true,
-      "bytes": 228482,
-      "rows": 2466,
-      "sector": "Healthcare",
-      "archive": "artifacts/research_v6/sectors/Healthcare.csv"
-    },
-    {
-      "symbol": "^CNXFMCG",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXFMCG?interval=1d&range=10y",
-      "sha256": "b29f94aae8fe2c15a3562c138fbfd02a2aa574827ab325573e0508102a0979ad",
-      "parsed": true,
-      "bytes": 212657,
       "rows": 2451,
-      "sector": "Fast Moving Consumer Goods",
-      "archive": "artifacts/research_v6/sectors/Fast_Moving_Consumer_Goods.csv"
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     },
     {
-      "symbol": "^CNXMETAL",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXMETAL?interval=1d&range=10y",
-      "sha256": "57fc27a397003ac3d11173236a7601d9c1f3072607dc509f0b60aac6f099f70f",
+      "archive": "artifacts/research_v6/sectors/Financial_Services.csv",
+      "sha256": "ccf76e580591b3c1f09d7c4ef695378f36030470d059bd2f9352a3a9e50ff0b2",
       "parsed": true,
-      "bytes": 232349,
       "rows": 2452,
-      "sector": "Metals & Mining",
-      "archive": "artifacts/research_v6/sectors/Metals_&_Mining.csv"
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     },
     {
-      "symbol": "^CNXENERGY",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXENERGY?interval=1d&range=10y",
-      "sha256": "003308026961df59c5e71df758a0cbcf3cf5b0a153410a8e1e275997345592b1",
+      "archive": "artifacts/research_v6/sectors/Healthcare.csv",
+      "sha256": "d328e0546d7705321a79b291e5ab09c848156b741e2b44f227bfa2fb7d65b696",
       "parsed": true,
-      "bytes": 221357,
-      "rows": 2452,
-      "sector": "Oil Gas & Consumable Fuels",
-      "archive": "artifacts/research_v6/sectors/Oil_Gas_&_Consumable_Fuels.csv"
+      "rows": 2466,
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     },
     {
-      "symbol": "^CNXIT",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXIT?interval=1d&range=10y",
-      "sha256": "51bb41ab23e75aab0f2c38fc3d48234db231d6d19b0f5e2f065bb06b97b48713",
+      "archive": "artifacts/research_v6/sectors/Information_Technology.csv",
+      "sha256": "f296b7d1ec9187c8ccda545642a11fba310a726fb46647f53b98cf1be93bf771",
       "parsed": true,
-      "bytes": 213916,
       "rows": 2467,
-      "sector": "Information Technology",
-      "archive": "artifacts/research_v6/sectors/Information_Technology.csv"
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     },
     {
-      "symbol": "^CNXREALTY",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXREALTY?interval=1d&range=10y",
-      "sha256": "e98a946487586053f1ba533755d043dc89d20a0cb5d368e595f5cdbea5cc54cf",
+      "archive": "artifacts/research_v6/sectors/Metals_&_Mining.csv",
+      "sha256": "c9135f3995b5cbcbb249cd3ffc3787afea831c26e9f952e04714d6c2bc8c8f20",
       "parsed": true,
-      "bytes": 242676,
       "rows": 2452,
-      "sector": "Realty",
-      "archive": "artifacts/research_v6/sectors/Realty.csv"
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     },
     {
-      "symbol": "^CNXFIN",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/%5ECNXFIN?interval=1d&range=10y",
-      "sha256": "92e8a0fe61451a4aa172343e83e4e709d42b31c78c50914624b505c71fc19ee7",
-      "parsed": false,
-      "bytes": 1224,
-      "rows": 1,
-      "sector": "Financial Services"
-    },
-    {
-      "symbol": "NIFTY_FIN_SERVICE.NS",
-      "url": "https://query1.finance.yahoo.com/v8/finance/chart/NIFTY_FIN_SERVICE.NS?interval=1d&range=10y",
-      "sha256": "920f19ae4476a00ad0df63502e0b2150a85a94157907a9ef7eaa27318f8a4355",
+      "archive": "artifacts/research_v6/sectors/Oil_Gas_&_Consumable_Fuels.csv",
+      "sha256": "e66f6f4e04efc49e069322267d042fb1788578a43a5ba0ce027ef0dc74cd1e4a",
       "parsed": true,
-      "bytes": 223245,
       "rows": 2452,
-      "sector": "Financial Services",
-      "archive": "artifacts/research_v6/sectors/Financial_Services.csv"
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
+    },
+    {
+      "archive": "artifacts/research_v6/sectors/Realty.csv",
+      "sha256": "09532bec7e55445ec5c60ce950218626a87ad3623ca8ad1ade87c4f83e0c0f54",
+      "parsed": true,
+      "rows": 2452,
+      "provider": "yahoo_chart_close",
+      "adjustment": "yahoo_close_not_the_same_convention_as_tvdatafeed_ohlc",
+      "network": false
     }
   ],
   "experiments": {
@@ -162,8 +197,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.021067681417923964,
-          "mean_mae_r": -0.7371988102553311,
-          "mean_mfe_r": 1.2451856213116892,
+          "mean_mae_r": -0.6145269085200797,
+          "mean_mfe_r": 1.0676110779522163,
           "time_exits": 501,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -193,14 +228,25 @@
             "symbol": "BSE",
             "share": 0.08787600149158836
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1474,
           "completed": 1277,
           "reference_quantity_zero": 0,
           "unfilled": 197,
           "censored": 0,
           "account_would_reject": 1277,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1277,
+            "median_notional": 85015.59486,
+            "p90_notional": 122186.4403572,
+            "max_notional": 170610.0,
+            "median_debit": 85201.55848229033,
+            "p90_debit": 122453.71170995598,
+            "max_debit": 170983.19333766,
+            "max_overlapping_notional": 10407529.129277552,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -235,31 +281,32 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_sum": {
         "gross": {
           "population": "gross_signal_diagnostic",
           "candidates": 1414,
-          "completed": 1201,
-          "unfilled": 213,
+          "completed": 1200,
+          "unfilled": 214,
           "censored": 0,
           "invalid": 0,
-          "mean_gross_return": 0.0177458979999426,
-          "mean_mae_r": -0.7697420363870779,
-          "mean_mfe_r": 1.1832920164912297,
-          "time_exits": 483,
+          "mean_gross_return": 0.01780065240898908,
+          "mean_mae_r": -0.6381599525401814,
+          "mean_mfe_r": 1.0280829510529608,
+          "time_exits": 482,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
         "reference": {
-          "completed_fills": 1201,
-          "unique_names": 69,
-          "net_pnl": 1182727.4105752078,
-          "expectancy_pnl": 984.7855208786076,
-          "expectancy_net_r": 0.19731061453730478,
-          "profit_factor": 1.447662332252025,
+          "completed_fills": 1200,
+          "unique_names": 70,
+          "net_pnl": 1176452.5003495922,
+          "expectancy_pnl": 980.3770836246601,
+          "expectancy_net_r": 0.1964219884624158,
+          "profit_factor": 1.4454749531516802,
           "marked_drawdown": null,
           "capital_utilization": null,
           "fortnight": {
@@ -270,23 +317,34 @@
           },
           "net_r_interval": {
             "weeks": 27,
-            "low": -0.016891951976077495,
-            "mid": 0.18113291747181665,
-            "high": 0.3985054270253913,
+            "low": -0.016489348413983494,
+            "mid": 0.1791568752233072,
+            "high": 0.390654698009108,
             "draws": 400
           },
           "concentration": {
             "symbol": "BSE",
-            "share": 0.09297613585257722
+            "share": 0.09309852081272511
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1414,
-          "completed": 1201,
+          "completed": 1200,
           "reference_quantity_zero": 0,
-          "unfilled": 213,
+          "unfilled": 214,
           "censored": 0,
-          "account_would_reject": 1201,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "account_would_reject": 1200,
+          "exposure": {
+            "trades": 1200,
+            "median_notional": 88855.94872,
+            "p90_notional": 132553.9906686,
+            "max_notional": 185714.10198,
+            "median_debit": 89050.31275536583,
+            "p90_debit": 132843.94006311244,
+            "max_debit": 186120.33412095567,
+            "max_overlapping_notional": 10858196.695273653,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -321,31 +379,32 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_vol": {
         "gross": {
           "population": "gross_signal_diagnostic",
           "candidates": 1414,
-          "completed": 1173,
-          "unfilled": 241,
+          "completed": 1176,
+          "unfilled": 238,
           "censored": 0,
           "invalid": 0,
-          "mean_gross_return": 0.010820585697600835,
-          "mean_mae_r": -0.8025344038760049,
-          "mean_mfe_r": 1.1369767403801079,
-          "time_exits": 464,
+          "mean_gross_return": 0.010764533368487473,
+          "mean_mae_r": -0.6699410957405861,
+          "mean_mfe_r": 0.9935651764311599,
+          "time_exits": 463,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
         "reference": {
-          "completed_fills": 1173,
-          "unique_names": 93,
-          "net_pnl": 438884.3271641361,
-          "expectancy_pnl": 374.155436627567,
-          "expectancy_net_r": 0.07472750319015652,
-          "profit_factor": 1.1509466368407442,
+          "completed_fills": 1176,
+          "unique_names": 95,
+          "net_pnl": 435370.8908131783,
+          "expectancy_pnl": 370.2133425282129,
+          "expectancy_net_r": 0.0740143525627145,
+          "profit_factor": 1.1490665479719466,
           "marked_drawdown": null,
           "capital_utilization": null,
           "fortnight": {
@@ -356,23 +415,34 @@
           },
           "net_r_interval": {
             "weeks": 27,
-            "low": -0.18457902421174027,
-            "mid": 0.05663768319091678,
-            "high": 0.326957461020445,
+            "low": -0.1859298284817438,
+            "mid": 0.057391833468513356,
+            "high": 0.31911506185939853,
             "draws": 400
           },
           "concentration": {
             "symbol": "BSE",
-            "share": 0.09325112858646442
+            "share": 0.09291403175112166
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1414,
-          "completed": 1173,
+          "completed": 1176,
           "reference_quantity_zero": 0,
-          "unfilled": 241,
+          "unfilled": 238,
           "censored": 0,
-          "account_would_reject": 1173,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "account_would_reject": 1176,
+          "exposure": {
+            "trades": 1176,
+            "median_notional": 115395.227255,
+            "p90_notional": 177663.885,
+            "max_notional": 270033.9,
+            "median_debit": 115647.64346746897,
+            "p90_debit": 178052.5080480323,
+            "max_debit": 270624.5737730634,
+            "max_overlapping_notional": 13779928.725350292,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -407,8 +477,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_raw_for_sum": {
@@ -420,8 +491,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.022267453794950046,
-          "mean_mae_r": -0.7315442867237109,
-          "mean_mfe_r": 1.2626470854089356,
+          "mean_mae_r": -0.6113873526487761,
+          "mean_mfe_r": 1.0779260080136588,
           "time_exits": 473,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -451,14 +522,25 @@
             "symbol": "BSE",
             "share": 0.09023173115389571
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1414,
           "completed": 1226,
           "reference_quantity_zero": 0,
           "unfilled": 188,
           "censored": 0,
           "account_would_reject": 1226,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1226,
+            "median_notional": 84131.86499999999,
+            "p90_notional": 121658.07253735501,
+            "max_notional": 170610.0,
+            "median_debit": 84315.89554629219,
+            "p90_debit": 121924.18813517164,
+            "max_debit": 170983.19333766,
+            "max_overlapping_notional": 10407529.129277552,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -493,8 +575,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_raw_for_vol": {
@@ -506,8 +589,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.022267453794950046,
-          "mean_mae_r": -0.7315442867237109,
-          "mean_mfe_r": 1.2626470854089356,
+          "mean_mae_r": -0.6113873526487761,
+          "mean_mfe_r": 1.0779260080136588,
           "time_exits": 473,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -537,14 +620,25 @@
             "symbol": "BSE",
             "share": 0.09023173115389571
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1414,
           "completed": 1226,
           "reference_quantity_zero": 0,
           "unfilled": 188,
           "censored": 0,
           "account_would_reject": 1226,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1226,
+            "median_notional": 84131.86499999999,
+            "p90_notional": 121658.07253735501,
+            "max_notional": 170610.0,
+            "median_debit": 84315.89554629219,
+            "p90_debit": 121924.18813517164,
+            "max_debit": 170983.19333766,
+            "max_overlapping_notional": 10407529.129277552,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -579,31 +673,32 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_sector_sum": {
         "gross": {
           "population": "gross_signal_diagnostic",
           "candidates": 160,
-          "completed": 142,
-          "unfilled": 18,
+          "completed": 143,
+          "unfilled": 17,
           "censored": 0,
           "invalid": 0,
-          "mean_gross_return": 0.009995277739240558,
-          "mean_mae_r": -0.8990978361126896,
-          "mean_mfe_r": 1.048642056120384,
-          "time_exits": 42,
+          "mean_gross_return": 0.009927146270657272,
+          "mean_mae_r": -0.7362741234025364,
+          "mean_mfe_r": 0.9242655071240884,
+          "time_exits": 44,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
         "reference": {
-          "completed_fills": 142,
-          "unique_names": 20,
-          "net_pnl": -30407.73451173287,
-          "expectancy_pnl": -214.1389754347385,
-          "expectancy_net_r": -0.04248372733692516,
-          "profit_factor": 0.9279971149682256,
+          "completed_fills": 143,
+          "unique_names": 19,
+          "net_pnl": -28093.352295933393,
+          "expectancy_pnl": -196.4570090624713,
+          "expectancy_net_r": -0.03907606245103416,
+          "profit_factor": 0.9331108018704318,
           "marked_drawdown": null,
           "capital_utilization": null,
           "fortnight": {
@@ -614,23 +709,34 @@
           },
           "net_r_interval": {
             "weeks": 10,
-            "low": -0.41886552471203253,
-            "mid": -0.06256756726774505,
-            "high": 0.671865980581622,
+            "low": -0.4110503061817614,
+            "mid": -0.055747461909466806,
+            "high": 0.6453815190346147,
             "draws": 400
           },
           "concentration": {
             "symbol": "BSE",
-            "share": 0.15625607472774145
+            "share": 0.15670149263225625
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 160,
-          "completed": 142,
+          "completed": 143,
           "reference_quantity_zero": 0,
-          "unfilled": 18,
+          "unfilled": 17,
           "censored": 0,
-          "account_would_reject": 142,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "account_would_reject": 143,
+          "exposure": {
+            "trades": 143,
+            "median_notional": 104007.39099300001,
+            "p90_notional": 156212.44834399997,
+            "max_notional": 162980.0,
+            "median_debit": 104234.89738410244,
+            "p90_debit": 156554.14839078233,
+            "max_debit": 163336.50342988,
+            "max_overlapping_notional": 7407218.78759826,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -665,8 +771,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_sector_raw_matched": {
@@ -678,8 +785,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.019546810487476415,
-          "mean_mae_r": -0.7960166019193579,
-          "mean_mfe_r": 1.2301884865760444,
+          "mean_mae_r": -0.6505778927098419,
+          "mean_mfe_r": 1.0850852846750072,
           "time_exits": 44,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -709,14 +816,25 @@
             "symbol": "BSE",
             "share": 0.14385652678446992
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 160,
           "completed": 148,
           "reference_quantity_zero": 0,
           "unfilled": 12,
           "censored": 0,
           "account_would_reject": 148,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 148,
+            "median_notional": 92060.078704,
+            "p90_notional": 143431.51641,
+            "max_notional": 161714.69999999998,
+            "median_debit": 92261.4514725176,
+            "p90_debit": 143745.25936958432,
+            "max_debit": 162068.43570506817,
+            "max_overlapping_notional": 7176354.637276259,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -751,8 +869,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "D_hysteresis": {
@@ -764,8 +883,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.021053570738384632,
-          "mean_mae_r": -0.7416846933813924,
-          "mean_mfe_r": 1.2421422024163624,
+          "mean_mae_r": -0.6192095174663022,
+          "mean_mfe_r": 1.0595971725685611,
           "time_exits": 498,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -795,14 +914,25 @@
             "symbol": "BSE",
             "share": 0.08749534914473224
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1488,
           "completed": 1282,
           "reference_quantity_zero": 0,
           "unfilled": 206,
           "censored": 0,
           "account_would_reject": 1282,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1282,
+            "median_notional": 85577.75,
+            "p90_notional": 122174.493731,
+            "max_notional": 170610.0,
+            "median_debit": 85764.94328381651,
+            "p90_debit": 122441.73895163415,
+            "max_debit": 170983.19333766,
+            "max_overlapping_notional": 10407529.129277552,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -837,8 +967,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "H2": {
@@ -850,8 +981,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.0700562125481368,
-          "mean_mae_r": -0.6348581748952273,
-          "mean_mfe_r": 1.567568434136367,
+          "mean_mae_r": -0.5642652919768796,
+          "mean_mfe_r": 1.3760066289215127,
           "time_exits": 2,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -881,14 +1012,25 @@
             "symbol": "KALYANKJIL",
             "share": 0.6053479522724781
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 14,
           "completed": 11,
           "reference_quantity_zero": 0,
           "unfilled": 3,
           "censored": 0,
           "account_would_reject": 11,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 11,
+            "median_notional": 66642.0,
+            "p90_notional": 87142.5,
+            "max_notional": 94883.19702,
+            "median_debit": 66787.773110652,
+            "p90_debit": 87333.116027355,
+            "max_debit": 95090.74509446074,
+            "max_overlapping_notional": 264726.04702,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -923,17 +1065,22 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "meta_model": {
         "status": "fitted",
-        "label_population": "reference_risk_budget_5000_not_admitted_fills",
+        "label_population": "reference_initial_price_risk_5000_not_account_capital",
+        "exit_convention": "A completed trade is assigned by its signal date. Train and calibration rows whose exit is on or after the next boundary are purged, as are signals within 10 sessions of that boundary. A test row keeps its own exit, which may fall up to 10 sessions after test_end. Those later prices are not training rows and are not test rows of an earlier fold.",
         "selected_model": "logistic_1.0",
         "m": 10,
         "train_rows": 5714,
         "calibration_rows": 706,
+        "test_rows": 1277,
+        "test_signal_start": "2023-07-03",
+        "test_signal_end": "2023-12-29",
         "calibration_attempts": [
           {
             "model": "prior",
@@ -956,8 +1103,8 @@
             "calibration_log_loss": 0.6958320013891718
           }
         ],
-        "test_brier": 0.24775806923660312,
-        "test_log_loss": 0.6886738000199509,
+        "test_brier": 0.2541204838877795,
+        "test_log_loss": 0.7014490862908772,
         "experts": "not_attempted_below_200_family_trades",
         "dependence": {
           "pairs": [
@@ -1027,8 +1174,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.006410502119642005,
-          "mean_mae_r": -0.88697759051427,
-          "mean_mfe_r": 0.8999394403996783,
+          "mean_mae_r": -0.7238366731996911,
+          "mean_mfe_r": 0.8406875755811325,
           "time_exits": 390,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1058,14 +1205,25 @@
             "symbol": "KALYANKJIL",
             "share": 0.057232348093612266
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1165,
           "completed": 1001,
           "reference_quantity_zero": 0,
           "unfilled": 164,
           "censored": 0,
           "account_would_reject": 1001,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1001,
+            "median_notional": 85791.99859999999,
+            "p90_notional": 125478.3,
+            "max_notional": 205654.0,
+            "median_debit": 85979.66053248962,
+            "p90_debit": 125752.77198628981,
+            "max_debit": 206103.848793524,
+            "max_overlapping_notional": 10897998.246666519,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1100,31 +1258,32 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_sum": {
         "gross": {
           "population": "gross_signal_diagnostic",
           "candidates": 1170,
-          "completed": 1021,
-          "unfilled": 149,
+          "completed": 1020,
+          "unfilled": 150,
           "censored": 0,
           "invalid": 0,
-          "mean_gross_return": -0.0031081639370460247,
-          "mean_mae_r": -0.8626441065689501,
-          "mean_mfe_r": 0.9240198293639812,
-          "time_exits": 413,
+          "mean_gross_return": -0.0029683135935498683,
+          "mean_mae_r": -0.7085247775721256,
+          "mean_mfe_r": 0.8790125143495843,
+          "time_exits": 414,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
         "reference": {
-          "completed_fills": 1021,
-          "unique_names": 70,
-          "net_pnl": -861373.3345043749,
-          "expectancy_pnl": -843.6565470170175,
-          "expectancy_net_r": -0.17022932800446924,
-          "profit_factor": 0.7059693696310142,
+          "completed_fills": 1020,
+          "unique_names": 69,
+          "net_pnl": -842799.4128444758,
+          "expectancy_pnl": -826.2739341612508,
+          "expectancy_net_r": -0.16671954844568795,
+          "profit_factor": 0.7109824011040062,
           "marked_drawdown": null,
           "capital_utilization": null,
           "fortnight": {
@@ -1135,23 +1294,34 @@
           },
           "net_r_interval": {
             "weeks": 23,
-            "low": -0.39820485985660475,
-            "mid": -0.1549727097275285,
-            "high": 0.09373734223559511,
+            "low": -0.3985270220733244,
+            "mid": -0.15156334602193305,
+            "high": 0.09110409446673837,
             "draws": 400
           },
           "concentration": {
             "symbol": "PAYTM",
-            "share": 0.07539683330311474
+            "share": 0.0755227342581759
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1170,
-          "completed": 1021,
+          "completed": 1020,
           "reference_quantity_zero": 0,
-          "unfilled": 149,
+          "unfilled": 150,
           "censored": 0,
-          "account_would_reject": 1021,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "account_would_reject": 1020,
+          "exposure": {
+            "trades": 1020,
+            "median_notional": 108871.02175,
+            "p90_notional": 158579.55,
+            "max_notional": 218472.65992647,
+            "median_debit": 109109.16687620207,
+            "p90_debit": 158926.4278591473,
+            "max_debit": 218950.54833362912,
+            "max_overlapping_notional": 14697943.294614866,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1186,31 +1356,32 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_vol": {
         "gross": {
           "population": "gross_signal_diagnostic",
           "candidates": 1170,
-          "completed": 1016,
-          "unfilled": 154,
+          "completed": 1017,
+          "unfilled": 153,
           "censored": 0,
           "invalid": 0,
-          "mean_gross_return": -0.00135334157292869,
-          "mean_mae_r": -0.8611485068748171,
-          "mean_mfe_r": 0.9506641397321748,
+          "mean_gross_return": -0.0015694822307223096,
+          "mean_mae_r": -0.7035260077565103,
+          "mean_mfe_r": 0.9008651903324459,
           "time_exits": 405,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
         "reference": {
-          "completed_fills": 1016,
-          "unique_names": 74,
-          "net_pnl": -815691.7031340239,
-          "expectancy_pnl": -802.846164501992,
-          "expectancy_net_r": -0.16190297383124197,
-          "profit_factor": 0.7224377420449932,
+          "completed_fills": 1017,
+          "unique_names": 75,
+          "net_pnl": -841172.5916327117,
+          "expectancy_pnl": -827.1116928541904,
+          "expectancy_net_r": -0.1667899616630917,
+          "profit_factor": 0.7149132850618444,
           "marked_drawdown": null,
           "capital_utilization": null,
           "fortnight": {
@@ -1221,23 +1392,34 @@
           },
           "net_r_interval": {
             "weeks": 23,
-            "low": -0.3761474453193749,
-            "mid": -0.1497718304971669,
-            "high": 0.11585235438078749,
+            "low": -0.37568674367477795,
+            "mid": -0.15325681899296945,
+            "high": 0.11048328084780852,
             "draws": 400
           },
           "concentration": {
             "symbol": "PAYTM",
-            "share": 0.0620675165012509
+            "share": 0.06209022535407945
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1170,
-          "completed": 1016,
+          "completed": 1017,
           "reference_quantity_zero": 0,
-          "unfilled": 154,
+          "unfilled": 153,
           "censored": 0,
-          "account_would_reject": 1016,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "account_would_reject": 1017,
+          "exposure": {
+            "trades": 1017,
+            "median_notional": 125664.0,
+            "p90_notional": 178742.49599999998,
+            "max_notional": 223006.0,
+            "median_debit": 125938.878187584,
+            "p90_debit": 179133.47840820538,
+            "max_debit": 223493.804662436,
+            "max_overlapping_notional": 16470797.465923125,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1272,8 +1454,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_raw_for_sum": {
@@ -1285,8 +1468,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.006466125811841762,
-          "mean_mae_r": -0.887108549729192,
-          "mean_mfe_r": 0.8987958594932335,
+          "mean_mae_r": -0.7232586697339847,
+          "mean_mfe_r": 0.8398384870445611,
           "time_exits": 394,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1316,14 +1499,25 @@
             "symbol": "KALYANKJIL",
             "share": 0.05710735903428527
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1170,
           "completed": 1006,
           "reference_quantity_zero": 0,
           "unfilled": 164,
           "censored": 0,
           "account_would_reject": 1006,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1006,
+            "median_notional": 85719.9993,
+            "p90_notional": 125571.15,
+            "max_notional": 205654.0,
+            "median_debit": 85907.50374078882,
+            "p90_debit": 125845.82508693691,
+            "max_debit": 206103.848793524,
+            "max_overlapping_notional": 11369406.87467452,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1358,8 +1552,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_raw_for_vol": {
@@ -1371,8 +1566,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.006466125811841762,
-          "mean_mae_r": -0.887108549729192,
-          "mean_mfe_r": 0.8987958594932335,
+          "mean_mae_r": -0.7232586697339847,
+          "mean_mfe_r": 0.8398384870445611,
           "time_exits": 394,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1402,14 +1597,25 @@
             "symbol": "KALYANKJIL",
             "share": 0.05710735903428527
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1170,
           "completed": 1006,
           "reference_quantity_zero": 0,
           "unfilled": 164,
           "censored": 0,
           "account_would_reject": 1006,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1006,
+            "median_notional": 85719.9993,
+            "p90_notional": 125571.15,
+            "max_notional": 205654.0,
+            "median_debit": 85907.50374078882,
+            "p90_debit": 125845.82508693691,
+            "max_debit": 206103.848793524,
+            "max_overlapping_notional": 11369406.87467452,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1444,8 +1650,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_sector_sum": {
@@ -1482,14 +1689,17 @@
             "weeks": 0
           },
           "concentration": null,
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 0,
           "completed": 0,
           "reference_quantity_zero": 0,
           "unfilled": 0,
           "censored": 0,
           "account_would_reject": 0,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 0
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1522,8 +1732,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_sector_raw_matched": {
@@ -1560,14 +1771,17 @@
             "weeks": 0
           },
           "concentration": null,
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 0,
           "completed": 0,
           "reference_quantity_zero": 0,
           "unfilled": 0,
           "censored": 0,
           "account_would_reject": 0,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 0
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1600,8 +1814,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "D_hysteresis": {
@@ -1613,8 +1828,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.007628882126731127,
-          "mean_mae_r": -0.8975378312717418,
-          "mean_mfe_r": 0.8841645460740464,
+          "mean_mae_r": -0.7313172838289841,
+          "mean_mfe_r": 0.8257510188390766,
           "time_exits": 392,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1644,14 +1859,25 @@
             "symbol": "KALYANKJIL",
             "share": 0.05599596664170105
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 1179,
           "completed": 1016,
           "reference_quantity_zero": 0,
           "unfilled": 163,
           "censored": 0,
           "account_would_reject": 1016,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 1016,
+            "median_notional": 86165.5,
+            "p90_notional": 125869.70999999999,
+            "max_notional": 205654.0,
+            "median_debit": 86353.97893169301,
+            "p90_debit": 126145.03815887225,
+            "max_debit": 206103.848793524,
+            "max_overlapping_notional": 11845841.550000008,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1686,8 +1912,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "H2": {
@@ -1699,8 +1926,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.004917043944082063,
-          "mean_mae_r": -0.8789580655294361,
-          "mean_mfe_r": 0.9812375670381565,
+          "mean_mae_r": -0.694009907290218,
+          "mean_mfe_r": 0.9279775294205813,
           "time_exits": 7,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1730,14 +1957,25 @@
             "symbol": "COCHINSHIP",
             "share": 0.11548170830172894
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 27,
           "completed": 18,
           "reference_quantity_zero": 0,
           "unfilled": 9,
           "censored": 0,
           "account_would_reject": 18,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 18,
+            "median_notional": 79633.225,
+            "p90_notional": 100834.35891100002,
+            "max_notional": 122297.87770200001,
+            "median_debit": 79807.41519416435,
+            "p90_debit": 101054.92459268808,
+            "max_debit": 122565.39281347263,
+            "max_overlapping_notional": 356973.69637,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1772,17 +2010,22 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "meta_model": {
         "status": "fitted",
-        "label_population": "reference_risk_budget_5000_not_admitted_fills",
+        "label_population": "reference_initial_price_risk_5000_not_account_capital",
+        "exit_convention": "A completed trade is assigned by its signal date. Train and calibration rows whose exit is on or after the next boundary are purged, as are signals within 10 sessions of that boundary. A test row keeps its own exit, which may fall up to 10 sessions after test_end. Those later prices are not training rows and are not test rows of an earlier fold.",
         "selected_model": "prior",
         "m": 10,
         "train_rows": 7734,
         "calibration_rows": 1331,
+        "test_rows": 1001,
+        "test_signal_start": "2024-07-01",
+        "test_signal_end": "2024-12-16",
         "calibration_attempts": [
           {
             "model": "prior",
@@ -1805,8 +2048,8 @@
             "calibration_log_loss": 0.6867316950575069
           }
         ],
-        "test_brier": 0.24444750668518425,
-        "test_log_loss": 0.6820333922926132,
+        "test_brier": 0.24408881407363525,
+        "test_log_loss": 0.6813154043117672,
         "experts": "not_attempted_below_200_family_trades",
         "dependence": {
           "pairs": [
@@ -1876,8 +2119,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.003172580799988396,
-          "mean_mae_r": -0.8628399442505853,
-          "mean_mfe_r": 0.9068066516393106,
+          "mean_mae_r": -0.7240002412805767,
+          "mean_mfe_r": 0.8443308389695994,
           "time_exits": 904,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1907,14 +2150,25 @@
             "symbol": "IDEA",
             "share": 0.04792785768299171
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 2512,
           "completed": 2229,
           "reference_quantity_zero": 0,
           "unfilled": 283,
           "censored": 0,
           "account_would_reject": 2229,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 2229,
+            "median_notional": 114800.0,
+            "p90_notional": 152535.6,
+            "max_notional": 231937.55000000002,
+            "median_debit": 115051.1142088,
+            "p90_debit": 152869.2572866536,
+            "max_debit": 232444.89158849532,
+            "max_overlapping_notional": 13981405.905918075,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -1949,8 +2203,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_sum": {
@@ -1962,8 +2217,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.005010819222525658,
-          "mean_mae_r": -0.8794584701667014,
-          "mean_mfe_r": 0.8801238438296843,
+          "mean_mae_r": -0.7303878216155946,
+          "mean_mfe_r": 0.8270703369067438,
           "time_exits": 935,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -1993,14 +2248,25 @@
             "symbol": "NATIONALUM",
             "share": 0.04386995057076678
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 2520,
           "completed": 2252,
           "reference_quantity_zero": 0,
           "unfilled": 268,
           "censored": 0,
           "account_would_reject": 2252,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 2252,
+            "median_notional": 119531.32999999999,
+            "p90_notional": 165127.71,
+            "max_notional": 246278.0,
+            "median_debit": 119792.79354842997,
+            "p90_debit": 165488.91134362025,
+            "max_debit": 246816.709974868,
+            "max_overlapping_notional": 16448479.354087183,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2035,8 +2301,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_vol": {
@@ -2048,8 +2315,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.003910738647629942,
-          "mean_mae_r": -0.8743998981813653,
-          "mean_mfe_r": 0.8905086123196447,
+          "mean_mae_r": -0.7268189346431677,
+          "mean_mfe_r": 0.8414421539241076,
           "time_exits": 952,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2079,14 +2346,25 @@
             "symbol": "NATIONALUM",
             "share": 0.03685025176633855
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 2520,
           "completed": 2234,
           "reference_quantity_zero": 0,
           "unfilled": 286,
           "censored": 0,
           "account_would_reject": 2234,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 2234,
+            "median_notional": 132501.05,
+            "p90_notional": 197177.1,
+            "max_notional": 270725.0,
+            "median_debit": 132790.88359177628,
+            "p90_debit": 197608.4063716026,
+            "max_debit": 271317.18548935,
+            "max_overlapping_notional": 19187683.224087175,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2121,8 +2399,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_raw_for_sum": {
@@ -2134,8 +2413,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.0034438304537733324,
-          "mean_mae_r": -0.8666785633421089,
-          "mean_mfe_r": 0.9042556377546123,
+          "mean_mae_r": -0.726058048108956,
+          "mean_mfe_r": 0.8415680268558166,
           "time_exits": 896,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2165,14 +2444,25 @@
             "symbol": "IDEA",
             "share": 0.04754695552775597
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 2520,
           "completed": 2237,
           "reference_quantity_zero": 0,
           "unfilled": 283,
           "censored": 0,
           "account_would_reject": 2237,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 2237,
+            "median_notional": 115561.8,
+            "p90_notional": 152745.95200000002,
+            "max_notional": 231937.55000000002,
+            "median_debit": 115814.5805746908,
+            "p90_debit": 153080.0694118805,
+            "max_debit": 232444.89158849532,
+            "max_overlapping_notional": 13981405.905918075,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2207,8 +2497,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_market_raw_for_vol": {
@@ -2220,8 +2511,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.0034438304537733324,
-          "mean_mae_r": -0.8666785633421089,
-          "mean_mfe_r": 0.9042556377546123,
+          "mean_mae_r": -0.726058048108956,
+          "mean_mfe_r": 0.8415680268558166,
           "time_exits": 896,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2251,14 +2542,25 @@
             "symbol": "IDEA",
             "share": 0.04754695552775597
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 2520,
           "completed": 2237,
           "reference_quantity_zero": 0,
           "unfilled": 283,
           "censored": 0,
           "account_would_reject": 2237,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 2237,
+            "median_notional": 115561.8,
+            "p90_notional": 152745.95200000002,
+            "max_notional": 231937.55000000002,
+            "median_debit": 115814.5805746908,
+            "p90_debit": 153080.0694118805,
+            "max_debit": 232444.89158849532,
+            "max_overlapping_notional": 13981405.905918075,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2293,8 +2595,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_sector_sum": {
@@ -2306,8 +2609,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.01607009347728468,
-          "mean_mae_r": -0.6898765695793128,
-          "mean_mfe_r": 1.234025916307039,
+          "mean_mae_r": -0.6112726856916152,
+          "mean_mfe_r": 1.1195353615799513,
           "time_exits": 178,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2337,14 +2640,25 @@
             "symbol": "HINDCOPPER",
             "share": 0.11512881849482168
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 450,
           "completed": 377,
           "reference_quantity_zero": 0,
           "unfilled": 73,
           "censored": 0,
           "account_would_reject": 377,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 377,
+            "median_notional": 141971.5,
+            "p90_notional": 189225.04000000004,
+            "max_notional": 243048.0,
+            "median_debit": 142282.049310929,
+            "p90_debit": 189638.95198784626,
+            "max_debit": 243579.644653488,
+            "max_overlapping_notional": 11220325.36408718,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2379,8 +2693,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "C_sector_raw_matched": {
@@ -2392,8 +2707,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": 0.014810873554112716,
-          "mean_mae_r": -0.7281885370554805,
-          "mean_mfe_r": 1.2266451661364652,
+          "mean_mae_r": -0.6383622268787514,
+          "mean_mfe_r": 1.1060930330592207,
           "time_exits": 163,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2423,14 +2738,25 @@
             "symbol": "HINDCOPPER",
             "share": 0.1247315672540282
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 450,
           "completed": 372,
           "reference_quantity_zero": 0,
           "unfilled": 78,
           "censored": 0,
           "account_would_reject": 372,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 372,
+            "median_notional": 136340.85,
+            "p90_notional": 180279.73000000007,
+            "max_notional": 228600.9,
+            "median_debit": 136639.0827933351,
+            "p90_debit": 180674.07496308043,
+            "max_debit": 229100.9429802654,
+            "max_overlapping_notional": 10250552.335918078,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2465,8 +2791,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "D_hysteresis": {
@@ -2478,8 +2805,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.0027813383381566563,
-          "mean_mae_r": -0.8610588537549683,
-          "mean_mfe_r": 0.9107079813104958,
+          "mean_mae_r": -0.7227464022928353,
+          "mean_mfe_r": 0.846774893929344,
           "time_exits": 938,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2509,14 +2836,25 @@
             "symbol": "IDEA",
             "share": 0.047830795959597244
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 2557,
           "completed": 2290,
           "reference_quantity_zero": 0,
           "unfilled": 267,
           "censored": 0,
           "account_would_reject": 2290,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 2290,
+            "median_notional": 114648.785,
+            "p90_notional": 153672.092,
+            "max_notional": 231937.55000000002,
+            "median_debit": 114899.56844020172,
+            "p90_debit": 154008.23525607336,
+            "max_debit": 232444.89158849532,
+            "max_overlapping_notional": 13981405.905918075,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2551,8 +2889,9 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "H2": {
@@ -2564,8 +2903,8 @@
           "censored": 0,
           "invalid": 0,
           "mean_gross_return": -0.005112716920339801,
-          "mean_mae_r": -0.9366514131129504,
-          "mean_mfe_r": 0.7925238352640126,
+          "mean_mae_r": -0.7849271251824211,
+          "mean_mfe_r": 0.7561700044166876,
           "time_exits": 18,
           "note": "hypothetical price paths, not recommendations and not a profitability claim"
         },
@@ -2595,14 +2934,25 @@
             "symbol": "HYUNDAI",
             "share": 0.10676840090997262
           },
-          "population": "reference_risk_budget_5000_not_admitted_fills",
+          "population": "reference_initial_price_risk_5000_not_account_capital",
           "candidates": 49,
           "completed": 42,
           "reference_quantity_zero": 0,
           "unfilled": 7,
           "censored": 0,
           "account_would_reject": 42,
-          "note": "costed at the declared reference quantity, not admitted by the \u20b95,748 account"
+          "exposure": {
+            "trades": 42,
+            "median_notional": 104980.5,
+            "p90_notional": 142501.255,
+            "max_notional": 152640.0,
+            "median_debit": 105210.134975583,
+            "p90_debit": 142812.96310019452,
+            "max_debit": 152973.88565184,
+            "max_overlapping_notional": 613381.4400000001,
+            "note": "\u20b95000 is initial price risk per independent reference trade, not ticket size or account capital. Overlapping notionals are not a funded portfolio."
+          },
+          "note": "costed at the declared initial-price-risk quantity; not admitted by the \u20b95,748 account and not a funded sum"
         },
         "account": {
           "completed_fills": 0,
@@ -2637,17 +2987,22 @@
             "psu_cap_without_tag",
             "quantity_search_slippage_is_fixed_at_10bps_inside_largest_quantity"
           ],
+          "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
           "missing_price_marks": 0,
-          "note": "zero admitted orders is an account result, not an alpha estimate"
+          "note": "partial account replay; zero admitted orders is not an alpha estimate"
         }
       },
       "meta_model": {
         "status": "fitted",
-        "label_population": "reference_risk_budget_5000_not_admitted_fills",
+        "label_population": "reference_initial_price_risk_5000_not_account_capital",
+        "exit_convention": "A completed trade is assigned by its signal date. Train and calibration rows whose exit is on or after the next boundary are purged, as are signals within 10 sessions of that boundary. A test row keeps its own exit, which may fall up to 10 sessions after test_end. Those later prices are not training rows and are not test rows of an earlier fold.",
         "selected_model": "prior",
         "m": 10,
         "train_rows": 10343,
         "calibration_rows": 717,
+        "test_rows": 2229,
+        "test_signal_start": "2025-07-01",
+        "test_signal_end": "2026-08-26",
         "calibration_attempts": [
           {
             "model": "prior",
@@ -2732,7 +3087,87 @@
       }
     }
   },
+  "sector_paired_comparison": {
+    "fold_2023h2": {
+      "status": "exploratory_reused_cache",
+      "comparison": "sector_residual_sum_minus_matched_raw",
+      "common_weeks": 6,
+      "difference_mean_net_r": -0.27826121260328557,
+      "low": -0.3847073880790342,
+      "mid": -0.2740041985812719,
+      "high": -0.1506889960755702,
+      "interval_includes_zero": false,
+      "leave_one_sector_out_point": {
+        "Automobile and Auto Components": -0.2931661278056238,
+        "Fast Moving Consumer Goods": -0.297757510761334,
+        "Financial Services": -0.28321044176457416,
+        "Information Technology": -0.3082714580097253,
+        "Metals & Mining": -0.27645797676620004,
+        "Oil Gas & Consumable Fuels": -0.22547809579235398,
+        "Realty": -0.2848716993791692
+      },
+      "names": 19,
+      "sectors": [
+        "Automobile and Auto Components",
+        "Fast Moving Consumer Goods",
+        "Financial Services",
+        "Information Technology",
+        "Metals & Mining",
+        "Oil Gas & Consumable Fuels",
+        "Realty"
+      ],
+      "largest_name_share": {
+        "symbol": "BSE",
+        "share": 0.15670149263225625
+      },
+      "overlapping_positions": "each reference path is an independent overlapping hypothetical, not one funded account; the bootstrap keeps every name from a signal week inside the same block, while holds that cross weeks can still be split",
+      "separate_intervals_are_not_a_difference_test": true
+    },
+    "fold_2024h2": {
+      "status": "insufficient_common_weeks",
+      "weeks": 0,
+      "variants": [
+        "sector_sum_minus_matched_raw"
+      ]
+    },
+    "fold_2025": {
+      "status": "exploratory_reused_cache",
+      "comparison": "sector_residual_sum_minus_matched_raw",
+      "common_weeks": 10,
+      "difference_mean_net_r": 0.06052945741603864,
+      "low": -0.054464525850188614,
+      "mid": 0.07184720919934634,
+      "high": 0.16078362702685506,
+      "interval_includes_zero": true,
+      "leave_one_sector_out_point": {
+        "Automobile and Auto Components": 0.08913033208235827,
+        "Fast Moving Consumer Goods": 0.11572907575848426,
+        "Financial Services": -0.2574320601057642,
+        "Healthcare": 0.08085939443500037,
+        "Metals & Mining": 0.06443577197190054,
+        "Oil Gas & Consumable Fuels": 0.022436044097829677,
+        "Realty": 0.03666197941907329
+      },
+      "names": 25,
+      "sectors": [
+        "Automobile and Auto Components",
+        "Fast Moving Consumer Goods",
+        "Financial Services",
+        "Healthcare",
+        "Metals & Mining",
+        "Oil Gas & Consumable Fuels",
+        "Realty"
+      ],
+      "largest_name_share": {
+        "symbol": "HINDCOPPER",
+        "share": 0.11512881849482168
+      },
+      "overlapping_positions": "each reference path is an independent overlapping hypothetical, not one funded account; the bootstrap keeps every name from a signal week inside the same block, while holds that cross weeks can still be split",
+      "separate_intervals_are_not_a_difference_test": true
+    }
+  },
   "hmm": {
+    "status_if_unfitted": "NOT EVALUATED",
     "full_window": {
       "full_window_status": "BLOCKED",
       "full_window_reason": "breadth_coverage_below_gate",
@@ -2747,12 +3182,124 @@
       "denominator": 150
     },
     "suffix": {
-      "status": "BLOCKED",
+      "status": "NOT EVALUATED",
       "reason": "hmm fit failed at observation 492",
+      "failed_observation": 492,
       "window": [
         "2021-06-29",
         "2026-10-08"
-      ]
+      ],
+      "attempts": [
+        {
+          "seed": 0,
+          "covariance": "diagonal",
+          "iterations": 40,
+          "converged": false,
+          "accepted": false,
+          "reason": "not_converged",
+          "probability_floor_applied": true,
+          "last_loglik": -2310.192098325231,
+          "mass": [
+            0.40811741526503914,
+            0.4091786985623358,
+            0.18270388617262298
+          ],
+          "min_variance": 0.1942027393298573,
+          "zero_transitions": 1,
+          "input_hash": "fe721bcc3b36a5c54695baae0ce4a701e8b870a6158f39f4ab6465e8b4471a64"
+        },
+        {
+          "seed": 1,
+          "covariance": "diagonal",
+          "iterations": 40,
+          "converged": false,
+          "accepted": false,
+          "reason": "not_converged",
+          "probability_floor_applied": true,
+          "last_loglik": -2310.1914041523355,
+          "mass": [
+            0.4092617836414088,
+            0.40789479087945474,
+            0.18284342547914287
+          ],
+          "min_variance": 0.19433884636286902,
+          "zero_transitions": 1,
+          "input_hash": "fe721bcc3b36a5c54695baae0ce4a701e8b870a6158f39f4ab6465e8b4471a64"
+        },
+        {
+          "seed": 2,
+          "covariance": "diagonal",
+          "iterations": 40,
+          "converged": false,
+          "accepted": false,
+          "reason": "not_converged",
+          "probability_floor_applied": true,
+          "last_loglik": -2245.4641039994954,
+          "mass": [
+            0.21612231878599392,
+            0.49764403708760097,
+            0.28623364412640034
+          ],
+          "min_variance": 0.12762134323338964,
+          "zero_transitions": 1,
+          "input_hash": "fe721bcc3b36a5c54695baae0ce4a701e8b870a6158f39f4ab6465e8b4471a64"
+        },
+        {
+          "seed": 0,
+          "covariance": "spherical",
+          "iterations": 40,
+          "converged": false,
+          "accepted": false,
+          "reason": "not_converged",
+          "probability_floor_applied": true,
+          "last_loglik": -2347.4603093451956,
+          "mass": [
+            0.4829319928560824,
+            0.2293763194991729,
+            0.2876916876447396
+          ],
+          "min_variance": 0.37772341950568994,
+          "zero_transitions": 0,
+          "input_hash": "fe721bcc3b36a5c54695baae0ce4a701e8b870a6158f39f4ab6465e8b4471a64"
+        },
+        {
+          "seed": 1,
+          "covariance": "spherical",
+          "iterations": 40,
+          "converged": false,
+          "accepted": false,
+          "reason": "not_converged",
+          "probability_floor_applied": true,
+          "last_loglik": -2412.9568931291215,
+          "mass": [
+            0.42942609842956697,
+            0.24043040416617226,
+            0.33014349740426363
+          ],
+          "min_variance": 0.2173481677806008,
+          "zero_transitions": 0,
+          "input_hash": "fe721bcc3b36a5c54695baae0ce4a701e8b870a6158f39f4ab6465e8b4471a64"
+        },
+        {
+          "seed": 2,
+          "covariance": "spherical",
+          "iterations": 40,
+          "converged": false,
+          "accepted": false,
+          "reason": "not_converged",
+          "probability_floor_applied": true,
+          "last_loglik": -2347.4681179923546,
+          "mass": [
+            0.22945779237799133,
+            0.48189226709498273,
+            0.28864994052702425
+          ],
+          "min_variance": 0.377842678808272,
+          "zero_transitions": 0,
+          "input_hash": "fe721bcc3b36a5c54695baae0ce4a701e8b870a6158f39f4ab6465e8b4471a64"
+        }
+      ],
+      "missing_posteriors_filled": false
     }
   },
   "earnings": {
@@ -2853,5 +3400,6 @@
   "feasibility_rows": 2512,
   "feasibility_zero_quantity": 2512,
   "kelly": false,
-  "conclusion_limit": "account infeasibility is not an alpha estimate; gross returns are not a profitability claim"
+  "replay_scope": "partial_account_replay_correlation_and_theme_caps_not_enforced",
+  "conclusion_limit": "account infeasibility is not an alpha estimate; gross and reference results are not a funded portfolio"
 }
