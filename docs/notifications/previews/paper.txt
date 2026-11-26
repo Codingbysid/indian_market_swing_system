@@ -26,7 +26,8 @@ Paper book · cumulative
 Orders recorded: 0
 Open positions: 0
 Pending orders: 0
-Cash after reservations and fills: ₹5,748.00
+Hypothetical paper cash: ₹5,748.00
 
 Research status
-Strategies are unpromoted. Paper results are not broker fills or validated forward returns.
+This is a hypothetical paper account, not the broker account. Strategies are unpromoted. A repeated message uses the same signal and is not a second order.
+Signal Unavailable

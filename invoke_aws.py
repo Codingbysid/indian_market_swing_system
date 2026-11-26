@@ -1,44 +1,81 @@
+"""Trigger AWS Lambda (indian-swing-bot) remotely with tail logs and error handling.
+
+Usage:
+  python invoke_aws.py PRE_MARKET [--force] [--dry-run]
+  python invoke_aws.py SIGNAL_RUN [--slot 1|2|3] [--force] [--dry-run]
+  python invoke_aws.py POST_MARKET [--force] [--dry-run]
+
+Flags:
+  --force / --ignore-weekend : Bypass exchange weekend & holiday guards (verification only)
+  --dry-run / --suppress-alerts : Suppress live email/ntfy notification delivery and S3 writes
+"""
+
 import base64
 import json
+import os
 import sys
 
 import boto3
 from botocore.config import Config
 from botocore.exceptions import NoCredentialsError
 
-# Set your AWS region (e.g., 'eu-north-1' from your screenshots)
-REGION = "eu-north-1"
-FUNCTION_NAME = "indian-swing-bot"
+try:
+    from dotenv import load_dotenv
 
-# Change action to "scraper", "recommender", or "monitor"
-# Or pass as CLI arg: python invoke_aws.py monitor [--force]
-# --force bypasses the IST weekend gate (for verification only)
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except ImportError:
+    pass
+
+REGION = os.getenv("AWS_DEFAULT_REGION", "eu-north-1")
+FUNCTION_NAME = os.getenv("LAMBDA_FUNCTION_NAME", "indian-swing-bot")
+
 args = [a for a in sys.argv[1:] if a]
-action = "recommender"
+action = "PRE_MARKET"
+slot_name = "SLOT_1"
 force = False
 dry_run = False
-for a in args:
-    if a in ("--force", "--ignore-weekend"):
+
+i = 0
+while i < len(args):
+    arg = args[i]
+    if arg in ("--force", "--ignore-weekend"):
         force = True
-    elif a in ("--dry-run", "--suppress-alerts"):
+    elif arg in ("--dry-run", "--suppress-alerts"):
         dry_run = True
-    elif not a.startswith("-"):
-        action = a
-payload = {"action": action}
+    elif arg in ("--slot", "-s") and i + 1 < len(args):
+        i += 1
+        val = args[i]
+        slot_name = f"SLOT_{val}" if val.isdigit() else val.upper()
+    elif not arg.startswith("-"):
+        action = arg.upper()
+    i += 1
+
+# Map legacy action names if passed
+if action in ("RECOMMENDER", "SCAN"):
+    action = "SIGNAL_RUN"
+    slot_name = "SLOT_1"
+elif action in ("MONITOR", "EXIT"):
+    action = "SIGNAL_RUN"
+    slot_name = "SLOT_3"
+elif action == "SCRAPER":
+    action = "PRE_MARKET"
+
+payload: dict = {"action": action}
+if action == "SIGNAL_RUN":
+    payload["slot_name"] = slot_name
 if force:
     payload["ignore_weekend"] = True
 if dry_run:
     payload["suppress_alerts"] = True
     payload["dry_run"] = True
 
-# Recommender scans ~90 tickers with TV rate-limit sleeps; allow up to 6 minutes.
 client = boto3.client(
     "lambda",
     region_name=REGION,
     config=Config(read_timeout=360, connect_timeout=30, retries={"max_attempts": 0}),
 )
 
-print(f"🚀 Triggering AWS Lambda ({FUNCTION_NAME}) with action: {payload['action']}...\n")
+print(f"🚀 Triggering AWS Lambda ({FUNCTION_NAME}) with payload: {payload}...\n")
 
 try:
     response = client.invoke(

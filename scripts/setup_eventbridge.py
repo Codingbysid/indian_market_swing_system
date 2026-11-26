@@ -1,7 +1,11 @@
 """Create/enable weekday EventBridge rules for indian-swing-bot (eu-north-1).
 
-  swing-recommender-daily  cron(55 3 ? * MON-FRI *)  -> 09:25 IST  action=recommender
-  swing-holdings-monitor   cron(35 9 ? * MON-FRI *)  -> 15:05 IST  action=monitor
+5-slot Mon-Fri IST schedule:
+  swing-pre-market      cron(35 3 ? * MON-FRI *)  -> 09:05 IST  {"action": "PRE_MARKET"}
+  swing-signal-slot-1   cron(15 4 ? * MON-FRI *)  -> 09:45 IST  {"action": "SIGNAL_RUN", "slot_name": "SLOT_1"}
+  swing-signal-slot-2   cron(15 7 ? * MON-FRI *)  -> 12:45 IST  {"action": "SIGNAL_RUN", "slot_name": "SLOT_2"}
+  swing-signal-slot-3   cron(0 10 ? * MON-FRI *)  -> 15:30 IST  {"action": "SIGNAL_RUN", "slot_name": "SLOT_3"}
+  swing-post-market     cron(35 10 ? * MON-FRI *) -> 16:05 IST  {"action": "POST_MARKET"}
 """
 
 from __future__ import annotations
@@ -25,23 +29,49 @@ FUNCTION_NAME = os.getenv("LAMBDA_FUNCTION_NAME", "indian-swing-bot")
 
 RULES = (
     {
-        "Name": "swing-recommender-daily",
-        "ScheduleExpression": "cron(55 3 ? * MON-FRI *)",
-        "Description": "NSE pre-open swing scan at 09:25 IST",
-        "Input": {"action": "recommender"},
-        "StatementId": "EventBridgeRecommendDaily",
+        "Name": "swing-pre-market",
+        "ScheduleExpression": "cron(35 3 ? * MON-FRI *)",
+        "Description": "NSE pre-open system health & context at 09:05 IST",
+        "Input": {"action": "PRE_MARKET"},
+        "StatementId": "EventBridgePreMarket",
     },
     {
-        "Name": "swing-holdings-monitor",
-        "ScheduleExpression": "cron(35 9 ? * MON-FRI *)",
-        "Description": "Holdings profit-exit watch at 15:05 IST",
-        "Input": {"action": "monitor"},
-        "StatementId": "EventBridgeHoldingsMonitor",
+        "Name": "swing-signal-slot-1",
+        "ScheduleExpression": "cron(15 4 ? * MON-FRI *)",
+        "Description": "Morning swing signal scan (Slot 1) at 09:45 IST",
+        "Input": {"action": "SIGNAL_RUN", "slot_name": "SLOT_1"},
+        "StatementId": "EventBridgeSignalSlot1",
+    },
+    {
+        "Name": "swing-signal-slot-2",
+        "ScheduleExpression": "cron(15 7 ? * MON-FRI *)",
+        "Description": "Midday swing signal scan (Slot 2) at 12:45 IST",
+        "Input": {"action": "SIGNAL_RUN", "slot_name": "SLOT_2"},
+        "StatementId": "EventBridgeSignalSlot2",
+    },
+    {
+        "Name": "swing-signal-slot-3",
+        "ScheduleExpression": "cron(0 10 ? * MON-FRI *)",
+        "Description": "Market close swing signal scan (Slot 3) at 15:30 IST",
+        "Input": {"action": "SIGNAL_RUN", "slot_name": "SLOT_3"},
+        "StatementId": "EventBridgeSignalSlot3",
+    },
+    {
+        "Name": "swing-post-market",
+        "ScheduleExpression": "cron(35 10 ? * MON-FRI *)",
+        "Description": "NSE post-close EOD reconciliation at 16:05 IST",
+        "Input": {"action": "POST_MARKET"},
+        "StatementId": "EventBridgePostMarket",
     },
 )
 
+LEGACY_RULES = (
+    "swing-recommender-daily",
+    "swing-holdings-monitor",
+)
 
-def main() -> None:
+
+def main(purge_legacy: bool = False) -> None:
     events = boto3.client("events", region_name=REGION)
     lam = boto3.client("lambda", region_name=REGION)
 
@@ -50,6 +80,16 @@ def main() -> None:
     print(f"Lambda ARN: {fn_arn}")
 
     account = fn_arn.split(":")[4]
+
+    # Clean up legacy rules if requested
+    if purge_legacy:
+        for legacy_name in LEGACY_RULES:
+            try:
+                events.remove_targets(Rule=legacy_name, Ids=["indian-swing-bot"])
+                events.delete_rule(Name=legacy_name)
+                print(f"Purged legacy rule: {legacy_name}")
+            except ClientError as exc:
+                print(f"Legacy rule {legacy_name} not found or already deleted: {exc}")
 
     for spec in RULES:
         name = spec["Name"]
@@ -72,9 +112,7 @@ def main() -> None:
                 }
             ],
         )
-        source_arn = (
-            f"arn:aws:events:{REGION}:{account}:rule/{name}"
-        )
+        source_arn = f"arn:aws:events:{REGION}:{account}:rule/{name}"
         try:
             lam.add_permission(
                 FunctionName=FUNCTION_NAME,
@@ -90,7 +128,7 @@ def main() -> None:
                 raise
             print(f"  invoke permission already present ({spec['StatementId']})")
 
-    print("EventBridge rules enabled.")
+    print("5-slot EventBridge rules enabled successfully.")
 
 
 if __name__ == "__main__":

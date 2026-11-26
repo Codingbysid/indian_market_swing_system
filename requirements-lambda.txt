@@ -6,8 +6,6 @@
 
 git+https://github.com/rongardF/tvdatafeed.git@e6f6aaa7de439ac6e454d9b26d2760ded8dc4923
 websocket-client>=1.0
-beautifulsoup4>=4.12
-lxml>=5.0
 s3fs>=2024.0
 requests>=2.31
 # boto3 is already available in the Lambda runtime

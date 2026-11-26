@@ -1,70 +1,84 @@
-"""
-AWS Lambda entrypoint for the Indian swing trading pipeline.
+"""AWS Lambda entrypoint for the automated Indian equities swing trading pipeline.
 
-EventBridge payloads:
-  {"action": "scraper"}      -> scrape Screener screens into S3
-  {"action": "recommender"} -> analyze S3 CSVs and send ntfy/email alerts
-  {"action": "monitor"}     -> profit-only exit watch on current holdings
+5-slot Mon-Fri IST schedule:
+  09:05 IST: PRE_MARKET  - system health check, Nifty pre-open context, load state
+  09:45 IST: SIGNAL_RUN  - Slot 1 universe evaluation & Buy/Sell signals
+  12:45 IST: SIGNAL_RUN  - Slot 2 universe evaluation & Buy/Sell signals
+  15:30 IST: SIGNAL_RUN  - Slot 3 universe evaluation & Buy/Sell signals
+  16:05 IST: POST_MARKET - ingest EOD data, update Nifty regime, prepare state
+
+Core infrastructure:
+  - AWS Lambda handler & EventBridge routing
+  - S3 read/write utilities with optimistic concurrency
+  - TradingView market data & Nifty 50-EMA regime check
+  - Multi-channel notification pipeline (Gmail SMTP + ntfy.sh)
+  - Official NSE cash market holiday & weekend guards
 """
 
 from __future__ import annotations
 
-import copy
 import json
-import math
-import os
 import logging
+import os
 import smtplib
-import time
-from datetime import datetime, timezone, timedelta
-from email.mime.text import MIMEText
+from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from io import StringIO
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import boto3
-import numpy as np
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 from tvDatafeed import Interval, TvDatafeed
 
-from swing_core.calendar_nse import completed_bar_iloc, now_ist
-from swing_core.india import FEATURE_NAMES
-from swing_core.messages import (scan_message, monitor_message, buy_card, reason,
-                                 when, email_html, push_parts, header_text)
-from swing_core.costs import true_breakeven as sc_true_breakeven
-from swing_core.indicators import calculate_atr as sc_atr
-from swing_core.indicators import calculate_rsi as sc_rsi
-from swing_core.indicators import enrich_ohlcv
-from swing_core.policy import (
-    LivePolicy,
-    admission_limits,
-    blocks_concentration,
+from swing_core.calendar_nse import (
+    IST,
+    clock_for,
+    completed_bar_iloc,
+    is_trading_day,
+    is_weekend,
+    now_ist,
 )
-from swing_core.scoring import admit_buy, finite_probability
-from swing_core.setups import detect_setups
-from swing_core.symbols import SYMBOL_MAP
+from swing_core.messages import (
+    Message,
+    email_html,
+    header_text,
+    monitor_message,
+    push_parts,
+    scan_message,
+)
+from swing_core.stubs import (
+    get_market_regime,
+    run_post_market,
+    run_pre_market,
+    run_signal_engine,
+)
 
-# Silence tvDatafeed timeout / "no data" spam in CloudWatch
+# Silence tvDatafeed logging noise
 tv_logger = logging.getLogger("tvDatafeed")
 tv_logger.setLevel(logging.CRITICAL)
 tv_logger.propagate = False
 logging.getLogger("tvDatafeed.main").setLevel(logging.CRITICAL)
 logging.getLogger("tvDatafeed.main").propagate = False
 
-# Lazily initialized guest-mode TradingView client (once per container, outside ticker loop)
+# Global S3 client
+s3_client = boto3.client("s3")
+
+# Lazily initialized guest-mode TradingView client (reused across container invocations)
 _tv = None
 
 
 def get_tv() -> TvDatafeed:
+    """Lazily initialize and return the TvDatafeed client."""
     global _tv
     if _tv is None:
         username = os.getenv("TV_USERNAME", "").strip()
         password = os.getenv("TV_PASSWORD", "").strip()
         if username and password:
-            print("Initializing TvDatafeed with TradingView login...")
+            print("Initializing TvDatafeed with TradingView credentials...")
             _tv = TvDatafeed(username=username, password=password)
         else:
             print("TV_USERNAME/TV_PASSWORD missing; falling back to guest mode.")
@@ -73,7 +87,7 @@ def get_tv() -> TvDatafeed:
 
 
 def slice_completed(hist: pd.DataFrame | None) -> pd.DataFrame | None:
-    """Drop the still-forming cash session so features use a completed bar."""
+    """Drop the still-forming cash session so indicators use a completed bar."""
     if hist is None or hist.empty:
         return None
     loc = completed_bar_iloc(hist.index)
@@ -86,158 +100,64 @@ def slice_completed(hist: pd.DataFrame | None) -> pd.DataFrame | None:
     return hist
 
 
-def get_market_regime(tv: TvDatafeed) -> tuple[str, str]:
-    """Nifty vs 50-EMA on the last COMPLETED session. Missing data = DATA_INVALID."""
-    try:
-        hist = tv.get_hist(
-            symbol="NIFTY",
-            exchange="NSE",
-            interval=Interval.in_daily,
-            n_bars=120,
-        )
-        hist = slice_completed(hist)
-        if hist is None or hist.empty or len(hist) < 50:
-            print("Regime fetch short/empty; DATA_INVALID (no new buys).")
-            return (
-                "DATA_INVALID",
-                "Regime: DATA_INVALID (Nifty completed bars unavailable)",
-            )
-
-        close = hist["close"].astype(float)
-        ema50 = close.ewm(span=50, adjust=False).mean()
-        last_close = float(close.iloc[-1])
-        last_ema = float(ema50.iloc[-1])
-        if last_close > last_ema:
-            detail = (
-                f"Regime: RISK_ON (Nifty {last_close:.1f} above 50-EMA {last_ema:.1f})"
-            )
-            return "RISK_ON", detail
-        detail = (
-            f"Regime: RISK_OFF (Nifty {last_close:.1f} below 50-EMA {last_ema:.1f})"
-        )
-        return "RISK_OFF", detail
-    except Exception as extra:
-        print(f"Regime fetch failed ({extra}); DATA_INVALID (no new buys).")
-        return "DATA_INVALID", "Regime: DATA_INVALID (Nifty fetch failed)"
-
-
-# Your S3 bucket name
+# ==========================================
+# CONFIGURATION & ENVIRONMENT VARIABLES
+# ==========================================
 BUCKET_NAME = os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
 NTFY_TOPIC = os.getenv("NTFY_TOPIC", "msu_swing_alerts_2026")
-MODEL_S3_KEY = os.getenv("MODEL_S3_KEY", "models/model.json")
 PORTFOLIO_STATE_KEY = os.getenv("PORTFOLIO_STATE_KEY", "portfolio_state.json")
 HOLDINGS_LEVELS_KEY = os.getenv("HOLDINGS_LEVELS_KEY", "holdings_levels.json")
 EQUITY_CURVE_KEY = os.getenv("EQUITY_CURVE_KEY", "equity_curve.json")
 
-# Live-cash split: Core 2/3, Satellite 1/3 of deployable cash in portfolio_state.json
-CORE_CASH_FRACTION = float(os.getenv("CORE_CASH_FRACTION", str(2.0 / 3.0)))
-SATELLITE_CASH_FRACTION = float(os.getenv("SATELLITE_CASH_FRACTION", str(1.0 / 3.0)))
 
-CHECKPOINT_DATE = "2026-12-15"
-CHECKPOINT_EQUITY = float(os.getenv("CHECKPOINT_EQUITY", "135000"))
-LONG_HORIZON_EQUITY = float(os.getenv("LONG_HORIZON_EQUITY", "250000"))
-
-# Profit-only exit ladder (never sell a holding below true breakeven)
-BE_COST_MULT = 1.0025
-BE_FLAT_FEE = 18.0
-TRAIL_ATR_MULT = 1.5
-ATR_DRIFT_THRESHOLD = 0.15
-
-# Dual-portfolio architecture (single scan pass, independent sizing + ML gates).
-# CORE_CAPITAL / SATELLITE_CAPITAL are fallbacks when portfolio_state.json is missing.
-# Live runs size sleeves from deployable cash (2/3 Core, 1/3 Satellite).
-CORE_PORTFOLIO = {
-    "key": "core",
-    "name": "Core (Conservative)",
-    "capital": float(os.getenv("CORE_CAPITAL", "16000")),
-    "min_prob": float(os.getenv("CORE_MIN_PROB", "0.55")),
-    "kelly_fraction": float(os.getenv("CORE_KELLY_FRACTION", "0.25")),
-    "kelly_label": "Kelly cap",
-    "risk_per_trade_pct": 0.025,
-    "max_positions": int(os.getenv("CORE_MAX_POSITIONS", "4")),
-}
-
-SATELLITE_PORTFOLIO = {
-    "key": "satellite",
-    "name": "Satellite (Aggressive)",
-    "capital": float(os.getenv("SATELLITE_CAPITAL", "8000")),
-    "min_prob": float(os.getenv("SATELLITE_MIN_PROB", "0.50")),
-    "kelly_fraction": float(os.getenv("SATELLITE_KELLY_FRACTION", "0.50")),
-    "kelly_label": "Kelly cap",
-    "risk_per_trade_pct": 0.025,
-    "max_positions": int(os.getenv("SATELLITE_MAX_POSITIONS", "2")),
-}
-
-PORTFOLIOS = (CORE_PORTFOLIO, SATELLITE_PORTFOLIO)
-
-SCREENS = {
-    "piotroski_stocks.csv": "https://www.screener.in/screens/1698348/piotroski-scan/",
-    "capacity_expansion.csv": "https://www.screener.in/screens/897734/capacity-expansion-stocks/",
-    "coffee_can.csv": "https://www.screener.in/screens/175680/coffee-can-portfolio-saurabh-mukherjea/",
-    "growth_no_dilution.csv": "https://www.screener.in/screens/226712/growth-without-dilution/",
-    "rsi_oversold.csv": "https://www.screener.in/screens/985942/rsi-oversold-stocks/",
-}
-
-# Static add-on universe (not overwritten by Screener scraper).
-EXTRA_UNIVERSE_CSVS = (
-    "nifty_200.csv",
-    "satellite_high_beta.csv",
-    "it_bluechips.csv",
-)
-
-RECOMMENDER_CSV_KEYS = tuple(SCREENS.keys()) + EXTRA_UNIVERSE_CSVS
-
-s3_client = boto3.client("s3")
-
-
+# ==========================================
+# S3 READ / WRITE UTILITIES
+# ==========================================
 def s3_uri(key: str) -> str:
     return f"s3://{BUCKET_NAME}/{key}"
 
 
 def write_df_to_s3(df: pd.DataFrame, key: str) -> None:
-    """Write a DataFrame to S3 (works with s3fs or falls back to boto3)."""
-    try:
-        df.to_csv(s3_uri(key), index=False)
-    except Exception:
-        csv_buffer = StringIO()
-        df.to_csv(csv_buffer, index=False)
-        s3_client.put_object(
-            Bucket=BUCKET_NAME,
-            Key=key,
-            Body=csv_buffer.getvalue().encode("utf-8"),
-        )
-
-
-def read_df_from_s3(key: str) -> pd.DataFrame | None:
-    """Read a CSV from S3; return None if missing."""
-    try:
-        return pd.read_csv(s3_uri(key))
-    except Exception:
-        try:
-            obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
-            return pd.read_csv(StringIO(obj["Body"].read().decode("utf-8")))
-        except Exception as exc:
-            print(f"Could not read s3://{BUCKET_NAME}/{key}: {exc}")
-            return None
-
-
-def append_log_to_s3(text: str, key: str = "execution_log.txt") -> None:
-    """Append a text log chunk to an S3 object (read-modify-write)."""
-    existing = ""
-    try:
-        obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
-        existing = obj["Body"].read().decode("utf-8")
-    except Exception:
-        pass
+    buf = StringIO()
+    df.to_csv(buf, index=False)
     s3_client.put_object(
         Bucket=BUCKET_NAME,
         Key=key,
-        Body=(existing + text).encode("utf-8"),
+        Body=buf.getvalue().encode("utf-8"),
+        ContentType="text/csv",
     )
+    print(f"Uploaded {key} to S3 ({len(df)} rows).")
+
+
+def read_df_from_s3(key: str) -> pd.DataFrame | None:
+    try:
+        obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
+        return pd.read_csv(obj["Body"])
+    except Exception as e:
+        print(f"Error reading s3://{BUCKET_NAME}/{key}: {e}")
+        return None
+
+
+def append_log_to_s3(text: str, key: str = "execution_log.txt") -> None:
+    try:
+        existing = ""
+        try:
+            obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
+            existing = obj["Body"].read().decode("utf-8")
+        except Exception:
+            existing = ""
+        updated = existing + text
+        s3_client.put_object(
+            Bucket=BUCKET_NAME,
+            Key=key,
+            Body=updated.encode("utf-8"),
+            ContentType="text/plain",
+        )
+    except Exception as e:
+        print(f"Failed to append to s3://{BUCKET_NAME}/{key}: {e}")
 
 
 def write_execution_log_json(payload: dict, key: str = "execution_log.json") -> None:
-    """Overwrite the structured dual-portfolio execution log on S3."""
     write_json_to_s3(payload, key)
 
 
@@ -245,855 +165,55 @@ def read_json_from_s3(key: str) -> dict | None:
     try:
         obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=key)
         return json.loads(obj["Body"].read().decode("utf-8"))
-    except Exception as exc:
-        print(f"Could not read s3://{BUCKET_NAME}/{key}: {exc}")
+    except Exception as e:
+        print(f"Error reading s3://{BUCKET_NAME}/{key}: {e}")
         return None
 
 
 def write_json_to_s3(payload: dict, key: str) -> None:
-    s3_client.put_object(
-        Bucket=BUCKET_NAME,
-        Key=key,
-        Body=json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False).encode(
-            "utf-8"
-        ),
-        ContentType="application/json",
-    )
+    try:
+        s3_client.put_object(
+            Bucket=BUCKET_NAME,
+            Key=key,
+            Body=json.dumps(payload, indent=2, default=str).encode("utf-8"),
+            ContentType="application/json",
+        )
+    except Exception as e:
+        print(f"Failed writing s3://{BUCKET_NAME}/{key}: {e}")
 
 
 def load_portfolio_state() -> dict:
-    """Strict load. Missing or invalid state cannot invent cash or emit BUYs."""
-    from swing_core.state import PortfolioInvalid, validate_state
-
-    try:
-        from swing_core.s3_state import read_state
-
-        data, etag = read_state(s3_client, BUCKET_NAME, PORTFOLIO_STATE_KEY)
-        return {**data, "_etag": etag}
-    except Exception as exc:
-        reason = exc.reason if isinstance(exc, PortfolioInvalid) else type(exc).__name__
-        print(f"PORTFOLIO_INVALID: {reason}. No BUY and no state mutation.")
-        return {
-            "status": "PORTFOLIO_INVALID",
-            "reason": reason,
-            "cash": None,
-            "holdings": [],
-        }
-
-
-def held_symbol_set(state: dict) -> set[str]:
-    out: set[str] = set()
-    for h in state.get("holdings") or []:
-        if int(h.get("qty", 0) or 0) <= 0:
-            continue
-        raw = str(h.get("symbol", "")).strip().upper()
-        if not raw:
-            continue
-        out.add(raw)
-        out.add(str(SYMBOL_MAP.get(raw, raw)).upper())
-    return out
-
-
-def sleeve_open_counts(state: dict) -> dict[str, int]:
-    counts = {"core": 0, "satellite": 0}
-    for h in state.get("holdings") or []:
-        if int(h.get("qty", 0) or 0) <= 0:
-            continue
-        sleeve = str(h.get("sleeve", "legacy")).strip().lower()
-        if sleeve in counts:
-            counts[sleeve] += 1
-    return counts
-
-
-def portfolios_from_state(state: dict | None) -> list[dict]:
-    """Core = 2/3 of validated cash. Invalid state does not fall back to env capital."""
-    core = copy.deepcopy(CORE_PORTFOLIO)
-    sat = copy.deepcopy(SATELLITE_PORTFOLIO)
-    if (
-        not state
-        or state.get("status") == "PORTFOLIO_INVALID"
-        or state.get("cash") is None
-    ):
-        core["capital"] = 0.0
-        sat["capital"] = 0.0
-        print("PORTFOLIO_INVALID: sleeves set to 0. No env-capital fallback.")
-        return [core, sat]
-    cash = float(state["cash"])
-    core["capital"] = round(cash * CORE_CASH_FRACTION, 2)
-    sat["capital"] = round(cash * SATELLITE_CASH_FRACTION, 2)
-    print(
-        f"Sleeves from live cash Rs {cash:,.0f}: "
-        f"Core={core['capital']:,.0f} Sat={sat['capital']:,.0f}"
-    )
-    return [core, sat]
-
-
-LEGACY_FEATURE_NAMES = [
-    "rsi",
-    "rsi_slope",
-    "atr_pct",
-    "bb_position",
-    "dist_sma50",
-    "rel_volume",
-    "regime_on",
-]
-
-
-def _sigmoid(x: float) -> float:
-    if x >= 0:
-        z = math.exp(-x)
-        return 1.0 / (1.0 + z)
-    z = math.exp(x)
-    return z / (1.0 + z)
-
-
-def _parse_xgb_base_score(raw) -> float:
-    """Parse learner base_score values like 0.5, '0.5', or '[5E-1]'."""
-    if isinstance(raw, (int, float)):
-        return float(raw)
-    text = str(raw).strip()
-    if text.startswith("[") and text.endswith("]"):
-        text = text[1:-1].strip()
-    if not text:
-        return 0.5
-    # Multi-class / multi-target dumps can be comma-separated; take first.
-    text = text.split(",")[0].strip()
-    return float(text)
-
-
-def _score_xgb_tree(tree: dict, features: list[float]) -> float:
-    """Walk one XGBoost JSON tree (binary array layout)."""
-    left = tree["left_children"]
-    right = tree["right_children"]
-    split_idx = tree["split_indices"]
-    split_cond = tree["split_conditions"]
-    default_left = tree.get("default_left") or [1] * len(left)
-    base_weights = tree["base_weights"]
-
-    node = 0
-    while left[node] != -1:
-        fidx = split_idx[node]
-        fval = features[fidx]
-        if fval != fval:  # NaN
-            go_left = bool(default_left[node])
-        else:
-            go_left = fval < split_cond[node]
-        node = left[node] if go_left else right[node]
-    return float(base_weights[node])
-
-
-def load_signal_model() -> dict | None:
-    """Load XGBoost JSON model (+ feature list) from S3. Returns None if missing."""
-    try:
-        obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=MODEL_S3_KEY)
-        model = json.loads(obj["Body"].read().decode("utf-8"))
-        # Support either raw XGBoost dump or wrapped payload from train.py
-        if "learner" in model:
-            wrapped = {
-                "xgb_model": model,
-                "feature_names": LEGACY_FEATURE_NAMES,
-            }
-        else:
-            wrapped = model
-        print(f"Loaded signal model from s3://{BUCKET_NAME}/{MODEL_S3_KEY}")
-        return wrapped
-    except Exception as exc:
-        print(f"Signal model not loaded ({exc}); using rule-based alerts only.")
-        return None
-
-
-def extract_live_features(stock_data: pd.DataFrame, regime_on: float = 1.0) -> dict:
-    """Engineer the same features used by the offline labeler/trainer."""
-    close = stock_data["Close"]
-    rsi = stock_data["RSI"]
-    atr = stock_data["ATR"]
-    lower = stock_data["Lower_Band"]
-    upper = stock_data["Upper_Band"]
-    sma50 = stock_data["SMA_50"]
-    volume = stock_data["Volume"]
-    vol_ma = stock_data["Vol_MA20"]
-
-    last_close = float(close.iloc[-1])
-    curr_rsi = float(rsi.iloc[-1])
-    prev_rsi = float(rsi.iloc[-15]) if len(rsi) >= 15 else float(rsi.iloc[0])
-    curr_atr = float(atr.iloc[-1])
-    band_width = float(upper.iloc[-1] - lower.iloc[-1])
-    bb_pos = (
-        (last_close - float(lower.iloc[-1])) / band_width if band_width > 0 else 0.5
-    )
-    sma50_val = (
-        float(sma50.iloc[-1]) if not math.isnan(float(sma50.iloc[-1])) else last_close
-    )
-    dist_sma50 = (last_close - sma50_val) / last_close if last_close else 0.0
-    rel_vol = (
-        float(volume.iloc[-1]) / float(vol_ma.iloc[-1])
-        if float(vol_ma.iloc[-1]) > 0
-        else 1.0
-    )
-
+    state = read_json_from_s3(PORTFOLIO_STATE_KEY)
+    if state and isinstance(state, dict):
+        return state
+    # Local fallback
+    local_path = Path("data") / "portfolio_state.json"
+    if local_path.exists():
+        try:
+            return json.loads(local_path.read_text())
+        except Exception:
+            pass
     return {
-        "rsi": curr_rsi,
-        "rsi_slope": curr_rsi - prev_rsi,
-        "atr_pct": curr_atr / last_close if last_close else 0.0,
-        "bb_position": bb_pos,
-        "dist_sma50": dist_sma50,
-        "rel_volume": rel_vol,
-        "regime_on": float(regime_on),
+        "cash": 100000.0,
+        "holdings": [],
+        "status": "PORTFOLIO_CONFIRMED",
+        "updated": datetime.now(timezone.utc).isoformat(),
     }
 
 
-def _eval_dump_tree(node: dict, fmap: dict) -> float:
-    """Walk one tree from booster.get_dump(dump_format='json').
-
-    XGBoost performs split comparisons in float32 — cast both sides so
-    near-threshold values match the C++ booster exactly.
-    """
-    if "leaf" in node:
-        return float(node["leaf"])
-    fname = node["split"]
-    fval = np.float32(fmap[fname])
-    thresh = np.float32(node["split_condition"])
-    children = {c["nodeid"]: c for c in node["children"]}
-    if fval != fval:  # NaN
-        nid = int(node.get("missing", node["yes"]))
-    elif fval < thresh:
-        nid = int(node["yes"])
-    else:
-        nid = int(node["no"])
-    return _eval_dump_tree(children[nid], fmap)
+def held_symbol_set(state: dict) -> set[str]:
+    holdings = state.get("holdings") if isinstance(state, dict) else []
+    symbols = set()
+    for h in holdings or []:
+        sym = (h.get("symbol") or h.get("ticker") or "").strip()
+        if sym:
+            symbols.add(sym.upper())
+    return symbols
 
 
-def score_setup(model: dict | None, stock_data: pd.DataFrame, regime_on: float = 1.0):
-    """Return P(success) in [0, 1], or None if no model."""
-    if not model:
-        return None
-    try:
-        feats = extract_live_features(stock_data, regime_on=regime_on)
-        feature_names = list(model.get("feature_names", LEGACY_FEATURE_NAMES))
-        if (
-            feature_names != LEGACY_FEATURE_NAMES
-            or model.get("schema_id") == "features_v3_20"
-        ):
-            print("Incompatible model schema for the live 7-feature contract. No BUY.")
-            return None
-        for name in feature_names:
-            val = feats.get(name)
-            if val is None or not math.isfinite(float(val)):
-                print(f"Model scoring fail-closed: non-finite feature {name}")
-                return None
-        x = [float(feats[name]) for name in feature_names]
-        fmap = {name: float(feats[name]) for name in feature_names}
-
-        # Lightweight logistic fallback (coefficients from train.py)
-        if model.get("type") == "logistic":
-            intercept = float(model["intercept"])
-            coefs = model["coefficients"]
-            z = intercept + sum(c * v for c, v in zip(coefs, x))
-            return _sigmoid(z)
-
-        # Preferred: high-precision dump trees from train.py
-        trees = model.get("trees")
-        if model.get("type") == "xgboost_dump" or (
-            isinstance(trees, list) and trees and "nodeid" in trees[0]
-        ):
-            base_score = _parse_xgb_base_score(model.get("base_score", 0.5))
-            if 0.0 < base_score < 1.0:
-                margin = math.log(base_score / (1.0 - base_score))
-            else:
-                margin = base_score
-            total = margin + sum(_eval_dump_tree(t, fmap) for t in trees)
-            return _sigmoid(total)
-
-        # Legacy: full XGBoost learner JSON (array layout; less precise thresholds)
-        xgb_model = model.get("xgb_model", model)
-        learner = xgb_model["learner"]
-        trees = learner["gradient_booster"]["model"]["trees"]
-        base_score = _parse_xgb_base_score(
-            learner["learner_model_param"].get("base_score", "0.5")
-        )
-        if 0.0 < base_score < 1.0:
-            margin = math.log(base_score / (1.0 - base_score))
-        else:
-            margin = base_score
-        total = margin
-        for tree in trees:
-            total += _score_xgb_tree(tree, x)
-        return _sigmoid(total)
-    except Exception as exc:
-        print(f"Model scoring failed ({exc}); fail-closed (no BUY).")
-        return None
-
-
-class ScreenerScraper:
-    def __init__(self, username: str = "", password: str = ""):
-        self.username = username
-        self.password = password
-        self.session = requests.Session()
-        self.headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-
-    def login(self) -> None:
-        if not self.username or self.username.startswith("YOUR_"):
-            print("Skipping Screener login (public screens / no credentials).")
-            return
-
-        login_url = "https://www.screener.in/login/"
-        response = self.session.get(login_url, headers=self.headers)
-        soup = BeautifulSoup(response.text, "html.parser")
-        csrf_token = soup.find("input", {"name": "csrfmiddlewaretoken"})["value"]
-
-        login_data = {
-            "csrfmiddlewaretoken": csrf_token,
-            "username": self.username,
-            "password": self.password,
-        }
-        post_headers = {**self.headers, "Referer": login_url}
-        self.session.post(login_url, data=login_data, headers=post_headers)
-        print("Session authenticated.")
-
-    def scrape_screen(self, screen_url: str) -> pd.DataFrame | None:
-        response = self.session.get(screen_url, headers=self.headers)
-        soup = BeautifulSoup(response.text, "html.parser")
-        table = soup.find("table")
-        if not table:
-            print(f"Could not locate table for {screen_url}")
-            return None
-
-        symbols = []
-        for tr in table.select("tr[data-row-company-id]"):
-            link = tr.select_one('a[href*="/company/"]')
-            if link:
-                symbols.append(link["href"].strip("/").split("/")[1])
-            else:
-                symbols.append(None)
-
-        df = pd.read_html(StringIO(str(table)))[0]
-        df = df.dropna(subset=["Name"])
-        df = df[df["Name"].astype(str).str.strip().str.lower() != "name"]
-        if len(symbols) == len(df):
-            df.insert(1, "Symbol", symbols)
-        else:
-            print(
-                f"Warning: symbol count ({len(symbols)}) != row count ({len(df)}); "
-                "saving without Symbol column."
-            )
-        return df
-
-
-class QuantRiskManager:
-    """Position sizing for one portfolio sleeve (independent capital + Kelly cap)."""
-
-    def __init__(
-        self,
-        total_capital: float,
-        kelly_fraction: float,
-        risk_per_trade_pct: float = 0.025,
-        stop_atr_mult: float = 1.5,
-        target_atr_mult: float = 3.0,
-    ):
-        self.total_capital = float(total_capital)
-        self.kelly_fraction = float(kelly_fraction)
-        self.risk_per_trade_pct = float(risk_per_trade_pct)
-        self.stop_atr_mult = float(stop_atr_mult)
-        self.target_atr_mult = float(target_atr_mult)
-        self.allocation_cap = self.total_capital * self.kelly_fraction
-
-    def calculate_trade_parameters(self, current_price, atr):
-        if current_price <= 0 or atr <= 0:
-            return {
-                "shares": 0,
-                "investment": 0.0,
-                "stop_loss": 0.0,
-                "take_profit": 0.0,
-                "risk_amount": 0.0,
-                "allocation_cap": round(self.allocation_cap, 2),
-                "reason": "invalid_price_or_atr",
-            }
-
-        stop_loss_dist = atr * self.stop_atr_mult
-        stop_loss_price = current_price - stop_loss_dist
-        take_profit_price = current_price + (atr * self.target_atr_mult)
-
-        # Primary: Kelly allocation cap (user-specified integer share rounding)
-        capital_to_allocate = self.allocation_cap
-        shares_by_capital = int(capital_to_allocate / current_price)
-
-        # Secondary: hard rupee-risk ceiling (2.5% of sleeve capital)
-        max_rupee_risk = self.total_capital * self.risk_per_trade_pct
-        shares_by_risk = (
-            math.floor(max_rupee_risk / stop_loss_dist) if stop_loss_dist > 0 else 0
-        )
-
-        final_shares = min(shares_by_capital, shares_by_risk)
-        actual_investment = final_shares * current_price
-        reason = "ok"
-        if final_shares <= 0:
-            reason = "price_exceeds_allocation_cap"
-
-        return {
-            "shares": final_shares,
-            "investment": round(actual_investment, 2),
-            "stop_loss": round(stop_loss_price, 2),
-            "take_profit": round(take_profit_price, 2),
-            "risk_amount": round(final_shares * stop_loss_dist, 2),
-            "allocation_cap": round(self.allocation_cap, 2),
-            "reason": reason,
-        }
-
-
-class SwingRecommender:
-    def __init__(self, portfolios=None, portfolio_state: dict | None = None):
-        self.portfolio_state = portfolio_state or {
-            "status": "PORTFOLIO_INVALID",
-            "reason": "state_not_provided",
-            "cash": None,
-            "holdings": [],
-        }
-        self.portfolios = list(
-            portfolios
-            if portfolios is not None
-            else portfolios_from_state(self.portfolio_state)
-        )
-        self.risk_managers = {
-            p["key"]: QuantRiskManager(
-                total_capital=p["capital"],
-                kelly_fraction=p["kelly_fraction"],
-                risk_per_trade_pct=p.get("risk_per_trade_pct", 0.025),
-            )
-            for p in self.portfolios
-        }
-        # Per-portfolio signal lists
-        self.signals = {p["key"]: [] for p in self.portfolios}
-        self.tickers_scanned = 0
-        self.regime = "RISK_ON"
-        self.regime_detail = "Regime: RISK_ON (not evaluated)"
-        self.signal_model = None
-        self.held_symbols = held_symbol_set(self.portfolio_state)
-        self.open_counts = sleeve_open_counts(self.portfolio_state)
-        raw_cash = self.portfolio_state.get("cash")
-        self.state_ok = (
-            self.portfolio_state.get("status") != "PORTFOLIO_INVALID"
-            and raw_cash is not None
-        )
-        self.remaining_cash = float(raw_cash or 0.0) if self.state_ok else 0.0
-        if self.held_symbols:
-            print(f"Held symbols (no add): {sorted(self.held_symbols)}")
-        print(
-            f"Free cash Rs {self.remaining_cash:,.0f} | "
-            f"open system positions core={self.open_counts['core']} "
-            f"satellite={self.open_counts['satellite']}"
-        )
-        self.policy = LivePolicy()
-        equity = float(self.portfolio_state.get("last_marked_equity") or 0.0)
-        if equity <= 0:
-            equity = self.remaining_cash + sum(
-                int(h.get("qty") or 0) * float(h.get("avg_cost") or 0)
-                for h in (self.portfolio_state.get("holdings") or [])
-            )
-        self.limits = admission_limits(self.remaining_cash, equity, self.policy)
-        self.watch = []
-        self.suppress_alerts = False
-        print(
-            f"Live policy {self.policy.policy_version if hasattr(self.policy,'policy_version') else 'v2'} | "
-            f"max_ticket=Rs {self.limits['max_ticket']:,.0f} | reserve=Rs {self.limits['reserve']:,.0f} | "
-            f"satellite_parked={self.limits['park_satellite']} | max_new_core={self.limits['max_new_core']}"
-        )
-        self.remaining_cash = float(self.limits["deployable"])
-        for ptf in self.portfolios:
-            if ptf["key"] == "core":
-                ptf["max_positions"] = int(self.policy.max_new_core)
-            elif ptf["key"] == "satellite":
-                ptf["max_positions"] = int(self.policy.max_new_satellite)
-        for key, rm in self.risk_managers.items():
-            # Repair ticket ceiling replaces the old Kelly notional cap.
-            rm.allocation_cap = float(self.limits["max_ticket"])
-            if key == "satellite" and self.policy.park_satellite:
-                rm.allocation_cap = 0.0
-            env = "core_envelope" if key == "core" else "satellite_envelope"
-            rm.total_capital = float(self.limits[env])
-            if rm.total_capital > 0:
-                rm.risk_per_trade_pct = (
-                    float(self.limits["risk_per_trade"]) / rm.total_capital
-                )
-
-    def calculate_rsi(self, data, periods=14):
-        return sc_rsi(data["Close"], periods=periods)
-
-    def calculate_atr(self, data, periods=14):
-        return sc_atr(data, periods=periods)
-
-    def _format_signal(
-        self,
-        portfolio: dict,
-        name: str,
-        ticker: str,
-        last_close: float,
-        curr_rsi: float,
-        position_in_range: float,
-        curr_sma20: float,
-        curr_lower_band: float,
-        trade_params: dict,
-        p_success,
-    ) -> dict:
-        """Structured setup used for JSON logs + alert bullets."""
-        return {
-            "portfolio": portfolio["key"],
-            "name": str(name),
-            "ticker": ticker,
-            "price": round(float(last_close), 2),
-            "rsi": round(float(curr_rsi), 1),
-            "bb_pct": round(float(position_in_range) * 100, 1),
-            "sma20": round(float(curr_sma20), 2),
-            "lower_band": round(float(curr_lower_band), 2),
-            "shares": int(trade_params["shares"]),
-            "investment": float(trade_params["investment"]),
-            "allocation_cap": float(trade_params["allocation_cap"]),
-            "take_profit": float(trade_params["take_profit"]),
-            "stop_loss": float(trade_params["stop_loss"]),
-            "risk_amount": float(trade_params["risk_amount"]),
-            "p_success": None if p_success is None else round(float(p_success), 4),
-        }
-
-    def _setup_bullet(self, setup: dict) -> str:
-        p = setup.get("p_success")
-        p_txt = f"{p:.2f}" if p is not None else "n/a"
-        return (
-            f"• {setup['name']} ({setup['ticker']}) | "
-            f"Price: ₹{setup['price']} | Shares: {setup['shares']} | "
-            f"Target: ₹{setup['take_profit']} | Stop: ₹{setup['stop_loss']} | "
-            f"P={p_txt}"
-        )
-
-    def _is_held(self, raw_symbol: str, tv_symbol: str) -> bool:
-        for candidate in (raw_symbol, tv_symbol):
-            if str(candidate).strip().upper() in self.held_symbols:
-                return True
-        return False
-
-    def _assign_to_portfolios(
-        self,
-        name: str,
-        ticker: str,
-        last_close: float,
-        curr_atr: float,
-        curr_rsi: float,
-        position_in_range: float,
-        curr_sma20: float,
-        curr_lower_band: float,
-        p_success,
-    ) -> None:
-        for portfolio in self.portfolios:
-            if (
-                getattr(self, "policy", LivePolicy()).park_satellite
-                and portfolio["key"] == "satellite"
-            ):
-                continue
-            min_prob = float(portfolio["min_prob"])
-            ok, reason = admit_buy(p_success, min_prob)
-            if not ok:
-                print(f"Skip {ticker} for {portfolio['key']}: {reason}")
-                continue
-
-            key = portfolio["key"]
-            max_pos = int(portfolio.get("max_positions") or 99)
-            already = self.open_counts.get(key, 0) + len(self.signals.get(key) or [])
-            if already >= max_pos:
-                print(
-                    f"Skip {ticker} for {key}: max_positions={max_pos} already filled"
-                )
-                continue
-
-            rm = self.risk_managers[key]
-            trade_params = rm.calculate_trade_parameters(last_close, curr_atr)
-            if trade_params["shares"] <= 0:
-                print(
-                    f"{portfolio['name']}: {ticker} price ₹{last_close:.2f} exceeds "
-                    f"single-trade allocation cap ₹{trade_params['allocation_cap']:.2f} "
-                    f"(shares=0)."
-                )
-                continue
-
-            investment = float(trade_params["investment"])
-            if investment > self.remaining_cash + 1e-6:
-                print(
-                    f"Skip {ticker} for {key}: lot Rs {investment:,.0f} exceeds "
-                    f"free cash Rs {self.remaining_cash:,.0f}"
-                )
-                continue
-
-            self.signals[key].append(
-                self._format_signal(
-                    portfolio,
-                    name,
-                    ticker,
-                    last_close,
-                    curr_rsi,
-                    position_in_range,
-                    curr_sma20,
-                    curr_lower_band,
-                    trade_params,
-                    p_success,
-                )
-            )
-            self.remaining_cash = round(self.remaining_cash - investment, 2)
-
-    def analyze_stocks(self, csv_keys):
-        print("Analyzing screens using advanced technical models...")
-        if not getattr(self, "state_ok", False):
-            print("PORTFOLIO_INVALID: scan aborted. No BUY.")
-            self.regime = "PORTFOLIO_INVALID"
-            self.regime_detail = "PORTFOLIO_INVALID"
-            if not self.suppress_alerts:
-                self.dispatch_alerts()
-            return
-        for p in self.portfolios:
-            rm = self.risk_managers[p["key"]]
-            print(
-                f"Portfolio ready | {p['name']} | capital=Rs {p['capital']:,.0f} | "
-                f"{p['kelly_label']}={p['kelly_fraction']:.1%} "
-                f"(max Rs {rm.allocation_cap:,.0f}/trade) | "
-                f"P>= {p['min_prob']:.2f} | max_pos={p.get('max_positions', '-')} | "
-                f"R:R 1:2 (1.5x/3.0x ATR)"
-            )
-
-        df_list = []
-        for key in csv_keys:
-            frame = read_df_from_s3(key)
-            if frame is None:
-                print(f"Skipping missing S3 object: {key}")
-                continue
-            if "Symbol" not in frame.columns:
-                print(f"Skipping {key}: missing Symbol column.")
-                continue
-            df_list.append(frame)
-
-        if not df_list:
-            print("No usable CSVs with Symbol columns in S3.")
-            self.dispatch_alerts()
-            return
-
-        df = pd.concat(df_list, ignore_index=True).drop_duplicates(subset=["Symbol"])
-        df = df.dropna(subset=["Symbol"])
-        self.tickers_scanned = len(df)
-        print(f"Evaluating {len(df)} unique symbols across {len(df_list)} screens...")
-
-        tv = get_tv()
-        self.regime, self.regime_detail = get_market_regime(tv)
-        print(self.regime_detail)
-
-        if self.regime in ("RISK_OFF", "DATA_INVALID"):
-            print(
-                f"{self.regime}: new B/C/A entries are WATCH-only "
-                "(skip new actionable longs until RISK_ON + valid data)."
-            )
-
-        self.signal_model = load_signal_model()
-        failed_symbols = []
-        successful_downloads = 0
-
-        for _, row in df.iterrows():
-            raw_symbol = str(row["Symbol"]).strip()
-
-            # 1. Determine exchange from Screener raw output (before alphabetic mapping)
-            exchange = "BSE" if raw_symbol.isdigit() else "NSE"
-
-            # 2. Map Screener codes/special tickers to TradingView symbols
-            tv_symbol = SYMBOL_MAP.get(raw_symbol, raw_symbol)
-            ticker = f"{exchange}:{tv_symbol}"
-            name = row["Name"]
-
-            if self._is_held(raw_symbol, tv_symbol):
-                print(f"Skip {ticker}: already held (no averaging down).")
-                continue
-
-            try:
-                hist_data = tv.get_hist(
-                    symbol=tv_symbol,
-                    exchange=exchange,
-                    interval=Interval.in_daily,
-                    n_bars=120,
-                )
-                # Tiny pause to stay under TradingView free-account rate limits
-                time.sleep(0.3)
-
-                if hist_data is None or hist_data.empty or len(hist_data) < 20:
-                    failed_symbols.append(
-                        f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
-                    )
-                    continue
-
-                successful_downloads += 1
-
-                # tvDatafeed returns lowercase OHLCV — map to existing indicator schema
-                stock_data = hist_data.rename(
-                    columns={
-                        "open": "Open",
-                        "high": "High",
-                        "low": "Low",
-                        "close": "Close",
-                        "volume": "Volume",
-                    }
-                )
-
-                stock_data = slice_completed(stock_data)
-                if stock_data is None or len(stock_data) < 55:
-                    failed_symbols.append(
-                        f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})"
-                    )
-                    continue
-                stock_data = enrich_ohlcv(stock_data)
-                i = len(stock_data) - 1
-                setups = detect_setups(stock_data, i)
-                last_close = float(stock_data["Close"].iloc[i])
-                curr_rsi = float(stock_data["RSI"].iloc[i])
-                curr_atr = float(stock_data["ATR"].iloc[i])
-                curr_lower_band = float(stock_data["Lower_Band"].iloc[i])
-                curr_sma20 = float(stock_data["SMA_20"].iloc[i])
-                curr_upper_band = float(stock_data["Upper_Band"].iloc[i])
-                band_width = curr_upper_band - curr_lower_band
-                position_in_range = (
-                    (last_close - curr_lower_band) / band_width
-                    if band_width > 0
-                    else 1.0
-                )
-                if not setups:
-                    continue
-                conc = blocks_concentration(
-                    tv_symbol,
-                    self.portfolio_state.get("holdings") or [],
-                    {},
-                    self.policy,
-                )
-                watch_item = {
-                    "ticker": ticker,
-                    "name": str(name),
-                    "setups": setups,
-                    "price": round(last_close, 2),
-                    "rsi": round(curr_rsi, 1),
-                    "bb_pct": round(position_in_range * 100, 1),
-                }
-                if conc:
-                    watch_item["status"] = conc
-                    self.watch.append(watch_item)
-                    print(f"WATCH {ticker}: {conc} setups={setups}")
-                    continue
-                actionable = [s for s in setups if s in self.policy.actionable_setups]
-                if self.regime != "RISK_ON" or not actionable:
-                    watch_item["status"] = f"WATCH regime={self.regime} setups={setups}"
-                    self.watch.append(watch_item)
-                    print(f"WATCH {ticker}: {watch_item['status']}")
-                    continue
-                p_success = score_setup(
-                    self.signal_model,
-                    stock_data,
-                    regime_on=float(self.regime == "RISK_ON"),
-                )
-                ok, reason = admit_buy(p_success, float(CORE_PORTFOLIO["min_prob"]))
-                if not ok:
-                    watch_item["status"] = reason
-                    self.watch.append(watch_item)
-                    print(f"WATCH {ticker}: {reason} setups={setups}")
-                    continue
-                self._assign_to_portfolios(
-                    name=name,
-                    ticker=ticker,
-                    last_close=last_close,
-                    curr_atr=curr_atr,
-                    curr_rsi=curr_rsi,
-                    position_in_range=position_in_range,
-                    curr_sma20=curr_sma20,
-                    curr_lower_band=curr_lower_band,
-                    p_success=p_success,
-                )
-            except Exception:
-                failed_symbols.append(f"{exchange}:{raw_symbol} (Mapped: {tv_symbol})")
-
-        print(
-            f"Market data summary: ok={successful_downloads} "
-            f"failed_or_short={len(failed_symbols)}"
-        )
-        print("=" * 50)
-        print(f"UNRESOLVED SYMBOLS ({len(failed_symbols)} total):")
-        print(failed_symbols)
-        print("=" * 50)
-        for p in self.portfolios:
-            print(
-                f"{p['name']}: {len(self.signals[p['key']])} signal(s) "
-                f"(P >= {p['min_prob']:.2f})"
-            )
-        self.dispatch_alerts()
-
-    def _build_segmented_message(self) -> str:
-        """Compact presentation for the legacy adapter; admission is unchanged."""
-        setups = list(self.signals.get("core") or []) + list(self.signals.get("satellite") or [])
-        blocks = [f"Swing scan · {len(setups)} buy alerts\n{when(datetime.now(timezone.utc).isoformat())}",
-                  "Market\n" + str(self.regime_detail)]
-        blocks.extend(buy_card(item, legacy=True) for item in setups)
-        if not setups:
-            blocks.append("No order to place\nNo candidate passed all entry checks.")
-        watches = list(getattr(self, "watch", []) or [])
-        if watches:
-            blocks.append("WATCH · no order\n" + "\n".join(
-                str(w.get("ticker", w.get("name", "Unknown"))) + ": " + reason(w.get("status"))
-                for w in watches[:3]))
-            if len(watches) > 3:
-                blocks.append(f"{len(watches)-3} more candidates in the scan log.")
-        blocks.append("Execution\nConfirm price, remaining cash and protective order in Zerodha. Record actual fills.")
-        return "\n\n".join(blocks)
-
-    def dispatch_alerts(self):
-        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        core_setups = list(self.signals.get("core") or [])
-        satellite_setups = list(self.signals.get("satellite") or [])
-        core_n = len(core_setups)
-        sat_n = len(satellite_setups)
-        total_n = core_n + sat_n
-
-        message_body = self._build_segmented_message()
-
-        # Structured S3 JSON log (nested dual-portfolio dictionary)
-        execution_payload = {
-            "timestamp_utc": timestamp,
-            "regime": self.regime,
-            "regime_detail": self.regime_detail,
-            "tickers_scanned": self.tickers_scanned,
-            "alert_text": message_body,
-            "core_setups": core_setups,
-            "satellite_setups": satellite_setups,
-            "counts": {"core": core_n, "satellite": sat_n, "total": total_n},
-        }
-        if not getattr(self, "suppress_alerts", False):
-            write_execution_log_json(execution_payload)
-            append_log_to_s3(
-                f"[{timestamp}] dual-portfolio run | core={core_n} satellite={sat_n}\n"
-                f"{message_body}" + ("-" * 40 + "\n")
-            )
-
-        if total_n == 0:
-            title = "System Update (No Action)"  # No emoji in HTTP headers (latin-1)
-            priority = "default"
-            tags = "grey_question,chart_with_downwards_trend"
-            email_subject = "Swing System Update (No Action)"
-        else:
-            title = "Swing Trade Alert"  # No emoji in HTTP headers (latin-1)
-            priority = "high"
-            tags = "green_circle,chart_with_upwards_trend,moneybag"
-            email_subject = (
-                f"Stock Buy Alerts Triggered (Core {core_n} / Satellite {sat_n})"
-            )
-
-        print(message_body)
-        if getattr(self, "suppress_alerts", False):
-            print("Notifications suppressed (dry-run).")
-        else:
-            send_push_and_email(
-                title=title,
-                message_body=message_body,
-                email_subject=email_subject,
-                priority=priority,
-                tags=tags,
-            )
-
-
+# ==========================================
+# NOTIFICATION PIPELINE (SES/SMTP & NTFY)
+# ==========================================
 def send_push_and_email(
     title: str,
     message_body: str,
@@ -1101,6 +221,7 @@ def send_push_and_email(
     priority: str = "default",
     tags: str = "grey_question",
 ) -> dict:
+    """Send push notifications via ntfy.sh and email alerts via Gmail SMTP."""
     ntfy_ok = True
     parts = push_parts(message_body)
     for index, part in enumerate(parts, 1):
@@ -1109,9 +230,12 @@ def send_push_and_email(
             response = requests.post(
                 f"https://ntfy.sh/{NTFY_TOPIC}",
                 data=part.encode("utf-8"),
-                headers={"Title": header_text(title) + suffix,
-                         "Priority": priority, "Tags": tags,
-                         "Content-Type": "text/plain; charset=utf-8"},
+                headers={
+                    "Title": header_text(title) + suffix,
+                    "Priority": priority,
+                    "Tags": tags,
+                    "Content-Type": "text/plain; charset=utf-8",
+                },
                 timeout=30,
             )
             response.raise_for_status()
@@ -1124,13 +248,9 @@ def send_push_and_email(
     try:
         sender_email = os.getenv("GMAIL_ADDRESS", "")
         sender_app_password = os.getenv("GMAIL_APP_PASSWORD", "").replace(" ", "")
-        receiver_email = sender_email
+        receiver_email = os.getenv("ALERT_EMAIL_RECEIVER", sender_email)
 
-        if (
-            not sender_email
-            or sender_email.startswith("YOUR_")
-            or not sender_app_password
-        ):
+        if not sender_email or sender_email.startswith("YOUR_") or not sender_app_password:
             print("Email skipped: set GMAIL_ADDRESS / GMAIL_APP_PASSWORD env vars.")
             email_status = "skipped"
         else:
@@ -1148,765 +268,181 @@ def send_push_and_email(
     except Exception as e:
         print(f"Failed to send email: {e}")
         email_status = "failed"
+
     return {"ntfy": "sent" if ntfy_ok else "failed", "email": email_status}
 
 
-def run_scraper():
-    print("Running scraper...")
-    scraper = ScreenerScraper(
-        username=os.getenv("SCREENER_EMAIL", "YOUR_EMAIL"),
-        password=os.getenv("SCREENER_PASSWORD", "YOUR_PASSWORD"),
-    )
-    scraper.login()
-
-    for filename, url in SCREENS.items():
-        print(f"Scraping {filename}...")
-        df = scraper.scrape_screen(url)
-        if df is not None:
-            write_df_to_s3(df, filename)
-            print(f"Scraped data saved to {s3_uri(filename)}")
-        else:
-            print(f"Failed to scrape {filename}")
-
-    print("Scraped data saved to S3.")
-
-
-def true_breakeven(avg_cost: float, qty: int) -> float:
-    return float(avg_cost) * BE_COST_MULT + BE_FLAT_FEE / max(int(qty), 1)
-
-
-def split_exit_qty(qty: int, holding: dict | None = None) -> tuple[int, int, int]:
-    """Use persisted tranche plan when present; else ~1/3 / 1/3 / remainder."""
-    qty = int(qty)
-    if holding:
-        t1 = int(holding.get("t1_qty_plan") or 0)
-        t2 = int(holding.get("t2_qty_plan") or 0)
-        runner = int(holding.get("runner_qty_plan") or 0)
-        if t1 + t2 + runner == qty:
-            t1 = max(0, t1 - int(holding.get("t1_filled_qty") or 0))
-            t2 = max(0, t2 - int(holding.get("t2_filled_qty") or 0))
-            return t1, t2, runner
-    if qty <= 1:
-        return 0, 0, qty
-    if qty == 2:
-        return 1, 0, 1
-    if qty == 5:
-        return 2, 1, 2
-    if qty == 8:
-        return 3, 3, 2
-    if qty == 16:
-        return 5, 5, 6
-    t1 = max(1, qty // 3)
-    t2 = max(1, qty // 3)
-    runner = qty - t1 - t2
-    if runner <= 0:
-        t2 -= 1
-        runner = 1
-    return t1, t2, runner
-
-
-def _prepare_ohlcv(hist: pd.DataFrame) -> pd.DataFrame:
-    return hist.rename(
-        columns={
-            "open": "Open",
-            "high": "High",
-            "low": "Low",
-            "close": "Close",
-            "volume": "Volume",
-        }
-    )
-
-
-def compute_holding_levels(
-    holding: dict,
-    stock: pd.DataFrame,
-    prev_row: dict | None,
-    rsi_fn,
-    atr_fn,
-) -> dict:
-    qty = int(holding.get("qty") or 0)
-    avg = float(holding.get("avg_cost") or 0)
-    symbol = str(holding.get("symbol", "")).strip().upper()
-    observed = stock.iloc[-1].copy()
-    all_session_dates = stock.index
-    stock = slice_completed(stock)
-    if stock is None or len(stock) < 55:
-        raise ValueError("completed holding indicators unavailable")
-    stock = stock.copy()
-    stock["ATR"] = atr_fn(stock)
-    stock["RSI"] = rsi_fn(stock)
-    stock["SMA_20"] = stock["Close"].rolling(20).mean()
-    stock["SMA_50"] = stock["Close"].rolling(50).mean()
-    stock["EMA_9"] = stock["Close"].ewm(span=9, adjust=False).mean()
-    stock["EMA_21"] = stock["Close"].ewm(span=21, adjust=False).mean()
-
-    ltp = float(observed["Close"])
-    atr = float(stock["ATR"].iloc[-1])
-    rsi = float(stock["RSI"].iloc[-1])
-    sma50 = float(stock["SMA_50"].iloc[-1]) if len(stock) >= 50 else float("nan")
-    day_high = float(observed["High"])
-    day_low = float(observed["Low"])
-    hi20 = float(stock["High"].iloc[-20:].max())
-    hi60 = float(stock["High"].iloc[-min(60, len(stock)) :].max())
-    hi252 = float(stock["High"].max())
-    prev_ema9 = float(stock["EMA_9"].iloc[-2])
-    prev_ema21 = float(stock["EMA_21"].iloc[-2])
-    curr_ema9 = float(stock["EMA_9"].iloc[-1])
-    curr_ema21 = float(stock["EMA_21"].iloc[-1])
-
-    if not all(math.isfinite(x) and x > 0 for x in (ltp, atr, day_high, day_low)):
-        raise ValueError("invalid holding prices")
-    if holding.get("classification") == "system_atr":
-        from swing_core.exits import system_exit_intent
-
-        entry_date = pd.Timestamp(holding["entry_date"]).tz_localize(None).normalize()
-        sessions = sum(
-            pd.Timestamp(d).tz_localize(None).normalize() >= entry_date
-            for d in all_session_dates
-        )
-        intent = system_exit_intent(holding, ltp, sessions_held=sessions)
-        event = (
-            []
-            if intent is None
-            else [
-                f"SELL {intent['qty']} {symbol}: {intent['kind']} near {ltp:.2f}; confirm execution (trigger is not a fill)"
-            ]
-        )
-        return {
-            "symbol": symbol,
-            "qty": qty,
-            "avg_cost": avg,
-            "sleeve": holding.get("sleeve", "core"),
-            "classification": "system_atr",
-            "ltp": ltp,
-            "atr": atr,
-            "rsi": rsi,
-            "pnl_pct": (ltp / avg - 1) * 100,
-            "be": None,
-            "t1": float(holding["target"]),
-            "t2": None,
-            "t3": None,
-            "t1_qty": qty,
-            "t2_qty": 0,
-            "runner_qty": 0,
-            "stop": float(holding["stop"]),
-            "target": float(holding["target"]),
-            "sessions_held": sessions,
-            "high_watermark": None,
-            "trail": None,
-            "trail_active": False,
-            "market_value": ltp * qty,
-            "events": event,
-            "actionable_intents": [] if intent is None else [intent],
-        }
-    if holding.get("classification") != "legacy_profit_only":
-        raise ValueError("holding classification must be explicit")
-
-    be = true_breakeven(avg, qty)
-    resistances = []
-    if sma50 == sma50 and sma50 > be:
-        resistances.append(sma50)
-    if hi20 > be:
-        resistances.append(hi20)
-    nearest_res = min(resistances) if resistances else None
-    t1 = max(be + atr, nearest_res) if nearest_res is not None else be + atr
-    t2 = avg + 3.0 * atr
-    if t2 <= t1:
-        t2 = t1 + atr
-    t3 = max(hi60, hi252, t2)
-    t1_qty, t2_qty, runner_qty = split_exit_qty(qty, holding)
-
-    prev_row = prev_row or {}
-    from swing_core.exits import update_trail
-
-    trail_state = update_trail(
-        (
-            float(prev_row.get("high_watermark") or 0.0)
-            if prev_row.get("trail_active")
-            else 0.0
-        ),
-        bool(prev_row.get("trail_active")),
-        day_low,
-        day_high if prev_row.get("trail_active") or ltp > t1 else 0.0,
-        t1,
-        be,
-        atr,
-        saved_prior_trail=prev_row.get("trail"),
-    )
-    hwm = trail_state["high_watermark"]
-    trail = trail_state["trail"]
-    trail_active = trail_state["trail_active"]
-    trail_breached = trail_state["breached_prior_trail"] and ltp > be
-
-    bearish_cross = (prev_ema9 > prev_ema21) and (curr_ema9 <= curr_ema21)
-    weakness_exit = bool(bearish_cross and ltp > be)
-
-    prev_atr = prev_row.get("atr")
-    atr_drift = None
-    atr_drift_alert = False
-    if prev_atr:
-        prev_atr_f = float(prev_atr)
-        if prev_atr_f > 0:
-            atr_drift = abs(atr - prev_atr_f) / prev_atr_f
-            atr_drift_alert = atr_drift > ATR_DRIFT_THRESHOLD
-
-    events: list[str] = []
-    if day_high >= t1 and t1_qty > 0 and ltp > be:
-        events.append(
-            f"day high >= T1 — confirm fill or place sell {t1_qty} @ {t1:.2f} (not a fill)"
-        )
-    if day_high >= t2 and t2_qty > 0 and ltp > be:
-        events.append(
-            f"day high >= T2 — confirm fill or place sell {t2_qty} @ {t2:.2f} (not a fill)"
-        )
-    if trail_breached:
-        events.append(
-            f"trail {trail:.2f} breached above BE — sell remainder {runner_qty or qty}"
-        )
-    if weakness_exit:
-        events.append("EMA9 crossed below EMA21 above BE — sell remainder")
-    if atr_drift_alert:
-        events.append(
-            f"ATR drifted {atr_drift:.0%} — refresh GTT levels "
-            f"(T1 {t1:.2f} / T2 {t2:.2f})"
-        )
-
-    intents = []
-    if ltp > be:
-        for stage, level, left in (("t1", t1, t1_qty), ("t2", t2, t2_qty)):
-            if ltp >= level and left > 0:
-                intents.append(
-                    {
-                        "kind": f"legacy_{stage}",
-                        "qty": left,
-                        "limit": math.ceil(level * 100) / 100,
-                        "floor": math.ceil(be * 100) / 100,
-                    }
-                )
-        if not intents and (weakness_exit or trail_breached):
-            intents.append(
-                {
-                    "kind": "legacy_weakness" if weakness_exit else "legacy_trail",
-                    "qty": qty if weakness_exit else (runner_qty or qty),
-                    "limit": math.ceil(max(be, ltp) * 100) / 100,
-                    "floor": math.ceil(be * 100) / 100,
-                }
-            )
-
-    pnl_pct = ((ltp / avg) - 1.0) * 100.0 if avg else 0.0
-    return {
-        "symbol": symbol,
-        "qty": qty,
-        "avg_cost": round(avg, 2),
-        "sleeve": holding.get("sleeve", "legacy"),
-        "ltp": round(ltp, 2),
-        "atr": round(atr, 2),
-        "rsi": round(rsi, 1),
-        "pnl_pct": round(pnl_pct, 2),
-        "be": round(be, 2),
-        "t1": round(t1, 2),
-        "t2": round(t2, 2),
-        "t3": round(t3, 2),
-        "t1_qty": t1_qty,
-        "t2_qty": t2_qty,
-        "runner_qty": runner_qty,
-        "sma50": None if sma50 != sma50 else round(sma50, 2),
-        "hi20": round(hi20, 2),
-        "high_watermark": round(hwm, 2),
-        "trail": None if trail is None else round(trail, 2),
-        "trail_active": trail_active,
-        "ema_bull": curr_ema9 > curr_ema21,
-        "market_value": round(ltp * qty, 2),
-        "events": events,
-        "actionable_intents": intents,
-    }
-
-
-def run_monitor(ignore_weekend: bool = False, suppress_alerts: bool = False):
-    weekend, ist_label = is_weekend_ist()
-    if weekend and not ignore_weekend:
-        print(f"Weekend gate: markets closed ({ist_label}). Skipping holdings monitor.")
-        return
-    if weekend and ignore_weekend:
-        print(f"Weekend gate bypassed for verification ({ist_label}).")
-
-    print("Running holdings exit monitor...")
-    state = load_portfolio_state()
-    if state.get("status") == "PORTFOLIO_INVALID":
-        return {"status": "PORTFOLIO_INVALID", "SELL": []}
-    holdings = [h for h in (state.get("holdings") or []) if int(h.get("qty") or 0) > 0]
-    prev_levels_doc = read_json_from_s3(HOLDINGS_LEVELS_KEY) or {}
-    prev_by_symbol = {
-        str(row.get("symbol", "")).upper(): row
-        for row in (prev_levels_doc.get("holdings") or [])
-    }
-
-    rec = SwingRecommender(
-        portfolios=portfolios_from_state(state), portfolio_state=state
-    )
-    from swing_core.market_data import auth_token
-
-    try:
-        monitor_token = auth_token(
-            os.getenv("TV_USERNAME", ""), os.getenv("TV_PASSWORD", "")
-        )
-    except Exception as exc:
-        return {"status": "DATA_INVALID", "reason": type(exc).__name__, "SELL": []}
-    rows: list[dict] = []
-    events: list[str] = []
-    holdings_mv = 0.0
-
-    for h in holdings:
-        raw = str(h.get("symbol", "")).strip()
-        tv_symbol = SYMBOL_MAP.get(raw, raw)
-        try:
-            from swing_core.market_data import fetch_bars
-
-            if raw.isdigit():
-                raise ValueError("v4 monitor requires an explicit NSE mapping")
-            hist, feed_health = fetch_bars(tv_symbol, bars=400, token=monitor_token)
-            if hist is None or hist.empty or len(hist) < 20:
-                print(f"Monitor skip {raw}: short/empty history")
-                continue
-            if hist.index[-1].date() != datetime.now(ZoneInfo("Asia/Kolkata")).date():
-                print(f"Monitor skip {raw}: current-session quote missing; no SELL.")
-                continue
-            row = compute_holding_levels(
-                h,
-                _prepare_ohlcv(hist),
-                prev_by_symbol.get(raw.upper()),
-                rec.calculate_rsi,
-                rec.calculate_atr,
-            )
-            from swing_core.signal_journal import record_once
-
-            for intent in row.get("actionable_intents", []):
-                fingerprint = f"{h['symbol']}:{h['classification']}:{h.get('entry_date',h['avg_cost'])}:{h.get('t1_filled_qty',0)}:{h.get('t2_filled_qty',0)}:{intent['kind']}:{intent['qty']}"
-                intent.update(symbol=h["symbol"], side="SELL", signal_id=fingerprint)
-            rows.append(row)
-            holdings_mv += float(row["market_value"])
-            print(
-                f"{row['symbol']} LTP={row['ltp']} BE={row['be']} "
-                f"T1={row['t1']} T2={row['t2']} T3={row['t3']} "
-                f"trail={row['trail']} events={row['events'] or 'none'}"
-            )
-            for ev in row["events"]:
-                events.append(f"{row['symbol']}: {ev}")
-        except Exception as exc:
-            print(f"Monitor failed {raw}: {exc}")
-
-    latest_state = load_portfolio_state()
-    if latest_state.get("status") == "PORTFOLIO_INVALID" or latest_state.get(
-        "_etag"
-    ) != state.get("_etag"):
-        return {
-            "status": "BOOK_CHANGED_DURING_MONITOR",
-            "SELL": [],
-            "message": "Reload confirmed holdings before any sell instruction.",
-        }
-    if not suppress_alerts:
-        from swing_core.signal_journal import record_once
-
-        for row in rows:
-            for intent in row.get("actionable_intents", []):
-                try:
-                    intent["new_intent"] = record_once(
-                        s3_client,
-                        BUCKET_NAME,
-                        intent,
-                        observed_at=datetime.now(timezone.utc).isoformat(),
-                    )
-                except Exception:
-                    intent["journal_status"] = "UNAVAILABLE"
-    cash = float(state.get("cash") or 0.0)
-    equity = round(cash + holdings_mv, 2)
-    gap = round(equity - CHECKPOINT_EQUITY, 2)
-    today_dt = datetime.now(ZoneInfo("Asia/Kolkata"))
-    today = today_dt.strftime("%Y-%m-%d")
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-    complete_marks = len(rows) == len(holdings)
-    mark_label = (
-        "current complete"
-        if complete_marks
-        else "INCOMPLETE: retained last complete mark"
-    )
-    if not complete_marks:
-        equity = state.get("last_marked_equity")
-        gap = float(equity) - CHECKPOINT_EQUITY if equity is not None else None
-    from swing_core.sentiment import fetch_overlay
-
-    metadata_path = Path(__file__).resolve().parent / "universes/india_150.csv"
-    sentiment = fetch_overlay(
-        pd.read_csv(metadata_path).fillna("").to_dict("records"),
-        [h["symbol"] for h in holdings],
-        backend_url=os.getenv("SENTIMENT_BACKEND_URL"),
-    )
-    if not suppress_alerts:
-        write_json_to_s3(
-            sentiment, f"sentiment/v4/{today_dt.strftime('%Y%m%dT%H%M%S')}_monitor.json"
-        )
-    for row in rows:
-        row["sentiment"] = sentiment["symbols"].get(
-            row["symbol"], {"status": "UNKNOWN"}
-        )
-    if suppress_alerts:
-        print("Dry run: no production writes.")
-    elif not complete_marks:
-        print("Incomplete marks: refusing to replace last_marked_equity.")
-    else:
-        # A mark snapshot must never overwrite a concurrently confirmed fill.
-        write_json_to_s3(
-            {
-                "date_ist": today,
-                "equity": equity,
-                "prices": {r["symbol"]: r["ltp"] for r in rows},
-                "source_book_etag": state.get("_etag"),
-            },
-            "portfolio_marks.json",
-        )
-
-    levels_payload = {
-        "timestamp_utc": timestamp,
-        "date_ist": today,
-        "cash": cash,
-        "holdings_mv": round(holdings_mv, 2),
-        "equity": equity,
-        "checkpoint_date": CHECKPOINT_DATE,
-        "checkpoint_equity": CHECKPOINT_EQUITY,
-        "long_horizon_equity": LONG_HORIZON_EQUITY,
-        "holdings": rows,
-        "events": events,
-        "mark_status": mark_label,
-        "SELL": [i for row in rows for i in row.get("actionable_intents", [])],
-        "sentiment_health": sentiment["health"],
-        "missing_symbols": [h["symbol"] for h in holdings if h["symbol"] not in {r["symbol"] for r in rows}],
-        "dry_run": suppress_alerts,
-    }
-    from swing_ops.reconciliation import guard_monitor, status_for
-    levels_payload = guard_monitor(levels_payload, status_for(latest_state))
-    if not suppress_alerts and complete_marks:
-        write_json_to_s3(levels_payload, HOLDINGS_LEVELS_KEY)
-
-    curve = read_json_from_s3(EQUITY_CURVE_KEY) or {
-        "checkpoint_date": CHECKPOINT_DATE,
-        "checkpoint_target": CHECKPOINT_EQUITY,
-        "long_horizon_target": LONG_HORIZON_EQUITY,
-        "points": [],
-    }
-    points = [p for p in (curve.get("points") or []) if p.get("date") != today]
-    points.append(
-        {
-            "date": today,
-            "cash": cash,
-            "holdings_mv": round(holdings_mv, 2),
-            "equity": equity,
-        }
-    )
-    curve["points"] = points
-    curve["checkpoint_date"] = CHECKPOINT_DATE
-    curve["checkpoint_target"] = CHECKPOINT_EQUITY
-    curve["long_horizon_target"] = LONG_HORIZON_EQUITY
-    if not suppress_alerts and complete_marks:
-        write_json_to_s3(curve, EQUITY_CURVE_KEY)
-
-    notice = monitor_message(levels_payload)
-    body = notice.body
-    print(body)
-    # Preserve existing delivery cadence: only monitor events generate notifications.
-    # Only structured SELL intents deserve an actionable subject/high priority.
-    if events and not suppress_alerts:
-        send_push_and_email(title=notice.title, message_body=body,
-                            email_subject=notice.title, priority=notice.priority, tags=notice.tags)
-    elif suppress_alerts:
-        print("Notifications suppressed (dry-run).")
-    if not suppress_alerts:
-        append_log_to_s3(f"[{timestamp}] monitor | events={len(events)} equity={equity}\n" + body)
-    return levels_payload
-
-
-def is_weekend_ist() -> tuple[bool, str]:
-    """NSE/BSE are closed Sat/Sun — evaluate in Asia/Kolkata."""
-    now_ist = datetime.now(ZoneInfo("Asia/Kolkata"))
-    # Monday=0 ... Sunday=6
-    weekend = now_ist.weekday() >= 5
-    label = now_ist.strftime("%A %Y-%m-%d %H:%M IST")
-    return weekend, label
-
-
-def run_recommender(ignore_weekend: bool = False, suppress_alerts: bool = False):
-    weekend, ist_label = is_weekend_ist()
-    if weekend and not ignore_weekend:
-        print(f"Weekend gate: markets closed ({ist_label}). Skipping signals/alerts.")
-        if suppress_alerts:
-            print("Dry run: weekend skip makes no production writes.")
-            return
-        write_execution_log_json(
-            {
-                "timestamp_utc": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
-                "regime": "WEEKEND",
-                "regime_detail": f"Weekend skip ({ist_label})",
-                "tickers_scanned": 0,
-                "alert_text": f"Weekend skip — no signals ({ist_label})\n",
-                "core_setups": [],
-                "satellite_setups": [],
-                "counts": {"core": 0, "satellite": 0, "total": 0},
-            }
-        )
-        append_log_to_s3(
-            f"[{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}] "
-            f"Weekend skip — no signals ({ist_label})\n" + ("-" * 40 + "\n")
-        )
-        return
-
-    if weekend and ignore_weekend:
-        print(f"Weekend gate bypassed for verification ({ist_label}).")
-
-    # No switch back to the older allocator, which bypasses reservation/stress gates.
-    return run_v4_recommender(suppress_alerts=suppress_alerts)
-
-
-def run_v4_recommender(suppress_alerts: bool = False):
-    from swing_core.market_data import fetch_panel, auth_token
-    from swing_core.engine_v4 import evaluate_snapshot, add_reservations
-    from swing_core.sentiment import fetch_overlay
-    from swing_core.s3_state import write_state
-
-    root = Path(__file__).resolve().parent
-    policy = json.loads((root / "config/live_v4.json").read_text())
-    meta = pd.read_csv(root / policy["universe"]).fillna("")
-    if len(meta) != 150 or meta.Symbol.nunique() != 150:
-        return {"status": "UNIVERSE_INVALID", "BUY": []}
-    state = load_portfolio_state()
-    if state.get("status") == "PORTFOLIO_INVALID":
-        return {"status": "PORTFOLIO_INVALID", "BUY": []}
-    token = None
-    try:
-        token = auth_token(os.getenv("TV_USERNAME", ""), os.getenv("TV_PASSWORD", ""))
-    except Exception as exc:
-        return {
-            "status": "DATA_INVALID",
-            "reason": "TradingView authentication " + type(exc).__name__,
-            "BUY": [],
-        }
-    frames, health = fetch_panel(
-        list(meta.Symbol) + ["NIFTY"],
-        bars=400,
-        token=token,
-        budget_seconds=policy["max_scan_seconds"] - 20,
-        workers=3,
-    )
-    nifty = frames.pop("NIFTY", None)
-    if nifty is None:
-        return {
-            "status": "DATA_INVALID",
-            "reason": "Nifty unavailable",
-            "BUY": [],
-            "feed_health": health,
-        }
-    now = datetime.now(timezone.utc)
-    local_day = now.astimezone(ZoneInfo("Asia/Kolkata")).date()
-    quotes = {
-        s: float(d.Close.iloc[-1])
-        for s, d in frames.items()
-        if d.index[-1].date() == local_day
-    }
-    overlay = fetch_overlay(
-        meta.to_dict("records"),
-        list(held_symbol_set(state)),
-        as_of=now,
-        backend_url=os.getenv("SENTIMENT_BACKEND_URL"),
-        include_news=False,
-    )
-    model = read_json_from_s3(policy["model_key"])
-    if model is None:
-        shadow_path = root / "backtest/artifacts/v4/model.candidate.json"
-        if shadow_path.exists():
-            model = json.loads(shadow_path.read_text())
-            model["promoted"] = False
-            model["allowed_live_families"] = []
-    from swing_ops.promotion import strip_unapproved_buys
-    from swing_core.fundamental_screen import filter_new_buys, load_snapshots
-    result = strip_unapproved_buys(filter_new_buys(evaluate_snapshot(
-        state,
-        frames,
-        nifty,
-        meta,
-        model,
-        as_of=now,
-        sentiment=overlay,
-        policy=policy,
-        live_quotes=quotes,
-    ), load_snapshots(s3_client, BUCKET_NAME)), model)
-    result["feed_health"] = health
-    result["sentiment_health"] = overlay["health"]
-    if result["BUY"] and not suppress_alerts:
-        try:
-            # Reserve before notifying. A concurrent fill cancels these stale recommendations.
-            updated = add_reservations(state, result["BUY"])
-            write_state(
-                s3_client, BUCKET_NAME, PORTFOLIO_STATE_KEY, updated, state.get("_etag")
-            )
-        except Exception as exc:
-            result["WATCH"].extend(
-                {
-                    **b,
-                    "status": "WATCH",
-                    "reasons": ["reservation_failed_" + type(exc).__name__],
-                }
-                for b in result["BUY"]
-            )
-            result["BUY"] = []
-    if result["BUY"] and not suppress_alerts:
-        from swing_core.signal_journal import record_once
-
-        for b in result["BUY"]:
-            try:
-                b["new_intent"] = record_once(
-                    s3_client,
-                    BUCKET_NAME,
-                    {**b, "side": "BUY"},
-                    observed_at=now.isoformat(),
-                )
-            except Exception:
-                b["journal_status"] = "UNAVAILABLE"
-    notice = scan_message(result)
-    body = notice.body
-    print(body)
-    if not suppress_alerts:
-        write_execution_log_json(result)
-        write_json_to_s3(overlay, f"sentiment/v4/{now.strftime('%Y%m%dT%H%M%SZ')}.json")
-        append_log_to_s3(body + "\n")
-        send_push_and_email(
-            title=notice.title,
-            message_body=body,
-            email_subject=notice.title,
-            priority=notice.priority,
-            tags=notice.tags,
-        )
-    return result
-
-
-def format_v4_digest(result):
-    return scan_message(result).body
+# ==========================================
+# NSE MARKET-HOLIDAY & WEEKEND GUARDS
+# ==========================================
+def is_weekend_ist(now: datetime | None = None) -> tuple[bool, str]:
+    current = now_ist(now)
+    if is_weekend(current):
+        return True, f"Market closed: {current.strftime('%A')} (IST weekend)."
+    clock = clock_for(current)
+    if not clock.is_trading_day(current.date()):
+        return True, f"Market closed: {current.strftime('%Y-%m-%d')} is an official NSE holiday."
+    return False, ""
 
 
 # ==========================================
 # THE AWS LAMBDA ENTRY POINT
 # ==========================================
-def lambda_handler(event, context):
-    """
-    AWS EventBridge will send a payload (the 'event') telling Lambda what time it is.
-    We use this to decide whether to scrape or analyze.
+def lambda_handler(event: dict | None, context: Any = None) -> dict[str, Any]:
+    """AWS Lambda entrypoint triggered by EventBridge across the 5 daily slots.
+
+    Supported event actions:
+      - PRE_MARKET (09:05 IST)
+      - SIGNAL_RUN (09:45, 12:45, 15:30 IST) with slot_name: SLOT_1 | SLOT_2 | SLOT_3
+      - POST_MARKET (16:05 IST)
+
+    Backwards compatibility:
+      - recommender -> SIGNAL_RUN (SLOT_1)
+      - monitor -> SIGNAL_RUN (SLOT_3)
+      - scraper -> PRE_MARKET
     """
     event = event or {}
-    from swing_core.scoring import output_policy
+    raw_action = str(event.get("action", "PRE_MARKET")).upper()
 
-    isolated = event.get("isolated") is True
-    if isolated and not str(event.get("book_key") or "").startswith("research-test/"):
-        return {"statusCode": 400, "body": "isolated runs require a research-test book key"}
-    silent = isolated and event.get("alerts") is False and not event.get("dry_run") and not event.get("suppress_alerts")
-    if silent:
-        policy = {"emit_alerts": False, "write_state": True, "destination": "isolated"}
-        event = {**event, "suppress_alerts": False, "dry_run": False}
+    # Map legacy actions
+    if raw_action in ("RECOMMENDER", "SCAN"):
+        action = "SIGNAL_RUN"
+        slot_name = event.get("slot_name", "SLOT_1")
+    elif raw_action in ("MONITOR", "EXIT"):
+        action = "SIGNAL_RUN"
+        slot_name = event.get("slot_name", "SLOT_3")
+    elif raw_action == "SCRAPER":
+        action = "PRE_MARKET"
+        slot_name = None
     else:
-        policy = output_policy(event)
-        event = {
-            **event,
-            "suppress_alerts": not policy["emit_alerts"],
-            "dry_run": not policy["write_state"],
-        }
-    action = event.get("action", "recommender")  # Default to recommender
-    print(
-        f"lambda_handler action={action} bucket={BUCKET_NAME} destination={policy['destination']}"
+        action = raw_action
+        slot_name = str(event.get("slot_name", "SLOT_1")).upper()
+
+    ignore_weekend = bool(
+        event.get("ignore_weekend") or event.get("force") or event.get("force_weekend")
     )
-    if action in {"paper", "transport_test", "initialize_paper_account", "recommender", "monitor"}:
-        from swing_ops.dispatch import handle_ops
+    suppress_alerts = bool(event.get("suppress_alerts") or event.get("dry_run"))
+    dry_run = bool(event.get("dry_run"))
 
-        def _notify(message, channels=None):
-            _notify.channel_aware = True
-            result = send_push_and_email(
-                title=message.title,
-                message_body=message.body,
-                email_subject=message.title,
-                priority=message.priority,
-                tags=message.tags,
-            )
-            if silent:
-                return {"ntfy": "skipped", "email": "skipped"}
-            if channels:
-                return {channel: result.get(channel, "failed") for channel in channels}
-            return result
-        _notify.channel_aware = True
+    now = now_ist()
+    closed, closed_reason = is_weekend_ist(now)
 
-        holdings = []
-        if action == "paper":
-            try:
-                loaded = load_portfolio_state()
-                holdings = [] if loaded.get("status") == "PORTFOLIO_INVALID" else (loaded.get("holdings") or [])
-            except Exception:
-                holdings = []
-        ops = handle_ops(
-            {**event, "holdings": holdings or event.get("holdings")},
+    print(
+        f"lambda_handler action={action} slot={slot_name} "
+        f"suppress_alerts={suppress_alerts} dry_run={dry_run} "
+        f"market_closed={closed}"
+    )
+
+    if closed and not ignore_weekend:
+        print(f"Skipping execution: {closed_reason}")
+        return {
+            "statusCode": 200,
+            "body": json.dumps({"status": "SKIPPED", "reason": closed_reason}),
+        }
+
+    # Load shared state
+    try:
+        portfolio_state = load_portfolio_state()
+    except Exception as exc:
+        print(f"Warning: could not load portfolio state ({exc}); using fallback.")
+        portfolio_state = {"cash": 100000.0, "holdings": [], "status": "PORTFOLIO_CONFIRMED"}
+
+    # Initialize market data client (TradingView)
+    try:
+        tv = get_tv()
+    except Exception as exc:
+        print(f"Warning: TradingView initialization failed ({exc}); running in stub mode.")
+        tv = None
+
+    result: dict[str, Any]
+
+    if action == "PRE_MARKET":
+        result = run_pre_market(
+            tv=tv,
             s3=s3_client,
             bucket=BUCKET_NAME,
-            notify=_notify,
-            suppress=bool(event.get("suppress_alerts") or event.get("dry_run")),
+            state=portfolio_state,
+            now=now,
         )
-        if ops is not None:
-            return ops
+        if not suppress_alerts and not dry_run:
+            notice: Message = result["notice"]
+            send_push_and_email(
+                title=notice.title,
+                message_body=notice.body,
+                email_subject=notice.title,
+                priority=notice.priority,
+                tags="information_source",
+            )
+            append_log_to_s3(f"[{now.isoformat()}] PRE_MARKET executed: {result.get('status')}\n")
 
-    if action == "scraper":
-        if not policy["write_state"]:
-            return {"statusCode": 200, "body": "Dry run: scraper writes skipped"}
-        run_scraper()
-        return {"statusCode": 200, "body": "Scraper executed successfully"}
-    if action == "recommender":
-        ignore_weekend = bool(
-            event.get("ignore_weekend")
-            or event.get("force")
-            or event.get("force_weekend")
+    elif action == "SIGNAL_RUN":
+        result = run_signal_engine(
+            slot_name=slot_name,
+            tv=tv,
+            s3=s3_client,
+            bucket=BUCKET_NAME,
+            state=portfolio_state,
+            now=now,
         )
-        result = run_recommender(
-            ignore_weekend=ignore_weekend,
-            suppress_alerts=bool(event.get("suppress_alerts") or event.get("dry_run")),
+        if not suppress_alerts and not dry_run:
+            notice = result["notice"]
+            send_push_and_email(
+                title=notice.title,
+                message_body=notice.body,
+                email_subject=notice.title,
+                priority=notice.priority,
+                tags="moneybag" if result.get("BUY") else "information_source",
+            )
+            write_execution_log_json(result)
+            append_log_to_s3(f"[{now.isoformat()}] SIGNAL_RUN {slot_name} executed.\n")
+
+    elif action == "POST_MARKET":
+        result = run_post_market(
+            tv=tv,
+            s3=s3_client,
+            bucket=BUCKET_NAME,
+            state=portfolio_state,
+            now=now,
         )
+        if not suppress_alerts and not dry_run:
+            notice = result["notice"]
+            send_push_and_email(
+                title=notice.title,
+                message_body=notice.body,
+                email_subject=notice.title,
+                priority=notice.priority,
+                tags="bar_chart",
+            )
+            write_execution_log_json(result)
+            append_log_to_s3(f"[{now.isoformat()}] POST_MARKET executed: {result.get('status')}\n")
+
+    else:
         return {
-            "statusCode": 200,
-            "body": (
-                json.dumps(result, default=str)
-                if result is not None
-                else "Recommender skipped"
-            ),
-        }
-    if action == "monitor":
-        ignore_weekend = bool(
-            event.get("ignore_weekend")
-            or event.get("force")
-            or event.get("force_weekend")
-        )
-        result = run_monitor(
-            ignore_weekend=ignore_weekend,
-            suppress_alerts=bool(event.get("suppress_alerts") or event.get("dry_run")),
-        )
-        return {
-            "statusCode": 200,
-            "body": (
-                json.dumps(result, default=str)
-                if result is not None
-                else "Monitor skipped"
-            ),
+            "statusCode": 400,
+            "body": f"Unknown action: {action}. Supported: PRE_MARKET, SIGNAL_RUN, POST_MARKET.",
         }
 
     return {
-        "statusCode": 400,
-        "body": f"Unknown action: {action}. Use 'scraper', 'recommender', or 'monitor'.",
+        "statusCode": 200,
+        "body": json.dumps(result, default=str),
     }
 
 
 if __name__ == "__main__":
-    # Local smoke test: python lambda_function.py scraper|recommender
     import sys
 
-    chosen = sys.argv[1] if len(sys.argv) > 1 else "recommender"
-    force = "--force" in sys.argv or "--ignore-weekend" in sys.argv
-    print(lambda_handler({"action": chosen, "ignore_weekend": force}, None))
+    chosen_action = sys.argv[1].upper() if len(sys.argv) > 1 else "PRE_MARKET"
+    chosen_slot = sys.argv[2].upper() if len(sys.argv) > 2 else "SLOT_1"
+    force_run = "--force" in sys.argv or "--ignore-weekend" in sys.argv
+    print(
+        lambda_handler(
+            {
+                "action": chosen_action,
+                "slot_name": chosen_slot,
+                "ignore_weekend": force_run,
+                "suppress_alerts": True,
+                "dry_run": True,
+            },
+            None,
+        )
+    )
