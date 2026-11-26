@@ -1,0 +1,145 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: NSE Quantitative Swing Trading Pipeline (HMM + LightGBM + PPO RL)
+
+Parameters:
+  QuantBucketName:
+    Type: String
+    Description: Existing S3 bucket storing v2/raw, v2/clean, v2/models, and v2/state
+  AlertFromEmail:
+    Type: String
+    Description: Verified Amazon SES sender email address
+  AlertToEmail:
+    Type: String
+    Description: Recipient email address for Nifty status and Buy/Sell signal alerts
+  Slot3CronExpression:
+    Type: String
+    Default: "cron(10 15 ? * MON-FRI *)"
+    Description: >
+      Slot 3 signal time in IST. Default 15:10 IST executes before the 15:15-15:30 IST
+      F&O Closing Auction Session; use cron(30 15 ? * MON-FRI *) for EOD signals.
+
+Globals:
+  Function:
+    Timeout: 300
+    MemorySize: 2048
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        QUANT_BUCKET: !Ref QuantBucketName
+        BUCKET_NAME: !Ref QuantBucketName
+        ALERT_FROM_EMAIL: !Ref AlertFromEmail
+        ALERT_TO_EMAIL: !Ref AlertToEmail
+        TZ: Asia/Kolkata
+
+Resources:
+  TradingEngineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: nse-quant-swing-engine-v2
+      PackageType: Image
+      Description: Runs Pre-Market, 3 Intraday Signal Slots, and Post-Market Ingestion/HMM
+      Policies:
+        - Statement:
+            - Sid: S3QuantBucketAccess
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+                - s3:DeleteObject
+                - s3:ListBucket
+              Resource:
+                - !Sub "arn:aws:s3:::${QuantBucketName}"
+                - !Sub "arn:aws:s3:::${QuantBucketName}/*"
+            - Sid: SesEmailAlerts
+              Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource: "*"
+            - Sid: BrokerAndSmtpSecretsRead
+              Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+                - ssm:GetParameter
+                - ssm:GetParameters
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:quant-trading/*"
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/quant-trading/*"
+      Events:
+        PreMarket0905:
+          Type: ScheduleV2
+          Properties:
+            Name: nse-quant-0905-pre-market
+            ScheduleExpression: "cron(5 9 ? * MON-FRI *)"
+            ScheduleExpressionTimezone: Asia/Kolkata
+            FlexibleTimeWindow:
+              Mode: "OFF"
+            Input: '{"job_type": "PRE_MARKET", "slot_name": "09:05_IST", "dry_run": false}'
+
+        SignalSlot0945:
+          Type: ScheduleV2
+          Properties:
+            Name: nse-quant-0945-signal-1
+            ScheduleExpression: "cron(45 9 ? * MON-FRI *)"
+            ScheduleExpressionTimezone: Asia/Kolkata
+            FlexibleTimeWindow:
+              Mode: "OFF"
+            Input: '{"job_type": "SIGNAL_RUN", "slot_name": "09:45_IST", "dry_run": false}'
+
+        SignalSlot1245:
+          Type: ScheduleV2
+          Properties:
+            Name: nse-quant-1245-signal-2
+            ScheduleExpression: "cron(45 12 ? * MON-FRI *)"
+            ScheduleExpressionTimezone: Asia/Kolkata
+            FlexibleTimeWindow:
+              Mode: "OFF"
+            Input: '{"job_type": "SIGNAL_RUN", "slot_name": "12:45_IST", "dry_run": false}'
+
+        SignalSlot3:
+          Type: ScheduleV2
+          Properties:
+            Name: nse-quant-slot-3-signal
+            ScheduleExpression: !Ref Slot3CronExpression
+            ScheduleExpressionTimezone: Asia/Kolkata
+            FlexibleTimeWindow:
+              Mode: "OFF"
+            Input: '{"job_type": "SIGNAL_RUN", "slot_name": "15:10_IST", "dry_run": false}'
+
+        PostMarket1605:
+          Type: ScheduleV2
+          Properties:
+            Name: nse-quant-1605-post-market
+            ScheduleExpression: "cron(5 16 ? * MON-FRI *)"
+            ScheduleExpressionTimezone: Asia/Kolkata
+            FlexibleTimeWindow:
+              Mode: "OFF"
+            Input: '{"job_type": "POST_MARKET", "slot_name": "16:05_IST", "dry_run": false}'
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: .
+      DockerTag: v2-latest
+
+  TradingEngineErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: nse-quant-swing-engine-v2-errors
+      AlarmDescription: Triggers if any scheduled Lambda slot throws an unhandled exception
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref TradingEngineFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  TradingEngineFunctionArn:
+    Description: Deployed Lambda Function ARN
+    Value: !GetAtt TradingEngineFunction.Arn

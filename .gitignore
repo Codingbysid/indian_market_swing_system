@@ -17,3 +17,5 @@ core
 dist/
 *.sqlite
 *.sqlite-journal
+artifacts/models/
+reports/slot_dry_runs/

@@ -20,6 +20,8 @@ from typing import Callable, Literal
 import numpy as np
 import pandas as pd
 
+from hmm_regime import RegimeConfig, entries_blocked_by_regime
+
 SectorTier = Literal["sector", "macro_sector"]
 
 
@@ -152,17 +154,33 @@ def _weekly_decision_dates(dates: pd.Series, first: pd.Timestamp) -> pd.Series:
     return usable.groupby(usable.dt.to_period("W")).max()
 
 
+def _get_regime_on_date(regime_df: pd.DataFrame | None, asof_date: pd.Timestamp) -> dict:
+    if regime_df is None or regime_df.empty:
+        return {"regime": "UNFILTERED", "prob_bear": 0.0}
+    eligible = regime_df[regime_df["date"] <= asof_date]
+    if eligible.empty:
+        return {"regime": "UNFILTERED", "prob_bear": 0.0}
+    row = eligible.iloc[-1]
+    return {
+        "regime": str(row["regime"]),
+        "prob_bear": float(row["prob_bear"]),
+    }
+
+
 def run_single_backtest(
     df: pd.DataFrame,
     universes: dict[pd.Timestamp, dict[str, pd.DataFrame]],
     variant: Literal["A", "A+", "C"],
     signal_fn: Callable[[pd.Timestamp, pd.DataFrame, list[str]], pd.DataFrame],
     bt_cfg: BacktestConfig = BacktestConfig(),
+    regime_df: pd.DataFrame | None = None,
+    regime_cfg: RegimeConfig = RegimeConfig(),
 ) -> dict[str, float | None]:
     """Weekly walk-forward for A (Top-N), A+ (Top-N + entry hard caps), and C (capped watchlist).
 
     Costs are half the round trip at entry and half at exit. A and A+ both read
     the "A" universe key; only A+ walks past sector-breaching candidates.
+    Optional regime_df gates new entries in BEAR_HIGH_VOL / high bear probability.
     """
     univ_key: Literal["A", "C"] = "A" if variant in ("A", "A+") else "C"
     enforce_hard_cap = variant == "A+"
@@ -177,6 +195,7 @@ def run_single_backtest(
         "Median_Max_Sector_Share_%": None,
         "P95_Max_Sector_Share_%": None,
         "Cap_Skips_Count": 0,
+        "Regime_Blocked_Weeks": 0,
     }
     if not rebalance_dates:
         return empty
@@ -194,6 +213,7 @@ def run_single_backtest(
     same_sector_weeks = 0
     two_entry_weeks = 0
     cap_skips_count = 0
+    regime_blocked_weeks = 0
     max_sector_share: list[float] = []
     active = None
     rebalance_index = 0
@@ -221,6 +241,11 @@ def run_single_backtest(
             del positions[symbol]
 
         slots = min(bt_cfg.max_new_entries_per_week, bt_cfg.max_open_positions - len(positions))
+        reg_info = _get_regime_on_date(regime_df, week)
+        if slots > 0 and regime_df is not None and entries_blocked_by_regime(reg_info, regime_cfg):
+            regime_blocked_weeks += 1
+            slots = 0
+
         picked_sectors: list[str] = []
         if slots > 0:
             watch = [symbol for symbol in active["symbol"].tolist() if symbol not in positions]
@@ -280,6 +305,7 @@ def run_single_backtest(
 
     if len(curve) < 2:
         empty["Cap_Skips_Count"] = cap_skips_count
+        empty["Regime_Blocked_Weeks"] = regime_blocked_weeks
         return empty
     equity_frame = pd.DataFrame(curve, columns=["date", "equity"]).set_index("date")
     returns = equity_frame["equity"].pct_change().dropna()
@@ -297,6 +323,7 @@ def run_single_backtest(
         "Median_Max_Sector_Share_%": round(float(np.median(max_sector_share)) * 100, 2) if max_sector_share else None,
         "P95_Max_Sector_Share_%": round(float(np.percentile(max_sector_share, 95)) * 100, 2) if max_sector_share else None,
         "Cap_Skips_Count": cap_skips_count,
+        "Regime_Blocked_Weeks": regime_blocked_weeks,
     }
 
 
@@ -458,8 +485,11 @@ def run_option_c_grid_search(
 
 
 if __name__ == "__main__":
+    from hmm_regime import compute_rolling_hmm_regimes
+
     ohlcv_adj = pd.read_parquet("data/clean/nse_ohlcv_10y_adj.parquet")
     pit_sectors = pd.read_parquet("data/clean/nse_pit_sectors.parquet")
+    macro_path = Path("data/clean/nifty_vix_10y.parquet")
 
     grid_results = run_option_c_grid_search(
         ohlcv_df=ohlcv_adj,
@@ -474,3 +504,28 @@ if __name__ == "__main__":
     print(grid_results.to_string(index=False))
     grid_results.to_csv(out_path, index=False)
     print(f"Wrote {out_path}")
+
+    if macro_path.exists():
+        reg_cfg = RegimeConfig(
+            train_window_days=504,
+            refit_every_n_days=21,
+            block_bear_entries=True,
+            max_bear_prob_for_entry=0.65,
+        )
+        regimes = compute_rolling_hmm_regimes(pd.read_parquet(macro_path), reg_cfg)
+        merged = attach_pit_sectors(ohlcv_adj, pit_sectors)
+        universes = build_quarterly_universes(merged, UniverseConfig())
+        no_hmm = run_single_backtest(merged, universes, "C", placeholder_weekly_signal_ranker)
+        with_hmm = run_single_backtest(
+            merged,
+            universes,
+            "C",
+            placeholder_weekly_signal_ranker,
+            regime_df=regimes,
+            regime_cfg=reg_cfg,
+        )
+        ablation = pd.DataFrame({"C_No_HMM": no_hmm, "C_With_HMM": with_hmm})
+        print(ablation.to_string())
+        ablation_path = Path("data/results/hmm_ablation_c.csv")
+        ablation.to_csv(ablation_path)
+        print(f"Wrote {ablation_path}")

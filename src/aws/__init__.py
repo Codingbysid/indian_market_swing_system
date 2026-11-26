@@ -1,0 +1,1 @@
+"""AWS Lambda slot contracts and handler."""
