@@ -285,6 +285,56 @@ def is_weekend_ist(now: datetime | None = None) -> tuple[bool, str]:
     return False, ""
 
 
+def is_nse_holiday(now: datetime | None = None) -> bool:
+    """True on an NSE cash holiday or weekend. Uses the bundled holiday list."""
+    closed, _reason = is_weekend_ist(now)
+    return closed
+
+
+def send_email_notification(job_type: str, payload: dict[str, Any]) -> None:
+    """Hand a typed slot result to the existing push and email sender."""
+    title = f"Indian swing | {job_type}"
+    if job_type == "SIGNAL_RUN" and not payload.get("signals"):
+        title = f"Indian swing | {payload.get('slot_name', job_type)} | no signal"
+    send_push_and_email(
+        title=title,
+        message_body=json.dumps(payload, default=str),
+        email_subject=title,
+        priority="default",
+        tags="information_source",
+    )
+
+
+def _handle_job_type(event: dict[str, Any]) -> dict[str, Any]:
+    """EventBridge Scheduler payload: job_type, slot_name, dry_run."""
+    from engine_stubs import run_post_market as stub_post
+    from engine_stubs import run_pre_market as stub_pre
+    from engine_stubs import run_signal_engine as stub_signal
+
+    job_type = event.get("job_type")
+    slot_name = str(event.get("slot_name", "UNSPECIFIED"))
+    dry_run = bool(event.get("dry_run", False))
+    print(f"lambda_handler job_type={job_type} slot={slot_name} dry_run={dry_run}")
+
+    if job_type not in ("PRE_MARKET", "SIGNAL_RUN", "POST_MARKET"):
+        raise ValueError(f"Unsupported job_type in EventBridge payload: {job_type!r}")
+
+    if is_nse_holiday():
+        body = {"status": "HOLIDAY", "job_type": job_type, "slot_name": slot_name}
+        return {"statusCode": 200, "body": json.dumps(body)}
+
+    if job_type == "PRE_MARKET":
+        result = stub_pre()
+    elif job_type == "SIGNAL_RUN":
+        result = stub_signal(slot_name=slot_name)
+    else:
+        result = stub_post()
+
+    if not dry_run:
+        send_email_notification(job_type, result)
+    return {"statusCode": 200, "body": json.dumps(result, default=str)}
+
+
 # ==========================================
 # THE AWS LAMBDA ENTRY POINT
 # ==========================================
@@ -302,6 +352,8 @@ def lambda_handler(event: dict | None, context: Any = None) -> dict[str, Any]:
       - scraper -> PRE_MARKET
     """
     event = event or {}
+    if event.get("job_type"):
+        return _handle_job_type(event)
     raw_action = str(event.get("action", "PRE_MARKET")).upper()
 
     # Map legacy actions

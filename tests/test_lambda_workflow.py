@@ -62,21 +62,59 @@ def test_calendar_and_holiday_guards():
 
 
 def test_eventbridge_rules_specification():
-    """Verify all 5 EventBridge rules have correct cron syntax and payload structure."""
+    """Verify all 5 EventBridge rules have the scheduler payload and cron."""
     expected_rules = {
-        "swing-pre-market": ("cron(35 3 ? * MON-FRI *)", "PRE_MARKET"),
-        "swing-signal-slot-1": ("cron(15 4 ? * MON-FRI *)", "SIGNAL_RUN"),
-        "swing-signal-slot-2": ("cron(15 7 ? * MON-FRI *)", "SIGNAL_RUN"),
-        "swing-signal-slot-3": ("cron(0 10 ? * MON-FRI *)", "SIGNAL_RUN"),
-        "swing-post-market": ("cron(35 10 ? * MON-FRI *)", "POST_MARKET"),
+        "swing-pre-market": ("cron(35 3 ? * MON-FRI *)", "PRE_MARKET", "09:05_IST"),
+        "swing-signal-slot-1": ("cron(15 4 ? * MON-FRI *)", "SIGNAL_RUN", "09:45_IST"),
+        "swing-signal-slot-2": ("cron(15 7 ? * MON-FRI *)", "SIGNAL_RUN", "12:45_IST"),
+        "swing-signal-slot-3": ("cron(0 10 ? * MON-FRI *)", "SIGNAL_RUN", "15:30_IST"),
+        "swing-post-market": ("cron(35 10 ? * MON-FRI *)", "POST_MARKET", "16:05_IST"),
     }
     assert len(RULES) == 5
     for rule in RULES:
         name = rule["Name"]
         assert name in expected_rules
-        expected_cron, expected_action = expected_rules[name]
+        expected_cron, expected_job, expected_slot = expected_rules[name]
         assert rule["ScheduleExpression"] == expected_cron
-        assert rule["Input"]["action"] == expected_action
+        assert rule["Input"] == {
+            "job_type": expected_job,
+            "slot_name": expected_slot,
+            "dry_run": False,
+        }
+
+
+def test_job_type_payloads_use_the_typed_stub(monkeypatch):
+    """Scheduler events return the locked schema and do not email on dry_run."""
+    monkeypatch.setattr(lambda_function, "is_nse_holiday", lambda now=None: False)
+    sent = []
+    monkeypatch.setattr(lambda_function, "send_email_notification", lambda job, payload: sent.append(job))
+
+    pre = lambda_function.lambda_handler(
+        {"job_type": "PRE_MARKET", "slot_name": "09:05_IST", "dry_run": True}, None
+    )
+    signal = lambda_function.lambda_handler(
+        {"job_type": "SIGNAL_RUN", "slot_name": "09:45_IST", "dry_run": True}, None
+    )
+    post = lambda_function.lambda_handler(
+        {"job_type": "POST_MARKET", "slot_name": "16:05_IST", "dry_run": True}, None
+    )
+    assert sent == []
+    assert json.loads(pre["body"])["status"] == "OK"
+    assert json.loads(pre["body"])["regime_state"] == "STUB_NEUTRAL"
+    parsed_signal = json.loads(signal["body"])
+    assert parsed_signal["slot_name"] == "09:45_IST"
+    assert parsed_signal["signals"] == []
+    assert json.loads(post["body"])["eod_rows_ingested"] == 0
+
+    monkeypatch.setattr(lambda_function, "is_nse_holiday", lambda now=None: True)
+    holiday = lambda_function.lambda_handler(
+        {"job_type": "SIGNAL_RUN", "slot_name": "12:45_IST", "dry_run": False}, None
+    )
+    assert json.loads(holiday["body"])["status"] == "HOLIDAY"
+    assert sent == []
+
+    with pytest.raises(ValueError):
+        lambda_function.lambda_handler({"job_type": "BUY_NOW", "dry_run": True}, None)
 
 
 def test_pre_market_stub_execution():

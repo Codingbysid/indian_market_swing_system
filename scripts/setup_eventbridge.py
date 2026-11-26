@@ -1,11 +1,12 @@
 """Create/enable weekday EventBridge rules for indian-swing-bot (eu-north-1).
 
-5-slot Mon-Fri IST schedule:
-  swing-pre-market      cron(35 3 ? * MON-FRI *)  -> 09:05 IST  {"action": "PRE_MARKET"}
-  swing-signal-slot-1   cron(15 4 ? * MON-FRI *)  -> 09:45 IST  {"action": "SIGNAL_RUN", "slot_name": "SLOT_1"}
-  swing-signal-slot-2   cron(15 7 ? * MON-FRI *)  -> 12:45 IST  {"action": "SIGNAL_RUN", "slot_name": "SLOT_2"}
-  swing-signal-slot-3   cron(0 10 ? * MON-FRI *)  -> 15:30 IST  {"action": "SIGNAL_RUN", "slot_name": "SLOT_3"}
-  swing-post-market     cron(35 10 ? * MON-FRI *) -> 16:05 IST  {"action": "POST_MARKET"}
+5-slot Mon-Fri IST schedule. Each target input is the EventBridge event dict.
+
+  swing-pre-market      cron(35 3 ? * MON-FRI *)  -> 09:05 IST
+  swing-signal-slot-1   cron(15 4 ? * MON-FRI *)  -> 09:45 IST
+  swing-signal-slot-2   cron(15 7 ? * MON-FRI *)  -> 12:45 IST
+  swing-signal-slot-3   cron(0 10 ? * MON-FRI *)  -> 15:30 IST
+  swing-post-market     cron(35 10 ? * MON-FRI *) -> 16:05 IST
 """
 
 from __future__ import annotations
@@ -32,35 +33,35 @@ RULES = (
         "Name": "swing-pre-market",
         "ScheduleExpression": "cron(35 3 ? * MON-FRI *)",
         "Description": "NSE pre-open system health & context at 09:05 IST",
-        "Input": {"action": "PRE_MARKET"},
+        "Input": {"job_type": "PRE_MARKET", "slot_name": "09:05_IST", "dry_run": False},
         "StatementId": "EventBridgePreMarket",
     },
     {
         "Name": "swing-signal-slot-1",
         "ScheduleExpression": "cron(15 4 ? * MON-FRI *)",
         "Description": "Morning swing signal scan (Slot 1) at 09:45 IST",
-        "Input": {"action": "SIGNAL_RUN", "slot_name": "SLOT_1"},
+        "Input": {"job_type": "SIGNAL_RUN", "slot_name": "09:45_IST", "dry_run": False},
         "StatementId": "EventBridgeSignalSlot1",
     },
     {
         "Name": "swing-signal-slot-2",
         "ScheduleExpression": "cron(15 7 ? * MON-FRI *)",
         "Description": "Midday swing signal scan (Slot 2) at 12:45 IST",
-        "Input": {"action": "SIGNAL_RUN", "slot_name": "SLOT_2"},
+        "Input": {"job_type": "SIGNAL_RUN", "slot_name": "12:45_IST", "dry_run": False},
         "StatementId": "EventBridgeSignalSlot2",
     },
     {
         "Name": "swing-signal-slot-3",
         "ScheduleExpression": "cron(0 10 ? * MON-FRI *)",
         "Description": "Market close swing signal scan (Slot 3) at 15:30 IST",
-        "Input": {"action": "SIGNAL_RUN", "slot_name": "SLOT_3"},
+        "Input": {"job_type": "SIGNAL_RUN", "slot_name": "15:30_IST", "dry_run": False},
         "StatementId": "EventBridgeSignalSlot3",
     },
     {
         "Name": "swing-post-market",
         "ScheduleExpression": "cron(35 10 ? * MON-FRI *)",
         "Description": "NSE post-close EOD reconciliation at 16:05 IST",
-        "Input": {"action": "POST_MARKET"},
+        "Input": {"job_type": "POST_MARKET", "slot_name": "16:05_IST", "dry_run": False},
         "StatementId": "EventBridgePostMarket",
     },
 )
