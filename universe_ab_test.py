@@ -20,7 +20,7 @@ from typing import Callable, Literal
 import numpy as np
 import pandas as pd
 
-from hmm_regime import RegimeConfig, entries_blocked_by_regime
+from src.models.hmm_regime import RegimeConfig, entries_blocked_by_regime
 
 SectorTier = Literal["sector", "macro_sector"]
 
@@ -485,7 +485,7 @@ def run_option_c_grid_search(
 
 
 if __name__ == "__main__":
-    from hmm_regime import compute_rolling_hmm_regimes
+    from src.models.hmm_regime import compute_rolling_hmm_regimes
 
     ohlcv_adj = pd.read_parquet("data/clean/nse_ohlcv_10y_adj.parquet")
     pit_sectors = pd.read_parquet("data/clean/nse_pit_sectors.parquet")

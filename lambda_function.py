@@ -307,9 +307,9 @@ def send_email_notification(job_type: str, payload: dict[str, Any]) -> None:
 
 def _handle_job_type(event: dict[str, Any]) -> dict[str, Any]:
     """EventBridge Scheduler payload: job_type, slot_name, dry_run."""
-    from engine_stubs import run_post_market as stub_post
-    from engine_stubs import run_pre_market as stub_pre
-    from engine_stubs import run_signal_engine as stub_signal
+    from src.aws.engine import run_post_market as stub_post
+    from src.aws.engine import run_pre_market as stub_pre
+    from src.aws.engine import run_signal_engine as stub_signal
 
     job_type = event.get("job_type")
     slot_name = str(event.get("slot_name", "UNSPECIFIED"))

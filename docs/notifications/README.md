@@ -22,12 +22,9 @@ Source: https://docs.ntfy.sh/publish/
 ## Inspect without sending
 
 ```bash
-python scripts/preview_messages.py
 python -m pytest -q tests/test_messages.py
 python -m pytest -q
 ```
-
-Open `docs/notifications/previews/*.html` for email or `*.txt` for push layout. Every preview is prominently marked illustrative and is not a signal or a report of current holdings. Preview prices, dates and quantities do not establish trading eligibility.
 
 ## Validation and deployment boundary
 

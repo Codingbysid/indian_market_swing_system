@@ -9,8 +9,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from corporate_actions import apply_corporate_actions, detect_unadjusted_splits, parse_nse_purpose_to_factor
-from ingest_nse_data import UDIFF_CUTOFF, bhavcopy_url, parse_bhavcopy_zip, pit_sectors_from_snapshots
+from src.data.corporate_actions import (
+    apply_corporate_actions,
+    detect_unadjusted_splits,
+    parse_nse_purpose_to_factor,
+)
+from src.data.ingest_nse import UDIFF_CUTOFF, bhavcopy_url, parse_bhavcopy_zip, pit_sectors_from_snapshots
 from universe_ab_test import (
     UniverseConfig,
     BacktestConfig,
