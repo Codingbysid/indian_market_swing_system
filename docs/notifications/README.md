@@ -29,18 +29,8 @@ python -m pytest -q
 
 Open `docs/notifications/previews/*.html` for email or `*.txt` for push layout. Every preview is prominently marked illustrative and is not a signal or a report of current holdings. Preview prices, dates and quantities do not establish trading eligibility.
 
-The existing research report command also writes `artifacts/v5/forward/message_preview.txt` and `.html` from its ledger inputs:
-
-```bash
-python -m backtest.v5.report --ledger artifacts/v5/forward/paper_book.sqlite
-```
-
-That command retains its existing local report writes and creates no notifications. It does not advance the book.
-
 ## Validation and deployment boundary
 
 Notification tests cover action preservation, remaining tranches, repeated intent labeling, system-loss exits, missing data, research counts, HTML escaping, UTF-8 chunk limits and mocked ntfy/SMTP delivery. They do not test a real phone or Gmail inbox, and no real test notification was sent.
 
-Review this change against the PR #8 branch. That research branch includes earlier engine work which is not the deployed October code. Do not deploy the whole branch solely to obtain these UI changes. First reconcile the actual deployed source and port/review the presentation changes against that source; then use the existing deployment process with explicit approval. No risk, strategy, promotion, EventBridge, model, S3-state or execution-policy change is part of this presentation work.
-
-Validation in this workspace: 121 tests passed (109 existing + 12 notification tests); syntax compilation and diff whitespace checks passed. Browser rendering could not be inspected because the Chromium download failed. HTML structure and escaping were tested, but actual Gmail/ntfy client rendering still needs a review before deployment.
+Legacy v3–v6 model packages (`recommender`, `backtest`, `swing_v5`, `research_v6`) were removed in the clean-slate refactor. Presentation changes here must stay on the stubbed 5-slot Lambda path; do not reintroduce purged model modules to ship message formatting.
