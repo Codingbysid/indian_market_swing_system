@@ -1,0 +1,15 @@
+{
+  "artifact": "lgbm_v3_ranker.txt",
+  "training_universe": "Model_A_AllStock",
+  "training_universe_detail": "Walk-forward / production fit on all NSE symbols present in the adjusted 10y panel (~3,792), not PIT Top-300.",
+  "features": "V3_RegimeResilientFeatures (includes rs_nifty_60d, downside_vol_60d, trend_consistency_60d)",
+  "inference_universe": "Option_APlus_Top150_HardCap",
+  "ab_test_2024_2026_top150_ic": {
+    "Model_A_AllStock": 0.0034,
+    "Model_B_Top300": 0.0127,
+    "adopted": "Model_A_AllStock",
+    "reason": "Model B improved 2024-26 Top-150 IC but failed mean-IC / overall Sharpe / MaxDD / 2024-26 Sharpe gates; artifacts were not retrained."
+  },
+  "shadow_ok": true,
+  "note": "Fine for AWS shadow alerts. Do not treat BUY emails as live orders until 2-week shadow review completes."
+}

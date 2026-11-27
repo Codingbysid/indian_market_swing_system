@@ -32,10 +32,10 @@ Deploy to **`ap-south-1`** for NSE/broker latency. Do not enable live schedules 
 ## Remaining AWS deployment steps (not applied)
 
 1. **IAM:** Covered by SAM policies (S3 `v2/*`, SES, Secrets Manager `/quant-trading/*`).
-2. **Package size:** Container image; zip layers are legacy fallback only (`DELETE_LEGACY_ZIP_LAMBDA=false`).
-3. **EventBridge Scheduler:** Five IST `ScheduleV2` rules in `template.yaml`.
+2. **Package size:** Container image only — the legacy zip Lambda and its `eu-north-1` EventBridge rules have been deleted.
+3. **EventBridge Scheduler:** Five IST `ScheduleV2` rules in `template.yaml` (`nse-quant-swing-v2` in `ap-south-1`).
 4. **S3 layout:** `v2/state/latest.json`, `v2/state/latest_features.json`, `v2/models/latest/`, hive partitions under `v2/clean/ohlcv_*_partitioned/year=YYYY/`.
-5. **Data:** Keep regenerable panels local/untracked; retrain via `scripts/train_prod_v3.py`.
+5. **Data:** Keep regenerable panels local/untracked; retrain via `scripts/train_prod_v3.py`. Seed with `scripts/seed_s3_v2.sh`.
 
 ## Architecture map
 

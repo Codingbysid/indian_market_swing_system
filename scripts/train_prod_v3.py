@@ -172,7 +172,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=MODELS_DIR)
     parser.add_argument("--upload-s3", action="store_true", help="Upload artifacts to S3")
-    parser.add_argument("--bucket", type=str, default=os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026"))
+    parser.add_argument(
+        "--bucket",
+        type=str,
+        default=os.getenv("BUCKET_NAME", S3Paths().default_bucket),
+    )
     args = parser.parse_args()
 
     out_dir: Path = args.output_dir

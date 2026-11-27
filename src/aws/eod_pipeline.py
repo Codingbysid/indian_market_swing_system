@@ -40,7 +40,9 @@ YAHOO_HEADERS = {
 
 
 def _bucket() -> str:
-    return os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
+    from src.config import S3Paths
+
+    return os.getenv("BUCKET_NAME", S3Paths().default_bucket)
 
 
 def _s3_client():

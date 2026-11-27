@@ -178,7 +178,9 @@ def load_portfolio_state(
     key: str = "v2/state/latest.json",
 ) -> tuple[dict[str, Any], str | None]:
     """Load portfolio state from S3 with local fallback when S3 is unavailable."""
-    bucket_name = bucket or os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
+    from src.config import S3Paths
+
+    bucket_name = bucket or os.getenv("BUCKET_NAME", S3Paths().default_bucket)
     if s3_client is not None:
         try:
             return read_state(s3_client, bucket_name, key)

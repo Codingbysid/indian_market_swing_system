@@ -1,28 +1,17 @@
-"""Shared fixtures. Stubs tvDatafeed so local tests do not need the Lambda TV layer."""
+"""Shared fixtures for the v2/v3 production test suite."""
 
 from __future__ import annotations
 
 import os
-import sys
 from datetime import date, datetime, timedelta
-from types import ModuleType, SimpleNamespace
-from unittest.mock import MagicMock
+
+import pytest
 
 # Stabilize hmmlearn/sklearn on macOS before those packages import OpenMP.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
-
-import pytest
-
-# lambda_function and swing_core.market_data import tvDatafeed at module load.
-# Install a lightweight stub before those imports so pytest collection works
-# without the GitHub-only tvdatafeed package.
-if "tvDatafeed" not in sys.modules:
-    _tv = ModuleType("tvDatafeed")
-    _tv.Interval = SimpleNamespace(in_daily="1d", in_1_hour="1h", in_weekly="1W")
-    _tv.TvDatafeed = MagicMock
-    sys.modules["tvDatafeed"] = _tv
+os.environ.setdefault("ENGINE_DRY_RUN", "1")
 
 
 @pytest.fixture

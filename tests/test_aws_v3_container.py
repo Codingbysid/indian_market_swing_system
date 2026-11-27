@@ -192,3 +192,75 @@ def test_aws_lambda_handler_all_slots():
         assert response["result"]["status"] == "OK"
         assert response["email_preview_html"] is not None
         assert "<!doctype html>" in response["email_preview_html"]
+
+
+def test_lambda_handler_legacy_action_aliases_and_holiday_skip(monkeypatch):
+    """Legacy action names map into job_type; holidays skip unless ignore_holiday."""
+    # Holiday without override
+    monkeypatch.setattr("src.aws.lambda_handler._is_holiday_guard", lambda: True)
+    holiday = lambda_handler({"job_type": "SIGNAL_RUN", "slot_name": "12:45_IST", "dry_run": True}, None)
+    assert holiday["ok"] is True
+    assert holiday["result"]["status"] == "HOLIDAY"
+    assert holiday["email_sent"] is False
+
+    # Alias: recommender -> SIGNAL_RUN
+    monkeypatch.setattr("src.aws.lambda_handler._is_holiday_guard", lambda: False)
+    rec = lambda_handler(
+        {"action": "recommender", "dry_run": True, "suppress_alerts": True, "ignore_holiday": True},
+        None,
+    )
+    assert rec["ok"] is True
+    assert rec["job_type"] == "SIGNAL_RUN"
+    assert rec["result"]["status"] == "OK"
+
+    # Alias: scraper -> PRE_MARKET
+    pre = lambda_handler(
+        {"action": "scraper", "dry_run": True, "suppress_alerts": True, "ignore_holiday": True},
+        None,
+    )
+    assert pre["job_type"] == "PRE_MARKET"
+    assert pre["result"]["status"] == "OK"
+
+
+def test_notification_html_escape_and_push_chunking():
+    """Migrated from legacy message contracts: HTML escape + UTF-8 push chunk integrity."""
+    html = email_html("<script>alert(1)</script>", "BUY · <img src=x>\nStop: ₹485.25 & fees")
+    assert "<script>" not in html and "<img" not in html
+    assert "&lt;img src=x&gt;" in html and "₹485.25 &amp; fees" in html
+    assert "width=device-width" in html
+
+    cards = [f"SELL · NAME{i} · 5 shares\nLimit ₹5,373.25\nConfirm fill." for i in range(150)]
+    body = "\n\n".join(cards)
+    parts = push_parts(body)
+    assert len(parts) > 1
+    assert all(len(p.encode("utf-8")) <= 3800 for p in parts)
+    assert "\n\n".join(parts) == body
+
+
+def test_notification_delivery_mocked(monkeypatch):
+    """ntfy + SMTP delivery path on src.aws.notifications (no live network)."""
+    from unittest.mock import MagicMock
+
+    import src.aws.notifications as notif
+
+    mock_post = MagicMock()
+    mock_smtp = MagicMock()
+    monkeypatch.setenv("NTFY_TOPIC", "test-swing-topic")
+    monkeypatch.setenv("GMAIL_ADDRESS", "fixture@gmail.com")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "fake-app-password")
+    monkeypatch.setenv("ALERT_FROM_EMAIL", "fixture@gmail.com")
+    monkeypatch.setenv("ALERT_TO_EMAIL", "fixture@gmail.com")
+    monkeypatch.setattr(notif.requests, "post", mock_post)
+    monkeypatch.setattr(notif.boto3, "client", MagicMock(side_effect=Exception("no ses")))
+    monkeypatch.setattr(notif.smtplib, "SMTP_SSL", mock_smtp)
+
+    result = notif.send_push_and_email(
+        title="Test Alert",
+        message_body="Sample notification body text",
+        email_subject="Test Alert",
+        priority="default",
+    )
+    assert result["ntfy"] == "sent"
+    assert result["email"] == "sent_smtp"
+    assert mock_post.call_count == 1
+    assert mock_smtp.call_count == 1

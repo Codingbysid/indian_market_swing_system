@@ -630,7 +630,9 @@ def run_post_market() -> PostMarketResult:
     """16:05 IST slot. Post-market ingestion, regime update, and S3 state persistence."""
     from src.aws.eod_pipeline import run_eod_pipeline
 
-    bucket = os.getenv("BUCKET_NAME", "indian-swing-bot-data-2026")
+    from src.config import S3Paths
+
+    bucket = os.getenv("BUCKET_NAME", S3Paths().default_bucket)
     dry = _dry_run_mode()
     eod = run_eod_pipeline(dry_run=dry, model_dir=get_model_dir())
     clear_artifact_caches()  # pick up freshly written latest_features on next call
