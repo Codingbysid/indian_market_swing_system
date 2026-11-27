@@ -30,7 +30,13 @@ from src.universe.pit_universe import UniverseConfig, attach_pit_sectors, build_
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
-CLEAN = ROOT / "data" / "clean"
+# Prefer /tmp in Lambda (task root is read-only); local runs keep repo paths.
+_WORK = Path(os.environ.get("EOD_WORK_ROOT") or (
+    "/tmp/nse-quant" if (os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("LAMBDA_TASK_ROOT")) else str(ROOT)
+))
+CLEAN = _WORK / "data" / "clean"
+PART_ROOT = CLEAN / "ohlcv_adj_partitioned"
+BHAV_CACHE = _WORK / "data" / "raw" / "bhavcopy_cache"
 YAHOO_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -42,7 +48,7 @@ YAHOO_HEADERS = {
 def _bucket() -> str:
     from src.config import S3Paths
 
-    return os.getenv("BUCKET_NAME", S3Paths().default_bucket)
+    return os.getenv("BUCKET_NAME") or os.getenv("QUANT_BUCKET") or S3Paths().default_bucket
 
 
 def _s3_client():
@@ -55,6 +61,64 @@ def _put_json(s3, key: str, payload: dict[str, Any]) -> str:
     body = json.dumps(payload, indent=2, default=str).encode("utf-8")
     s3.put_object(Bucket=_bucket(), Key=key, Body=body, ContentType="application/json")
     return f"s3://{_bucket()}/{key}"
+
+
+def _s3_download(key: str, dest: Path) -> bool:
+    """Download s3://bucket/key → dest. Returns True on success."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        _s3_client().download_file(_bucket(), key, str(dest))
+        return True
+    except Exception as exc:
+        logger.warning("s3 download miss %s: %s", key, exc)
+        return False
+
+
+def _s3_upload(local: Path, key: str) -> str:
+    _s3_client().upload_file(str(local), _bucket(), key)
+    return f"s3://{_bucket()}/{key}"
+
+
+def _ensure_clean_file(name: str, s3_key: str) -> Path:
+    """Prefer workspace copy; else pull from S3; else fall back to repo bake (local only)."""
+    dest = CLEAN / name
+    if dest.exists() and dest.stat().st_size > 0:
+        return dest
+    if _s3_download(s3_key, dest):
+        return dest
+    repo_copy = ROOT / "data" / "clean" / name
+    if repo_copy.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(repo_copy.read_bytes())
+        return dest
+    raise FileNotFoundError(f"missing {name} (s3://{_bucket()}/{s3_key})")
+
+
+def _ensure_year_partition(year: int) -> Path:
+    dest = PART_ROOT / f"year={year}" / "data.parquet"
+    if dest.exists() and dest.stat().st_size > 0:
+        return dest
+    key = f"v2/clean/ohlcv_adj_partitioned/year={year}/data.parquet"
+    _s3_download(key, dest)
+    return dest
+
+
+def _load_ohlcv_lookback(as_of: date, lookback_days: int = 420) -> pd.DataFrame:
+    """Load hive year partitions covering the lookback window (S3 → /tmp)."""
+    from src.data.incremental_s3 import read_partitioned_ohlcv
+
+    years = sorted({as_of.year, as_of.year - 1, as_of.year - 2})
+    for y in years:
+        _ensure_year_partition(y)
+    ohlcv = read_partitioned_ohlcv(PART_ROOT)
+    if ohlcv.empty:
+        flat = CLEAN / "nse_ohlcv_10y_adj.parquet"
+        if not flat.exists():
+            _ensure_clean_file("nse_ohlcv_10y_adj.parquet", "v2/clean/nse_ohlcv_10y_adj.parquet")
+        ohlcv = pd.read_parquet(flat)
+        ohlcv["date"] = pd.to_datetime(ohlcv["date"])
+    cutoff = pd.Timestamp(as_of) - pd.Timedelta(days=lookback_days)
+    return ohlcv[ohlcv["date"] >= cutoff].copy()
 
 
 def _is_quarter_end(day: date) -> bool:
@@ -85,24 +149,30 @@ def fetch_yahoo_close(symbol: str, timeout: float = 8.0) -> float | None:
 
 
 def ingest_today_bhavcopy(day: date | None = None) -> tuple[int, Path | None]:
-    """Fetch today's UDiFF bhavcopy and append into local year partition (S3-ready root)."""
+    """Fetch today's UDiFF bhavcopy, append year partition under /tmp, upload to S3."""
     day = day or date.today()
-    cache = ROOT / "data" / "raw" / "bhavcopy_cache"
-    root = ROOT / "data" / "clean" / "ohlcv_adj_partitioned"
+    BHAV_CACHE.mkdir(parents=True, exist_ok=True)
+    PART_ROOT.mkdir(parents=True, exist_ok=True)
+    _ensure_year_partition(day.year)
     session = requests.Session()
-    path, fmt = fetch_and_cache_bhavcopy(day, cache, session)
+    path, fmt = fetch_and_cache_bhavcopy(day, BHAV_CACHE, session)
     if path is None:
         return 0, None
     parsed = parse_bhavcopy_zip(path, day, fmt)
     if parsed is None or parsed.empty:
         return 0, None
-    out = append_daily_rows(parsed, root)
+    out = append_daily_rows(parsed, PART_ROOT)
+    try:
+        key = f"v2/clean/ohlcv_adj_partitioned/year={day.year}/data.parquet"
+        _s3_upload(out, key)
+    except Exception as exc:
+        logger.warning("year partition upload failed: %s", exc)
     return len(parsed), out
 
 
 def update_macro_tail(macro_path: Path | None = None, *, skip_network: bool = False) -> pd.DataFrame:
-    """Append today's Nifty 50 + India VIX closes onto the local macro parquet."""
-    path = macro_path or (CLEAN / "nifty_vix_10y.parquet")
+    """Append today's Nifty 50 + India VIX closes onto the macro parquet (S3-backed)."""
+    path = macro_path or _ensure_clean_file("nifty_vix_10y.parquet", "v2/clean/nifty_vix_10y.parquet")
     macro = pd.read_parquet(path)
     macro["date"] = pd.to_datetime(macro["date"])
     if skip_network:
@@ -118,6 +188,10 @@ def update_macro_tail(macro_path: Path | None = None, *, skip_network: bool = Fa
     macro = macro.sort_values("date").drop_duplicates("date", keep="last")
     path.parent.mkdir(parents=True, exist_ok=True)
     macro.to_parquet(path, index=False)
+    try:
+        _s3_upload(path, "v2/clean/nifty_vix_10y.parquet")
+    except Exception as exc:
+        logger.warning("macro upload failed: %s", exc)
     return macro
 
 
@@ -175,9 +249,17 @@ def build_latest_features_payload(
     """Build Tail V3 feature vectors for the active Top-150 watchlist."""
     symbols = list(universe.get("symbols") or [])
     sector_map = dict(universe.get("sector_map") or {})
-    ohlcv = ohlcv if ohlcv is not None else pd.read_parquet(CLEAN / "nse_ohlcv_10y_adj.parquet")
-    sectors = sectors if sectors is not None else pd.read_parquet(CLEAN / "nse_pit_sectors.parquet")
-    macro = macro if macro is not None else pd.read_parquet(CLEAN / "nifty_vix_10y.parquet")
+    as_of = date.today()
+    if ohlcv is None:
+        ohlcv = _load_ohlcv_lookback(as_of, lookback_days=420)
+    if sectors is None:
+        sectors = pd.read_parquet(
+            _ensure_clean_file("nse_pit_sectors.parquet", "v2/clean/nse_pit_sectors.parquet")
+        )
+    if macro is None:
+        macro = pd.read_parquet(
+            _ensure_clean_file("nifty_vix_10y.parquet", "v2/clean/nifty_vix_10y.parquet")
+        )
 
     # Restrict panel to watchlist + trailing lookback to keep Lambda memory bounded
     ohlcv = ohlcv.copy()
@@ -246,8 +328,12 @@ def build_latest_features_payload(
 
 
 def refresh_quarterly_universe(ohlcv: pd.DataFrame | None = None, sectors: pd.DataFrame | None = None) -> dict[str, Any]:
-    ohlcv = ohlcv if ohlcv is not None else pd.read_parquet(CLEAN / "nse_ohlcv_10y_adj.parquet")
-    sectors = sectors if sectors is not None else pd.read_parquet(CLEAN / "nse_pit_sectors.parquet")
+    if ohlcv is None:
+        ohlcv = _load_ohlcv_lookback(date.today(), lookback_days=400)
+    if sectors is None:
+        sectors = pd.read_parquet(
+            _ensure_clean_file("nse_pit_sectors.parquet", "v2/clean/nse_pit_sectors.parquet")
+        )
     merged = attach_pit_sectors(ohlcv, sectors)
     univ = build_quarterly_universes(
         merged,
@@ -299,7 +385,14 @@ def run_eod_pipeline(
         notes.append(f"macro_rows={len(macro)}")
     except Exception as exc:
         notes.append(f"macro_skip: {exc}")
-        macro = pd.read_parquet(CLEAN / "nifty_vix_10y.parquet") if (CLEAN / "nifty_vix_10y.parquet").exists() else pd.DataFrame()
+        macro = pd.DataFrame()
+        try:
+            macro = pd.read_parquet(
+                _ensure_clean_file("nifty_vix_10y.parquet", "v2/clean/nifty_vix_10y.parquet")
+            )
+            macro["date"] = pd.to_datetime(macro["date"])
+        except Exception:
+            pass
 
     hmm_bundle = None
     hmm_path = model_dir / "hmm_regime.joblib"
@@ -309,10 +402,14 @@ def run_eod_pipeline(
         except Exception as exc:
             notes.append(f"hmm_load_skip: {exc}")
 
-    feats_path = model_dir / "latest_features.json"
-    if dry_run and feats_path.exists():
+    # Writable feature/state paths (never write into read-only /var/task)
+    state_dir = _WORK / "v2" / "state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    feats_path = state_dir / "latest_features.json"
+    baked_feats = model_dir / "latest_features.json"
+    if dry_run and baked_feats.exists():
         # Preserve baked posteriors; only correct the regime label via argmax.
-        existing = json.loads(feats_path.read_text())
+        existing = json.loads(baked_feats.read_text())
         regime_info = {
             "regime": label_regime_from_probs(
                 float(existing.get("prob_bull", 0.34)),
@@ -328,6 +425,8 @@ def run_eod_pipeline(
         notes.append(f"regime={regime_info['regime']} (dry_run_preserved_probs)")
     else:
         try:
+            if macro is None or macro.empty or "date" not in getattr(macro, "columns", []):
+                raise ValueError("macro frame missing date column")
             regime_info = refresh_hmm_posteriors(macro, hmm_bundle)
             notes.append(f"regime={regime_info['regime']}")
         except Exception as exc:
@@ -347,17 +446,18 @@ def run_eod_pipeline(
     if (not dry_run) and _is_quarter_end(day):
         try:
             universe = refresh_quarterly_universe()
-            universe_path.write_text(json.dumps(universe, indent=2, default=str))
+            univ_out = state_dir / "latest_150_universe.json"
+            univ_out.write_text(json.dumps(universe, indent=2, default=str))
             refreshed_universe = True
             notes.append("universe_refreshed")
         except Exception as exc:
             notes.append(f"universe_skip: {exc}")
 
-    features_uri = f"local://{model_dir / 'latest_features.json'}"
+    features_uri = f"local://{feats_path}"
     payload = None
     try:
-        if dry_run and feats_path.exists():
-            payload = json.loads(feats_path.read_text())
+        if dry_run and baked_feats.exists():
+            payload = json.loads(baked_feats.read_text())
             payload["regime"] = label_regime_from_probs(
                 float(payload.get("prob_bull", 0.34)),
                 float(payload.get("prob_sideways", 0.33)),
@@ -368,19 +468,17 @@ def run_eod_pipeline(
             payload = build_latest_features_payload(universe=universe, regime_info=regime_info, macro=macro)
             notes.append(f"features_symbols={len(payload.get('features') or {})}")
             feats_path.write_text(json.dumps(payload, indent=2, default=str))
-            state_dir = ROOT / "v2" / "state"
-            state_dir.mkdir(parents=True, exist_ok=True)
-            (state_dir / "latest_features.json").write_text(json.dumps(payload, indent=2, default=str))
         features_uri = str(feats_path)
     except Exception as exc:
         notes.append(f"features_skip: {exc}")
         payload = None
 
-    if not dry_run and os.getenv("BUCKET_NAME"):
+    if not dry_run and _bucket():
         try:
             s3 = _s3_client()
             if payload is not None:
                 features_uri = _put_json(s3, "v2/state/latest_features.json", payload)
+                _put_json(s3, "v2/models/latest/latest_features.json", payload)
             if refreshed_universe:
                 _put_json(s3, "v2/models/latest/latest_150_universe.json", universe)
                 _put_json(s3, "v2/state/latest_150_universe.json", universe)

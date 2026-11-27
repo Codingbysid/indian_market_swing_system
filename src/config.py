@@ -12,7 +12,8 @@ SectorTier = Literal["sector", "macro_sector"]
 @dataclass(frozen=True)
 class S3Paths:
     bucket_env: str = "BUCKET_NAME"
-    default_bucket: str = "indian-swing-bot-data-2026"
+    # Prefer ap-south-1 colocated bucket for NSE latency (legacy eu-north-1 bucket kept for archive).
+    default_bucket: str = "nse-quant-swing-data-ap-south-1"
     state_key: str = "v2/state/latest.json"
     universe_key: str = "v2/universes/latest_150.json"
     ohlcv_raw_prefix: str = "v2/clean/ohlcv_raw_partitioned"

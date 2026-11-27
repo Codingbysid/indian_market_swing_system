@@ -5,13 +5,21 @@ Description: NSE Quantitative Swing Trading Pipeline (HMM + LightGBM V3 / A+ Har
 Parameters:
   QuantBucketName:
     Type: String
-    Description: Existing S3 bucket storing v2/raw, v2/clean, v2/models, and v2/state
+    Description: S3 bucket for v2/models, v2/state, and v2/clean (prefer ap-south-1 for NSE latency)
   AlertFromEmail:
     Type: String
-    Description: Verified Amazon SES sender email address
+    Description: From address for alerts (Gmail address when using SMTP fallback)
   AlertToEmail:
     Type: String
-    Description: Recipient email address for Nifty status and Buy/Sell signal alerts
+    Description: Recipient email for Nifty status and Buy/Sell signal alerts
+  NtfyTopic:
+    Type: String
+    Default: msu_swing_alerts_2026
+    Description: ntfy.sh topic for push alerts
+  AlertSecretsName:
+    Type: String
+    Default: quant-trading/gmail
+    Description: Secrets Manager secret JSON with keys app_password (and optional ntfy_topic)
   Slot3CronExpression:
     Type: String
     Default: "cron(10 15 ? * MON-FRI *)"
@@ -24,14 +32,20 @@ Globals:
     Timeout: 300
     MemorySize: 2048
     Architectures:
-      - x86_64
+      - arm64
     Environment:
       Variables:
         QUANT_BUCKET: !Ref QuantBucketName
         BUCKET_NAME: !Ref QuantBucketName
         ALERT_FROM_EMAIL: !Ref AlertFromEmail
         ALERT_TO_EMAIL: !Ref AlertToEmail
+        GMAIL_ADDRESS: !Ref AlertFromEmail
+        # Prefer Gmail SMTP for Day-1 (no SES identities verified yet). SES is still tried first at runtime.
+        GMAIL_APP_PASSWORD: !Sub "{{resolve:secretsmanager:${AlertSecretsName}:SecretString:app_password}}"
+        NTFY_TOPIC: !Ref NtfyTopic
         TZ: Asia/Kolkata
+        # Shadow: engine places zero broker orders; set ENGINE_DRY_RUN=1 only for offline tests
+        ENGINE_DRY_RUN: "0"
 
 Resources:
   TradingEngineFunction:
@@ -143,3 +157,9 @@ Outputs:
   TradingEngineFunctionArn:
     Description: Deployed Lambda Function ARN
     Value: !GetAtt TradingEngineFunction.Arn
+  DeployRegion:
+    Description: Stack region
+    Value: !Ref AWS::Region
+  QuantBucket:
+    Description: S3 data bucket used by the function
+    Value: !Ref QuantBucketName

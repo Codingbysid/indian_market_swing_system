@@ -1,0 +1,1062 @@
+{
+  "generated_at": "2026-11-27T10:34:43.296306",
+  "effective_date": "2026-10-01",
+  "quarter_end": "2026-09-30",
+  "target_size": 150,
+  "symbols": [
+    "HDFCBANK",
+    "ICICIBANK",
+    "RELIANCE",
+    "BSE",
+    "BHARTIARTL",
+    "INFY",
+    "SBIN",
+    "ETERNAL",
+    "TCS",
+    "AXISBANK",
+    "MCX",
+    "M&M",
+    "BAJFINANCE",
+    "LT",
+    "DIXON",
+    "ADANIPOWER",
+    "NETWEB",
+    "IDEA",
+    "KOTAKBANK",
+    "HFCL",
+    "TATASTEEL",
+    "SILVERBEES",
+    "GROWW",
+    "SHRIRAMFIN",
+    "MARUTI",
+    "ADANIENT",
+    "HINDALCO",
+    "VEDL",
+    "BEL",
+    "HSCL",
+    "ATHERENERG",
+    "SUNPHARMA",
+    "KAYNES",
+    "POWERINDIA",
+    "ITC",
+    "BHEL",
+    "INDIGO",
+    "HCLTECH",
+    "ADANIPORTS",
+    "COFORGE",
+    "ADANIENSOL",
+    "HAL",
+    "CUPID",
+    "GVT&D",
+    "NTPC",
+    "DATAPATTNS",
+    "ADANIGREEN",
+    "EICHERMOT",
+    "SAIL",
+    "PAYTM",
+    "BAJAJ-AUTO",
+    "TITAN",
+    "TMCV",
+    "COALINDIA",
+    "KALYANKJIL",
+    "TVSMOTOR",
+    "ONGC",
+    "TECHM",
+    "HINDUNILVR",
+    "ULTRACEMCO",
+    "SUZLON",
+    "APOLLO",
+    "LIQUIDBEES",
+    "SWIGGY",
+    "WIPRO",
+    "GOLDBEES",
+    "NATIONALUM",
+    "POLYCAB",
+    "JIOFIN",
+    "TMPV",
+    "HEROMOTOCO",
+    "OLAELEC",
+    "ASHOKLEY",
+    "PERSISTENT",
+    "LAURUSLABS",
+    "TRENT",
+    "HINDCOPPER",
+    "APOLLOHOSP",
+    "PFC",
+    "CGPOWER",
+    "DIVISLAB",
+    "LENSKART",
+    "MEESHO",
+    "CANBK",
+    "POWERGRID",
+    "HINDZINC",
+    "OFSS",
+    "BANKBARODA",
+    "VBL",
+    "ASIANPAINT",
+    "NESTLEIND",
+    "IFCI",
+    "CUMMINSIND",
+    "CHOLAFIN",
+    "MOTHERSON",
+    "MUTHOOTFIN",
+    "DRREDDY",
+    "PINELABS",
+    "GRASIM",
+    "UNIONBANK",
+    "HDFCAMC",
+    "DLF",
+    "BPCL",
+    "POLICYBZR",
+    "WAAREEENER",
+    "HINDPETRO",
+    "LIQUIDCASE",
+    "INDUSTOWER",
+    "AMBER",
+    "SOLARINDS",
+    "LODHA",
+    "FEDERALBNK",
+    "LUPIN",
+    "HDFCLIFE",
+    "MAXHEALTH",
+    "ZEEL",
+    "APARINDS",
+    "ABB",
+    "JSWSTEEL",
+    "BHARATFORG",
+    "TATAPOWER",
+    "NIFTYBEES",
+    "MAZDOCK",
+    "RECLTD",
+    "CDSL",
+    "BAJAJFINSV",
+    "ANGELONE",
+    "YESBANK",
+    "TORNTPHARM",
+    "KEI",
+    "COCHINSHIP",
+    "SBILIFE",
+    "FORCEMOT",
+    "BANDHANBNK",
+    "DMART",
+    "LICI",
+    "PNB",
+    "CIPLA",
+    "CHENNPETRO",
+    "INDUSINDBK",
+    "NAUKRI",
+    "TATACONSUM",
+    "LTM",
+    "WOCKPHARMA",
+    "NMDC",
+    "SAMMAANCAP",
+    "GRSE",
+    "IOC",
+    "AUROPHARMA",
+    "RBLBANK"
+  ],
+  "sector_map": {
+    "HDFCBANK": "Financial Services",
+    "ICICIBANK": "Financial Services",
+    "RELIANCE": "Oil Gas & Consumable Fuels",
+    "BSE": "Financial Services",
+    "BHARTIARTL": "Telecommunication",
+    "INFY": "Information Technology",
+    "SBIN": "Financial Services",
+    "ETERNAL": "Consumer Services",
+    "TCS": "Information Technology",
+    "AXISBANK": "Financial Services",
+    "MCX": "Financial Services",
+    "M&M": "Automobile and Auto Components",
+    "BAJFINANCE": "Financial Services",
+    "LT": "Construction",
+    "DIXON": "Consumer Durables",
+    "ADANIPOWER": "Power",
+    "NETWEB": "Information Technology",
+    "IDEA": "Telecommunication",
+    "KOTAKBANK": "Financial Services",
+    "HFCL": "Telecommunication",
+    "TATASTEEL": "Metals & Mining",
+    "SILVERBEES": "Financial Services",
+    "GROWW": "Financial Services",
+    "SHRIRAMFIN": "Financial Services",
+    "MARUTI": "Automobile and Auto Components",
+    "ADANIENT": "Metals & Mining",
+    "HINDALCO": "Metals & Mining",
+    "VEDL": "Metals & Mining",
+    "BEL": "Capital Goods",
+    "HSCL": "Chemicals",
+    "ATHERENERG": "Automobile and Auto Components",
+    "SUNPHARMA": "Healthcare",
+    "KAYNES": "Capital Goods",
+    "POWERINDIA": "Capital Goods",
+    "ITC": "Fast Moving Consumer Goods",
+    "BHEL": "Capital Goods",
+    "INDIGO": "Services",
+    "HCLTECH": "Information Technology",
+    "ADANIPORTS": "Services",
+    "COFORGE": "Information Technology",
+    "ADANIENSOL": "Power",
+    "HAL": "Capital Goods",
+    "CUPID": "Fast Moving Consumer Goods",
+    "GVT&D": "Capital Goods",
+    "NTPC": "Power",
+    "DATAPATTNS": "Capital Goods",
+    "ADANIGREEN": "Power",
+    "EICHERMOT": "Automobile and Auto Components",
+    "SAIL": "Metals & Mining",
+    "PAYTM": "Financial Services",
+    "BAJAJ-AUTO": "Automobile and Auto Components",
+    "TITAN": "Consumer Durables",
+    "TMCV": "Capital Goods",
+    "COALINDIA": "Oil Gas & Consumable Fuels",
+    "KALYANKJIL": "Consumer Durables",
+    "TVSMOTOR": "Automobile and Auto Components",
+    "ONGC": "Oil Gas & Consumable Fuels",
+    "TECHM": "Information Technology",
+    "HINDUNILVR": "Fast Moving Consumer Goods",
+    "ULTRACEMCO": "Construction Materials",
+    "SUZLON": "Capital Goods",
+    "APOLLO": "Capital Goods",
+    "LIQUIDBEES": "Financial Services",
+    "SWIGGY": "Consumer Services",
+    "WIPRO": "Information Technology",
+    "GOLDBEES": "Financial Services",
+    "NATIONALUM": "Metals & Mining",
+    "POLYCAB": "Capital Goods",
+    "JIOFIN": "Financial Services",
+    "TMPV": "Automobile and Auto Components",
+    "HEROMOTOCO": "Automobile and Auto Components",
+    "OLAELEC": "Automobile and Auto Components",
+    "ASHOKLEY": "Capital Goods",
+    "PERSISTENT": "Information Technology",
+    "LAURUSLABS": "Healthcare",
+    "TRENT": "Consumer Services",
+    "HINDCOPPER": "Metals & Mining",
+    "APOLLOHOSP": "Healthcare",
+    "PFC": "Financial Services",
+    "CGPOWER": "Capital Goods",
+    "DIVISLAB": "Healthcare",
+    "LENSKART": "Consumer Services",
+    "MEESHO": "Consumer Services",
+    "CANBK": "Financial Services",
+    "POWERGRID": "Power",
+    "HINDZINC": "Metals & Mining",
+    "OFSS": "Information Technology",
+    "BANKBARODA": "Financial Services",
+    "VBL": "Fast Moving Consumer Goods",
+    "ASIANPAINT": "Consumer Durables",
+    "NESTLEIND": "Fast Moving Consumer Goods",
+    "IFCI": "Financial Services",
+    "CUMMINSIND": "Capital Goods",
+    "CHOLAFIN": "Financial Services",
+    "MOTHERSON": "Automobile and Auto Components",
+    "MUTHOOTFIN": "Financial Services",
+    "DRREDDY": "Healthcare",
+    "PINELABS": "Financial Services",
+    "GRASIM": "Construction Materials",
+    "UNIONBANK": "Financial Services",
+    "HDFCAMC": "Financial Services",
+    "DLF": "Realty",
+    "BPCL": "Oil Gas & Consumable Fuels",
+    "POLICYBZR": "Financial Services",
+    "WAAREEENER": "Capital Goods",
+    "HINDPETRO": "Oil Gas & Consumable Fuels",
+    "LIQUIDCASE": "Financial Services",
+    "INDUSTOWER": "Telecommunication",
+    "AMBER": "Consumer Durables",
+    "SOLARINDS": "Chemicals",
+    "LODHA": "Realty",
+    "FEDERALBNK": "Financial Services",
+    "LUPIN": "Healthcare",
+    "HDFCLIFE": "Financial Services",
+    "MAXHEALTH": "Healthcare",
+    "ZEEL": "Media Entertainment & Publication",
+    "APARINDS": "Capital Goods",
+    "ABB": "Capital Goods",
+    "JSWSTEEL": "Metals & Mining",
+    "BHARATFORG": "Automobile and Auto Components",
+    "TATAPOWER": "Power",
+    "NIFTYBEES": "Financial Services",
+    "MAZDOCK": "Capital Goods",
+    "RECLTD": "Financial Services",
+    "CDSL": "Financial Services",
+    "BAJAJFINSV": "Financial Services",
+    "ANGELONE": "Financial Services",
+    "YESBANK": "Financial Services",
+    "TORNTPHARM": "Healthcare",
+    "KEI": "Capital Goods",
+    "COCHINSHIP": "Capital Goods",
+    "SBILIFE": "Financial Services",
+    "FORCEMOT": "Automobile and Auto Components",
+    "BANDHANBNK": "Financial Services",
+    "DMART": "Consumer Services",
+    "LICI": "Financial Services",
+    "PNB": "Financial Services",
+    "CIPLA": "Healthcare",
+    "CHENNPETRO": "Oil Gas & Consumable Fuels",
+    "INDUSINDBK": "Financial Services",
+    "NAUKRI": "Consumer Services",
+    "TATACONSUM": "Fast Moving Consumer Goods",
+    "LTM": "Information Technology",
+    "WOCKPHARMA": "Healthcare",
+    "NMDC": "Metals & Mining",
+    "SAMMAANCAP": "Financial Services",
+    "GRSE": "Capital Goods",
+    "IOC": "Oil Gas & Consumable Fuels",
+    "AUROPHARMA": "Healthcare",
+    "RBLBANK": "Financial Services"
+  },
+  "watchlist": [
+    {
+      "symbol": "HDFCBANK",
+      "sector": "Financial Services",
+      "median_adtv": 25747759760.9
+    },
+    {
+      "symbol": "ICICIBANK",
+      "sector": "Financial Services",
+      "median_adtv": 17788671880.85
+    },
+    {
+      "symbol": "RELIANCE",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 17517854962.6
+    },
+    {
+      "symbol": "BSE",
+      "sector": "Financial Services",
+      "median_adtv": 13628831564.15
+    },
+    {
+      "symbol": "BHARTIARTL",
+      "sector": "Telecommunication",
+      "median_adtv": 11867233129.65
+    },
+    {
+      "symbol": "INFY",
+      "sector": "Information Technology",
+      "median_adtv": 11596321366.7
+    },
+    {
+      "symbol": "SBIN",
+      "sector": "Financial Services",
+      "median_adtv": 11490816403.58
+    },
+    {
+      "symbol": "ETERNAL",
+      "sector": "Consumer Services",
+      "median_adtv": 8205315397.96
+    },
+    {
+      "symbol": "TCS",
+      "sector": "Information Technology",
+      "median_adtv": 7672450638.15
+    },
+    {
+      "symbol": "AXISBANK",
+      "sector": "Financial Services",
+      "median_adtv": 7597824683.05
+    },
+    {
+      "symbol": "MCX",
+      "sector": "Financial Services",
+      "median_adtv": 7574585437.35
+    },
+    {
+      "symbol": "M&M",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 7509886652.75
+    },
+    {
+      "symbol": "BAJFINANCE",
+      "sector": "Financial Services",
+      "median_adtv": 7144091575.77
+    },
+    {
+      "symbol": "LT",
+      "sector": "Construction",
+      "median_adtv": 7113521890.55
+    },
+    {
+      "symbol": "DIXON",
+      "sector": "Consumer Durables",
+      "median_adtv": 6047019984.0
+    },
+    {
+      "symbol": "ADANIPOWER",
+      "sector": "Power",
+      "median_adtv": 5972311944.28
+    },
+    {
+      "symbol": "NETWEB",
+      "sector": "Information Technology",
+      "median_adtv": 5631533202.2
+    },
+    {
+      "symbol": "IDEA",
+      "sector": "Telecommunication",
+      "median_adtv": 5519453083.42
+    },
+    {
+      "symbol": "KOTAKBANK",
+      "sector": "Financial Services",
+      "median_adtv": 5417903697.62
+    },
+    {
+      "symbol": "HFCL",
+      "sector": "Telecommunication",
+      "median_adtv": 5287996236.05
+    },
+    {
+      "symbol": "TATASTEEL",
+      "sector": "Metals & Mining",
+      "median_adtv": 5207138898.91
+    },
+    {
+      "symbol": "SILVERBEES",
+      "sector": "Financial Services",
+      "median_adtv": 5204551044.19
+    },
+    {
+      "symbol": "GROWW",
+      "sector": "Financial Services",
+      "median_adtv": 5175740627.83
+    },
+    {
+      "symbol": "SHRIRAMFIN",
+      "sector": "Financial Services",
+      "median_adtv": 4942589063.5
+    },
+    {
+      "symbol": "MARUTI",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 4832938308.0
+    },
+    {
+      "symbol": "ADANIENT",
+      "sector": "Metals & Mining",
+      "median_adtv": 4765528139.95
+    },
+    {
+      "symbol": "HINDALCO",
+      "sector": "Metals & Mining",
+      "median_adtv": 4693947939.5
+    },
+    {
+      "symbol": "VEDL",
+      "sector": "Metals & Mining",
+      "median_adtv": 4645779111.93
+    },
+    {
+      "symbol": "BEL",
+      "sector": "Capital Goods",
+      "median_adtv": 4478716256.93
+    },
+    {
+      "symbol": "HSCL",
+      "sector": "Chemicals",
+      "median_adtv": 4422639716.4
+    },
+    {
+      "symbol": "ATHERENERG",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 4103730556.6
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "sector": "Healthcare",
+      "median_adtv": 4083382501.95
+    },
+    {
+      "symbol": "KAYNES",
+      "sector": "Capital Goods",
+      "median_adtv": 4021702047.65
+    },
+    {
+      "symbol": "POWERINDIA",
+      "sector": "Capital Goods",
+      "median_adtv": 4001411457.5
+    },
+    {
+      "symbol": "ITC",
+      "sector": "Fast Moving Consumer Goods",
+      "median_adtv": 3979424086.72
+    },
+    {
+      "symbol": "BHEL",
+      "sector": "Capital Goods",
+      "median_adtv": 3968810650.78
+    },
+    {
+      "symbol": "INDIGO",
+      "sector": "Services",
+      "median_adtv": 3906211005.0
+    },
+    {
+      "symbol": "HCLTECH",
+      "sector": "Information Technology",
+      "median_adtv": 3827683514.55
+    },
+    {
+      "symbol": "ADANIPORTS",
+      "sector": "Services",
+      "median_adtv": 3804948667.15
+    },
+    {
+      "symbol": "COFORGE",
+      "sector": "Information Technology",
+      "median_adtv": 3770345583.9
+    },
+    {
+      "symbol": "ADANIENSOL",
+      "sector": "Power",
+      "median_adtv": 3671068148.05
+    },
+    {
+      "symbol": "HAL",
+      "sector": "Capital Goods",
+      "median_adtv": 3639705291.45
+    },
+    {
+      "symbol": "CUPID",
+      "sector": "Fast Moving Consumer Goods",
+      "median_adtv": 3512034252.49
+    },
+    {
+      "symbol": "GVT&D",
+      "sector": "Capital Goods",
+      "median_adtv": 3510279161.35
+    },
+    {
+      "symbol": "NTPC",
+      "sector": "Power",
+      "median_adtv": 3428834426.7
+    },
+    {
+      "symbol": "DATAPATTNS",
+      "sector": "Capital Goods",
+      "median_adtv": 3374477505.1
+    },
+    {
+      "symbol": "ADANIGREEN",
+      "sector": "Power",
+      "median_adtv": 3362998823.65
+    },
+    {
+      "symbol": "EICHERMOT",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 3356445179.25
+    },
+    {
+      "symbol": "SAIL",
+      "sector": "Metals & Mining",
+      "median_adtv": 3356261516.19
+    },
+    {
+      "symbol": "PAYTM",
+      "sector": "Financial Services",
+      "median_adtv": 3312594869.45
+    },
+    {
+      "symbol": "BAJAJ-AUTO",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 3226640103.0
+    },
+    {
+      "symbol": "TITAN",
+      "sector": "Consumer Durables",
+      "median_adtv": 3222270915.7
+    },
+    {
+      "symbol": "TMCV",
+      "sector": "Capital Goods",
+      "median_adtv": 3187237410.12
+    },
+    {
+      "symbol": "COALINDIA",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 3167533985.0
+    },
+    {
+      "symbol": "KALYANKJIL",
+      "sector": "Consumer Durables",
+      "median_adtv": 3151640926.45
+    },
+    {
+      "symbol": "TVSMOTOR",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 3151211776.7
+    },
+    {
+      "symbol": "ONGC",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 3123818799.9
+    },
+    {
+      "symbol": "TECHM",
+      "sector": "Information Technology",
+      "median_adtv": 3109511786.2
+    },
+    {
+      "symbol": "HINDUNILVR",
+      "sector": "Fast Moving Consumer Goods",
+      "median_adtv": 3101992400.6
+    },
+    {
+      "symbol": "ULTRACEMCO",
+      "sector": "Construction Materials",
+      "median_adtv": 3091960850.5
+    },
+    {
+      "symbol": "SUZLON",
+      "sector": "Capital Goods",
+      "median_adtv": 3072323874.26
+    },
+    {
+      "symbol": "APOLLO",
+      "sector": "Capital Goods",
+      "median_adtv": 3059954105.0
+    },
+    {
+      "symbol": "LIQUIDBEES",
+      "sector": "Financial Services",
+      "median_adtv": 3028830974.78
+    },
+    {
+      "symbol": "SWIGGY",
+      "sector": "Consumer Services",
+      "median_adtv": 3019803779.51
+    },
+    {
+      "symbol": "WIPRO",
+      "sector": "Information Technology",
+      "median_adtv": 2966360815.27
+    },
+    {
+      "symbol": "GOLDBEES",
+      "sector": "Financial Services",
+      "median_adtv": 2944900398.16
+    },
+    {
+      "symbol": "NATIONALUM",
+      "sector": "Metals & Mining",
+      "median_adtv": 2920503858.65
+    },
+    {
+      "symbol": "POLYCAB",
+      "sector": "Capital Goods",
+      "median_adtv": 2886599894.75
+    },
+    {
+      "symbol": "JIOFIN",
+      "sector": "Financial Services",
+      "median_adtv": 2879436146.61
+    },
+    {
+      "symbol": "TMPV",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 2867566068.3
+    },
+    {
+      "symbol": "HEROMOTOCO",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 2848028823.75
+    },
+    {
+      "symbol": "OLAELEC",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 2839641202.12
+    },
+    {
+      "symbol": "ASHOKLEY",
+      "sector": "Capital Goods",
+      "median_adtv": 2815577766.94
+    },
+    {
+      "symbol": "PERSISTENT",
+      "sector": "Information Technology",
+      "median_adtv": 2814714275.2
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "sector": "Healthcare",
+      "median_adtv": 2811749461.4
+    },
+    {
+      "symbol": "TRENT",
+      "sector": "Consumer Services",
+      "median_adtv": 2707626006.7
+    },
+    {
+      "symbol": "HINDCOPPER",
+      "sector": "Metals & Mining",
+      "median_adtv": 2665779118.4
+    },
+    {
+      "symbol": "APOLLOHOSP",
+      "sector": "Healthcare",
+      "median_adtv": 2662961784.0
+    },
+    {
+      "symbol": "PFC",
+      "sector": "Financial Services",
+      "median_adtv": 2656870970.57
+    },
+    {
+      "symbol": "CGPOWER",
+      "sector": "Capital Goods",
+      "median_adtv": 2636602293.88
+    },
+    {
+      "symbol": "DIVISLAB",
+      "sector": "Healthcare",
+      "median_adtv": 2624626459.25
+    },
+    {
+      "symbol": "LENSKART",
+      "sector": "Consumer Services",
+      "median_adtv": 2563769113.0
+    },
+    {
+      "symbol": "MEESHO",
+      "sector": "Consumer Services",
+      "median_adtv": 2555045728.34
+    },
+    {
+      "symbol": "CANBK",
+      "sector": "Financial Services",
+      "median_adtv": 2549824492.34
+    },
+    {
+      "symbol": "POWERGRID",
+      "sector": "Power",
+      "median_adtv": 2547887687.15
+    },
+    {
+      "symbol": "HINDZINC",
+      "sector": "Metals & Mining",
+      "median_adtv": 2532501194.88
+    },
+    {
+      "symbol": "OFSS",
+      "sector": "Information Technology",
+      "median_adtv": 2518753557.5
+    },
+    {
+      "symbol": "BANKBARODA",
+      "sector": "Financial Services",
+      "median_adtv": 2491281209.96
+    },
+    {
+      "symbol": "VBL",
+      "sector": "Fast Moving Consumer Goods",
+      "median_adtv": 2441079921.68
+    },
+    {
+      "symbol": "ASIANPAINT",
+      "sector": "Consumer Durables",
+      "median_adtv": 2394158612.35
+    },
+    {
+      "symbol": "NESTLEIND",
+      "sector": "Fast Moving Consumer Goods",
+      "median_adtv": 2346079090.05
+    },
+    {
+      "symbol": "IFCI",
+      "sector": "Financial Services",
+      "median_adtv": 2328077135.24
+    },
+    {
+      "symbol": "CUMMINSIND",
+      "sector": "Capital Goods",
+      "median_adtv": 2315845222.0
+    },
+    {
+      "symbol": "CHOLAFIN",
+      "sector": "Financial Services",
+      "median_adtv": 2288154052.25
+    },
+    {
+      "symbol": "MOTHERSON",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 2280423630.81
+    },
+    {
+      "symbol": "MUTHOOTFIN",
+      "sector": "Financial Services",
+      "median_adtv": 2255720863.4
+    },
+    {
+      "symbol": "DRREDDY",
+      "sector": "Healthcare",
+      "median_adtv": 2253052067.05
+    },
+    {
+      "symbol": "PINELABS",
+      "sector": "Financial Services",
+      "median_adtv": 2213715248.14
+    },
+    {
+      "symbol": "GRASIM",
+      "sector": "Construction Materials",
+      "median_adtv": 2213689133.8
+    },
+    {
+      "symbol": "UNIONBANK",
+      "sector": "Financial Services",
+      "median_adtv": 2169214710.39
+    },
+    {
+      "symbol": "HDFCAMC",
+      "sector": "Financial Services",
+      "median_adtv": 2149898491.55
+    },
+    {
+      "symbol": "DLF",
+      "sector": "Realty",
+      "median_adtv": 2135591084.15
+    },
+    {
+      "symbol": "BPCL",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 2130052849.55
+    },
+    {
+      "symbol": "POLICYBZR",
+      "sector": "Financial Services",
+      "median_adtv": 2122015063.4
+    },
+    {
+      "symbol": "WAAREEENER",
+      "sector": "Capital Goods",
+      "median_adtv": 2121635054.4
+    },
+    {
+      "symbol": "HINDPETRO",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 2119773773.17
+    },
+    {
+      "symbol": "LIQUIDCASE",
+      "sector": "Financial Services",
+      "median_adtv": 2079829832.16
+    },
+    {
+      "symbol": "INDUSTOWER",
+      "sector": "Telecommunication",
+      "median_adtv": 2077182722.17
+    },
+    {
+      "symbol": "AMBER",
+      "sector": "Consumer Durables",
+      "median_adtv": 2076983566.5
+    },
+    {
+      "symbol": "SOLARINDS",
+      "sector": "Chemicals",
+      "median_adtv": 2045297471.5
+    },
+    {
+      "symbol": "LODHA",
+      "sector": "Realty",
+      "median_adtv": 1965961085.53
+    },
+    {
+      "symbol": "FEDERALBNK",
+      "sector": "Financial Services",
+      "median_adtv": 1961045237.4
+    },
+    {
+      "symbol": "LUPIN",
+      "sector": "Healthcare",
+      "median_adtv": 1957148649.5
+    },
+    {
+      "symbol": "HDFCLIFE",
+      "sector": "Financial Services",
+      "median_adtv": 1940516693.57
+    },
+    {
+      "symbol": "MAXHEALTH",
+      "sector": "Healthcare",
+      "median_adtv": 1934887731.7
+    },
+    {
+      "symbol": "ZEEL",
+      "sector": "Media Entertainment & Publication",
+      "median_adtv": 1926283307.2
+    },
+    {
+      "symbol": "APARINDS",
+      "sector": "Capital Goods",
+      "median_adtv": 1909997885.75
+    },
+    {
+      "symbol": "ABB",
+      "sector": "Capital Goods",
+      "median_adtv": 1906418483.25
+    },
+    {
+      "symbol": "JSWSTEEL",
+      "sector": "Metals & Mining",
+      "median_adtv": 1896198587.2
+    },
+    {
+      "symbol": "BHARATFORG",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 1881860965.0
+    },
+    {
+      "symbol": "TATAPOWER",
+      "sector": "Power",
+      "median_adtv": 1881089264.25
+    },
+    {
+      "symbol": "NIFTYBEES",
+      "sector": "Financial Services",
+      "median_adtv": 1864061439.38
+    },
+    {
+      "symbol": "MAZDOCK",
+      "sector": "Capital Goods",
+      "median_adtv": 1863328867.7
+    },
+    {
+      "symbol": "RECLTD",
+      "sector": "Financial Services",
+      "median_adtv": 1814457911.33
+    },
+    {
+      "symbol": "CDSL",
+      "sector": "Financial Services",
+      "median_adtv": 1808795064.75
+    },
+    {
+      "symbol": "BAJAJFINSV",
+      "sector": "Financial Services",
+      "median_adtv": 1750950524.4
+    },
+    {
+      "symbol": "ANGELONE",
+      "sector": "Financial Services",
+      "median_adtv": 1739203180.4
+    },
+    {
+      "symbol": "YESBANK",
+      "sector": "Financial Services",
+      "median_adtv": 1727674091.24
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "sector": "Healthcare",
+      "median_adtv": 1685815095.75
+    },
+    {
+      "symbol": "KEI",
+      "sector": "Capital Goods",
+      "median_adtv": 1683609896.15
+    },
+    {
+      "symbol": "COCHINSHIP",
+      "sector": "Capital Goods",
+      "median_adtv": 1681399190.8
+    },
+    {
+      "symbol": "SBILIFE",
+      "sector": "Financial Services",
+      "median_adtv": 1678625386.4
+    },
+    {
+      "symbol": "FORCEMOT",
+      "sector": "Automobile and Auto Components",
+      "median_adtv": 1652182654.5
+    },
+    {
+      "symbol": "BANDHANBNK",
+      "sector": "Financial Services",
+      "median_adtv": 1651893986.45
+    },
+    {
+      "symbol": "DMART",
+      "sector": "Consumer Services",
+      "median_adtv": 1635396872.5
+    },
+    {
+      "symbol": "LICI",
+      "sector": "Financial Services",
+      "median_adtv": 1631940413.85
+    },
+    {
+      "symbol": "PNB",
+      "sector": "Financial Services",
+      "median_adtv": 1628955965.2
+    },
+    {
+      "symbol": "CIPLA",
+      "sector": "Healthcare",
+      "median_adtv": 1622009276.0
+    },
+    {
+      "symbol": "CHENNPETRO",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 1619068639.2
+    },
+    {
+      "symbol": "INDUSINDBK",
+      "sector": "Financial Services",
+      "median_adtv": 1605589632.75
+    },
+    {
+      "symbol": "NAUKRI",
+      "sector": "Consumer Services",
+      "median_adtv": 1593412523.85
+    },
+    {
+      "symbol": "TATACONSUM",
+      "sector": "Fast Moving Consumer Goods",
+      "median_adtv": 1575482336.85
+    },
+    {
+      "symbol": "LTM",
+      "sector": "Information Technology",
+      "median_adtv": 1565676394.2
+    },
+    {
+      "symbol": "WOCKPHARMA",
+      "sector": "Healthcare",
+      "median_adtv": 1561216436.9
+    },
+    {
+      "symbol": "NMDC",
+      "sector": "Metals & Mining",
+      "median_adtv": 1558428375.03
+    },
+    {
+      "symbol": "SAMMAANCAP",
+      "sector": "Financial Services",
+      "median_adtv": 1531398737.98
+    },
+    {
+      "symbol": "GRSE",
+      "sector": "Capital Goods",
+      "median_adtv": 1531327093.15
+    },
+    {
+      "symbol": "IOC",
+      "sector": "Oil Gas & Consumable Fuels",
+      "median_adtv": 1525376103.34
+    },
+    {
+      "symbol": "AUROPHARMA",
+      "sector": "Healthcare",
+      "median_adtv": 1525196363.8
+    },
+    {
+      "symbol": "RBLBANK",
+      "sector": "Financial Services",
+      "median_adtv": 1523403055.88
+    }
+  ]
+}

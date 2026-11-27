@@ -30,6 +30,17 @@ from src.aws.schemas import (
     SignalItem,
     SignalRunResult,
 )
+from src.aws.paper_ledger import (
+    append_paper_daily_nav,
+    append_paper_trade,
+    compute_paper_summary,
+    execute_paper_buys,
+    execute_paper_sells,
+    load_paper_state,
+    ratchet_trailing_stops,
+    read_paper_daily_nav,
+    save_paper_state,
+)
 from src.aws.state import load_portfolio_state, validate_state, write_state
 from src.models.hmm_regime import label_regime_from_probs
 
@@ -601,6 +612,72 @@ def run_signal_engine(slot_name: str) -> dict[str, Any]:
             weekly_entries_total += 1
             available_cash -= debit
 
+    # Automated Shadow Paper Portfolio Execution
+    paper_summary = None
+    if os.getenv("PAPER_AUTO_EXECUTE", "true").lower() in ("true", "1", "yes"):
+        try:
+            from src.config import S3Paths
+
+            bucket_name = os.getenv("BUCKET_NAME", S3Paths().default_bucket)
+            s3_client = None
+            dry = _dry_run_mode()
+            if not dry:
+                try:
+                    import boto3
+
+                    s3_client = boto3.client("s3")
+                except Exception:
+                    s3_client = None
+
+            paper_state, paper_etag = load_paper_state(s3_client=s3_client, bucket=bucket_name)
+
+            # 1. Ratchet trailing stops on open paper positions
+            ratchet_trailing_stops(paper_state["positions"], price_by_sym)
+
+            # 2. Identify paper sell triggers from current paper positions
+            paper_sells_to_exec = []
+            for p in paper_state["positions"]:
+                sym = p["symbol"]
+                p_ltp = float(price_by_sym.get(sym) or live_prices.get(sym) or p.get("avg_entry_price", 0.0))
+                p_days = 0
+                if p.get("entry_date"):
+                    try:
+                        p_dt = datetime.fromisoformat(str(p["entry_date"]).replace("Z", "+00:00"))
+                        p_days = (now_utc - p_dt).days
+                    except Exception:
+                        pass
+                p_rank = rank_by_sym.get(sym, 999)
+
+                if p_ltp <= p.get("stop_price", 0.0):
+                    paper_sells_to_exec.append({"symbol": sym, "trigger": "TRAILING_STOP_12PCT", "price": p_ltp, "v3_rank": p_rank})
+                elif p_days >= 84:
+                    paper_sells_to_exec.append({"symbol": sym, "trigger": "MAX_HOLD_12W", "price": p_ltp, "v3_rank": p_rank})
+                elif p_rank > 40:
+                    paper_sells_to_exec.append({"symbol": sym, "trigger": "RANK_BUFFER_TOP40", "price": p_ltp, "v3_rank": p_rank})
+
+            # Execute paper sells
+            executed_sells = execute_paper_sells(
+                paper_state, paper_sells_to_exec, price_by_sym, slot_name, dt=now_ist()
+            )
+            for t in executed_sells:
+                append_paper_trade(s3_client, bucket_name, t, dry_run=dry)
+
+            # 3. Execute paper buys from ranked candidates
+            executed_buys = execute_paper_buys(
+                paper_state, ranked_candidates, price_by_sym, slot_name, dt=now_ist()
+            )
+            for t in executed_buys:
+                append_paper_trade(s3_client, bucket_name, t, dry_run=dry)
+
+            # 4. Save updated paper state
+            save_paper_state(s3_client, bucket_name, paper_state, etag=paper_etag, dry_run=dry)
+
+            # 5. Compute summary for notification
+            new_trades = executed_sells + executed_buys
+            paper_summary = compute_paper_summary(paper_state, price_by_sym, today_trades=new_trades)
+        except Exception as exc:
+            logger.error("Paper portfolio execution error: %s", exc)
+
     result: dict[str, Any] = {
         "status": "OK",
         "slot_name": slot_name,
@@ -622,6 +699,7 @@ def run_signal_engine(slot_name: str) -> dict[str, Any]:
             if stale_quotes
             else None
         ),
+        "paper_summary": paper_summary,
     }
     return result
 
@@ -650,6 +728,75 @@ def run_post_market() -> PostMarketResult:
     except Exception as exc:
         logger.warning("Post-market S3 sync skipped or local mode: %s", exc)
 
+    # Automated Paper Daily NAV Snapshot
+    paper_nav = None
+    if os.getenv("PAPER_AUTO_EXECUTE", "true").lower() in ("true", "1", "yes"):
+        try:
+            s3_client = None
+            if not dry:
+                try:
+                    import boto3
+
+                    s3_client = boto3.client("s3")
+                except Exception:
+                    s3_client = None
+
+            paper_state, _ = load_paper_state(s3_client=s3_client, bucket=bucket)
+            today_date = now_ist().strftime("%Y-%m-%d")
+
+            payload = get_latest_features_payload()
+            eod_prices = dict(payload.get("prices") or {})
+            nifty_close = float(payload.get("nifty_prev_close") or 0.0)
+
+            # Mark open positions
+            positions = paper_state.get("positions", [])
+            invested_value = sum(
+                p["qty"] * float(eod_prices.get(p["symbol"]) or p.get("avg_entry_price", 0.0))
+                for p in positions
+            )
+            cash = float(paper_state.get("cash", 0.0))
+            total_equity = round(cash + invested_value, 2)
+            init_cap = float(paper_state.get("initial_capital", 500000.0))
+
+            # Read historical daily NAV rows to compute daily delta
+            prev_navs = read_paper_daily_nav(s3_client=s3_client, bucket=bucket)
+            prev_equity = prev_navs[-1]["total_equity"] if prev_navs else init_cap
+            base_nifty = prev_navs[0].get("nifty_close", nifty_close) if prev_navs else nifty_close
+
+            daily_ret_bps = round(((total_equity - prev_equity) / prev_equity) * 10000.0, 1) if prev_equity > 0 else 0.0
+            cum_ret_pct = round(((total_equity - init_cap) / init_cap) * 100.0, 2)
+            nifty_cum_pct = round(((nifty_close - base_nifty) / base_nifty) * 100.0, 2) if base_nifty > 0 else 0.0
+            alpha_bps = round((cum_ret_pct - nifty_cum_pct) * 100.0, 1)
+
+            sector_weights = {}
+            for p in positions:
+                sec = p.get("sector", "UNKNOWN")
+                p_val = p["qty"] * float(eod_prices.get(p["symbol"]) or p.get("avg_entry_price", 0.0))
+                sector_weights[sec] = round(sector_weights.get(sec, 0.0) + (p_val / total_equity if total_equity > 0 else 0.0), 4)
+
+            stale_count = sum(1 for p in positions if p["symbol"] not in eod_prices)
+
+            nav_record = {
+                "date": today_date,
+                "cash": round(cash, 2),
+                "invested_value": round(invested_value, 2),
+                "total_equity": total_equity,
+                "daily_return_bps": daily_ret_bps,
+                "cumulative_return_pct": cum_ret_pct,
+                "nifty_close": nifty_close,
+                "nifty_cumulative_pct": nifty_cum_pct,
+                "alpha_vs_nifty_bps": alpha_bps,
+                "open_positions_count": len(positions),
+                "sector_weights": sector_weights,
+                "hmm_regime": regime,
+                "stale_quote_count": stale_count,
+            }
+
+            append_paper_daily_nav(s3_client, bucket, nav_record, dry_run=dry)
+            paper_nav = nav_record
+        except Exception as exc:
+            logger.error("Paper daily NAV generation error: %s", exc)
+
     features_uri = eod.get("features_uri") or f"s3://{bucket}/v2/state/latest_features.json"
     return {
         "status": "OK",
@@ -659,4 +806,5 @@ def run_post_market() -> PostMarketResult:
         "s3_artifact_uri": f"s3://{bucket}/v2/state/latest.json",
         "features_uri": features_uri,
         "notes": eod.get("notes"),
+        "paper_nav": paper_nav,
     }

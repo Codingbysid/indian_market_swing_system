@@ -242,6 +242,23 @@ def scan_message(result: dict) -> Message:
     if cash is not None:
         blocks.append(f"Account Context\nAvailable Cash: {rupees(cash)}")
 
+    paper = result.get("paper_summary")
+    if paper:
+        paper_lines = [
+            f"Cash: {rupees(paper.get('cash'))} | Invested: {rupees(paper.get('invested_value'))} | Total Equity: {rupees(paper.get('total_equity'))}",
+            f"Unrealized P&L: {rupees(paper.get('unrealized_pnl'))} ({paper.get('unrealized_pnl_pct', 0.0):+.2f}%)",
+            f"Open Positions: {paper.get('open_count', 0)}/10 | Weekly Entries: {paper.get('weekly_entries', 0)}/2",
+        ]
+        fills = paper.get("today_fills") or []
+        if fills:
+            paper_lines.append("Today's Fills:\n" + "\n".join(
+                f"• {f.get('action')} {f.get('symbol')} x {f.get('qty')} @ {rupees(f.get('fill_price'))} ({f.get('trigger_reason', '')})"
+                for f in fills
+            ))
+        else:
+            paper_lines.append("Today's Fills: None")
+        blocks.append("Paper Book Summary (Shadow V3)\n" + "\n".join(paper_lines))
+
     blocks.append("Execution Notice\nSHADOW / ALERT-ONLY MODE: No automated broker orders placed.")
     return Message(title, "\n\n".join(blocks), priority, tag)
 
@@ -270,13 +287,25 @@ def post_market_message(result: dict) -> Message:
     regime = clean(result.get("updated_regime_state", "UNKNOWN"))
     uri = clean(result.get("s3_artifact_uri", "v2/state/latest.json"))
     title = f"Post-Market | EOD Summary · {slot}"
-    body = (
-        f"{title}\n\n"
-        f"EOD Ingestion & Model Updates\nStatus: {result.get('status', 'OK')}\nBhavcopy Rows Ingested: {ingested}\nUpdated Regime: {regime}\n\n"
-        f"Artifact State\nPersisted: {uri}\n\n"
-        "Execution Notice\nSHADOW / ALERT-ONLY MODE: No automated broker orders placed."
-    )
-    return Message(title, body, priority="default", tags="twilight")
+
+    blocks = [
+        f"{title}\n{when(result.get('timestamp_ist', datetime.now(IST).isoformat()))}",
+        f"EOD Ingestion & Model Updates\nStatus: {result.get('status', 'OK')}\nBhavcopy Rows Ingested: {ingested}\nUpdated Regime: {regime}",
+        f"Artifact State\nPersisted: {uri}",
+    ]
+
+    nav = result.get("paper_nav")
+    if nav:
+        nav_lines = [
+            f"Total Equity: {rupees(nav.get('total_equity'))} (Cash: {rupees(nav.get('cash'))}, Invested: {rupees(nav.get('invested_value'))})",
+            f"Daily Return: {nav.get('daily_return_bps', 0.0):+.1f} bps | Cumulative Return: {nav.get('cumulative_return_pct', 0.0):+.2f}%",
+            f"Alpha vs Nifty 50: {nav.get('alpha_vs_nifty_bps', 0.0):+.1f} bps",
+            f"Open Positions: {nav.get('open_positions_count', 0)}/10",
+        ]
+        blocks.append("Paper Portfolio EOD NAV\n" + "\n".join(nav_lines))
+
+    blocks.append("Execution Notice\nSHADOW / ALERT-ONLY MODE: No automated broker orders placed.")
+    return Message(title, "\n\n".join(blocks), priority="default", tags="twilight")
 
 
 def monitor_message(doc: dict) -> Message:

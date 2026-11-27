@@ -25,12 +25,11 @@ core
 
 # Local data (regenerable / oversized; keep untracked)
 data/raw/
-data/clean/*.parquet
-data/clean/*.csv
-data/clean/*.json
+data/clean/
 data/*.csv
 data/portfolio_state.json
 data/results/
+v2/paper/
 execution_log.txt
 *.sqlite
 *.sqlite-journal

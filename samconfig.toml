@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "nse-quant-swing-v2"
+region = "ap-south-1"
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+resolve_image_repos = true
+confirm_changeset = false
+fail_on_empty_changeset = false
+parameter_overrides = "QuantBucketName=nse-quant-swing-data-ap-south-1 AlertFromEmail=siddcricket21@gmail.com AlertToEmail=siddcricket21@gmail.com NtfyTopic=msu_swing_alerts_2026 Slot3CronExpression=\"cron(10 15 ? * MON-FRI *)\""
+
+[default.build.parameters]
+cached = true
+parallel = true

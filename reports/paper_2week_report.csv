@@ -1,0 +1,3 @@
+timestamp_ist,date,slot_name,action,symbol,sector,qty,fill_price,gross_notional,cost_bps,cost_inr,net_cash_delta,v3_rank,trigger_reason,realized_pnl_inr,realized_pnl_bps
+2026-11-27T17:22:25.915766+05:30,2026-11-27,09:45_IST,BUY,FEDERALBNK,Financial Services,140,356.85,49959.0,16.9,84.43,-50043.43,1,TOP_V3_RANK,,
+2026-11-27T17:22:25.915766+05:30,2026-11-27,09:45_IST,BUY,AUROPHARMA,Healthcare,27,1811.0,48897.0,16.9,82.64,-48979.64,2,TOP_V3_RANK,,
