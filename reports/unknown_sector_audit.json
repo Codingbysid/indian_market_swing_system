@@ -1,0 +1,35 @@
+[
+  {
+    "variant": "Winner_APlus_HardCap_rankBuffer",
+    "n_trades": 370,
+    "pct_trades_unknown": 3.78,
+    "pct_notional_unknown": 3.35
+  },
+  {
+    "top150_unknown_symbols_sample": [
+      "GUJGASLTD",
+      "L&TFH",
+      "LIQUIDBEES",
+      "LIQUIDCASE",
+      "LTI",
+      "LTIM",
+      "MCDOWELL-N",
+      "MINDTREE",
+      "PEL",
+      "PVR",
+      "RAJESHEXPO",
+      "RIIL",
+      "RNAM",
+      "SILVERBEES",
+      "SILVERIETF",
+      "SRTRANSFIN",
+      "SWANENERGY",
+      "TATAMTRDVR",
+      "TATSILV",
+      "VAKRANGEE",
+      "VENKEYS",
+      "ZOMATO"
+    ],
+    "n_unknown": 22
+  }
+]

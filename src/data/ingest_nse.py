@@ -13,6 +13,7 @@ import time
 import zipfile
 from datetime import date, timedelta
 from pathlib import Path
+from urllib.parse import quote
 
 import pandas as pd
 import requests
@@ -140,22 +141,115 @@ def build_ohlcv_parquet(
     raw_cache_dir: Path,
     output_parquet: Path,
 ) -> pd.DataFrame:
+    return build_ohlcv_parquet_resumable(
+        start_date=start_date,
+        end_date=end_date,
+        raw_cache_dir=raw_cache_dir,
+        checkpoint_dir=raw_cache_dir.parent / "ohlcv_checkpoint",
+        output_parquet=output_parquet,
+    )
+
+
+def build_ohlcv_parquet_resumable(
+    start_date: date,
+    end_date: date,
+    raw_cache_dir: Path,
+    checkpoint_dir: Path,
+    output_parquet: Path,
+    sleep_sec: float = 1.2,
+    checkpoint_every: int = 20,
+    assemble: bool = True,
+) -> pd.DataFrame | None:
+    """Download/parse weekdays with zip cache + per-day parquet checkpoints.
+
+    Set ``assemble=False`` for parallel year workers that only fill day shards.
+    """
     raw_cache_dir.mkdir(parents=True, exist_ok=True)
-    frames: list[pd.DataFrame] = []
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    done_path = checkpoint_dir / "completed_dates.txt"
+    completed: set[str] = set()
+    if done_path.exists():
+        completed = {line.strip() for line in done_path.read_text().splitlines() if line.strip()}
+
+    parsed_since_ckpt = 0
     with requests.Session() as session:
+        # Warm NSE cookies (archives sometimes require a landing hit)
+        try:
+            session.get("https://www.nseindia.com", headers=HEADERS, timeout=15)
+            time.sleep(0.5)
+        except requests.RequestException:
+            pass
+
         current = start_date
         while current <= end_date:
             if current.weekday() < 5:
-                path, fmt = fetch_and_cache_bhavcopy(current, raw_cache_dir, session)
+                key = current.isoformat()
+                shard = checkpoint_dir / f"day_{key}.parquet"
+                holiday = checkpoint_dir / f"holiday_{key}.flag"
+                # Parallel-safe: day parquet / holiday flag are the source of truth
+                if shard.exists() or holiday.exists():
+                    if key not in completed:
+                        with done_path.open("a") as handle:
+                            handle.write(key + "\n")
+                        completed.add(key)
+                    current += timedelta(days=1)
+                    continue
+                path, fmt = fetch_and_cache_bhavcopy(
+                    current, raw_cache_dir, session, sleep_sec=sleep_sec
+                )
+                wrote = False
                 if path is not None:
                     parsed = parse_bhavcopy_zip(path, current, fmt)
-                    if parsed is not None:
-                        frames.append(parsed)
+                    if parsed is not None and not parsed.empty:
+                        tmp = shard.with_suffix(".parquet.tmp")
+                        parsed.to_parquet(tmp, index=False)
+                        tmp.replace(shard)  # atomic on POSIX
+                        wrote = True
+                        parsed_since_ckpt += 1
+                if not wrote:
+                    holiday.write_text("no_eq_session\n", encoding="utf-8")
+                if key not in completed:
+                    with done_path.open("a") as handle:
+                        handle.write(key + "\n")
+                    completed.add(key)
+                n_shards = len(list(checkpoint_dir.glob("day_*.parquet")))
+                if len(completed) % 10 == 0:
+                    print(
+                        f"[ingest] {key} completed_weekdays={len(completed)} day_shards={n_shards}",
+                        flush=True,
+                    )
+                if parsed_since_ckpt and parsed_since_ckpt % checkpoint_every == 0:
+                    logger.info("Checkpoint progress through %s (%d shards)", key, n_shards)
             current += timedelta(days=1)
-    if not frames:
+
+    if not assemble:
+        n = len(list(checkpoint_dir.glob("day_*.parquet")))
+        print(f"[ingest] assemble=False range={start_date}→{end_date} day_shards={n}", flush=True)
+        return None
+
+    shards = sorted(checkpoint_dir.glob("day_*.parquet"))
+    if not shards:
         raise RuntimeError("No valid Bhavcopy files were parsed.")
+    # Stream-concat in batches to bound peak memory
+    chunks: list[pd.DataFrame] = []
+    batch: list[pd.DataFrame] = []
+    for i, shard in enumerate(shards, 1):
+        try:
+            batch.append(pd.read_parquet(shard))
+        except Exception as exc:
+            logger.warning("Skipping unreadable shard %s: %s", shard.name, exc)
+            continue
+        if len(batch) >= 60:
+            chunks.append(pd.concat(batch, ignore_index=True))
+            batch = []
+        if i % 200 == 0:
+            print(f"[ingest] loaded {i}/{len(shards)} day shards", flush=True)
+    if batch:
+        chunks.append(pd.concat(batch, ignore_index=True))
+    if not chunks:
+        raise RuntimeError("No readable Bhavcopy day shards.")
     ohlcv = (
-        pd.concat(frames, ignore_index=True)
+        pd.concat(chunks, ignore_index=True)
         .drop_duplicates(["date", "symbol"], keep="last")
         .sort_values(["date", "symbol"])
         .reset_index(drop=True)
@@ -164,6 +258,159 @@ def build_ohlcv_parquet(
     ohlcv.to_parquet(output_parquet, index=False, compression="snappy")
     logger.info("Saved %d rows to %s", len(ohlcv), output_parquet)
     return ohlcv
+
+
+def fetch_static_nse_sector_map(symbols: list[str], ohlcv: pd.DataFrame) -> pd.DataFrame:
+    """Current NSE/Nifty sector classification mapped by symbol (STATIC fallback).
+
+    Prefer archives.nseindia.com index constituent CSVs (Industry column). The
+    www.nseindia.com JSON API is often blocked (403); CSV archives are reliable.
+    Unmapped symbols get UNKNOWN / Unknown Macro so the PIT join still succeeds.
+    """
+    session = requests.Session()
+    records: list[dict] = []
+    csv_names = [
+        "ind_niftytotalmarket_list.csv",
+        "ind_nifty500list.csv",
+        "ind_niftymidcap150list.csv",
+        "ind_niftysmallcap250list.csv",
+        "ind_nifty100list.csv",
+        "ind_nifty50list.csv",
+    ]
+    for name in csv_names:
+        for host in (
+            "https://archives.nseindia.com/content/indices/",
+            "https://nsearchives.nseindia.com/content/indices/",
+        ):
+            url = host + name
+            try:
+                resp = session.get(url, headers={**HEADERS, "Accept": "text/csv,*/*"}, timeout=30)
+                if resp.status_code != 200 or "Company Name" not in resp.text[:200]:
+                    continue
+                frame = pd.read_csv(io.StringIO(resp.text))
+                cols = {c.strip().lower(): c for c in frame.columns}
+                sym_col = cols.get("symbol")
+                ind_col = cols.get("industry")
+                isin_col = cols.get("isin code") or cols.get("isin")
+                if sym_col is None or ind_col is None:
+                    continue
+                for _, data in frame.iterrows():
+                    sym = str(data.get(sym_col, "")).strip()
+                    industry = str(data.get(ind_col, "")).strip() or "UNKNOWN"
+                    isin = str(data.get(isin_col, "")).strip() if isin_col else None
+                    if not sym or industry in {"", "UNKNOWN", "nan"}:
+                        continue
+                    records.append(
+                        {
+                            "symbol": sym,
+                            "isin": isin or None,
+                            "sector": industry,
+                            "macro_sector": _macro_from_industry(industry),
+                        }
+                    )
+                print(f"[sectors] loaded {name} rows={len(frame)}", flush=True)
+                time.sleep(0.25)
+                break
+            except Exception as exc:
+                logger.warning("Sector CSV %s failed: %s", url, exc)
+
+    if not records:
+        logger.warning("No sector CSVs loaded; all symbols will be UNKNOWN")
+
+    # Later CSVs do not overwrite earlier richer Total Market mappings
+    by_symbol: dict[str, dict] = {}
+    for r in records:
+        by_symbol.setdefault(r["symbol"], r)
+    # Fill ISINs from OHLCV when API omitted them
+    isin_map = (
+        ohlcv.sort_values("date")
+        .groupby("symbol")["isin"]
+        .last()
+        .to_dict()
+        if "isin" in ohlcv.columns
+        else {}
+    )
+    effective = pd.Timestamp(ohlcv["date"].min()) if len(ohlcv) else pd.Timestamp("2016-01-01")
+    rows = []
+    for sym in sorted(set(symbols)):
+        hit = by_symbol.get(sym)
+        if hit:
+            rows.append(
+                {
+                    "effective_date": effective,
+                    "symbol": sym,
+                    "isin": hit.get("isin") or isin_map.get(sym),
+                    "sector": hit["sector"],
+                    "macro_sector": hit["macro_sector"],
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "effective_date": effective,
+                    "symbol": sym,
+                    "isin": isin_map.get(sym),
+                    "sector": "UNKNOWN",
+                    "macro_sector": "Unknown Macro",
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def _macro_from_industry(industry: str) -> str:
+    """Map NSE 22-industry labels onto ~12 macro buckets."""
+    text = (industry or "").strip().lower()
+    # Collapse NSE's ~22 industries into 12 macro buckets (distinct from 22-sector Option C).
+    exact = {
+        "financial services": "Financials",
+        "capital goods": "Industrials",
+        "information technology": "Technology",
+        "healthcare": "Healthcare",
+        "automobile and auto components": "Cyclicals",
+        "oil gas & consumable fuels": "Energy",
+        "oil, gas & consumable fuels": "Energy",
+        "metals & mining": "Materials",
+        "fast moving consumer goods": "Staples",
+        "consumer durables": "Cyclicals",
+        "consumer services": "Cyclicals",
+        "realty": "Real Estate",
+        "construction": "Industrials",
+        "construction materials": "Materials",
+        "power": "Utilities",
+        "utilities": "Utilities",
+        "telecommunication": "Communication",
+        "media entertainment & publication": "Communication",
+        "services": "Industrials",
+        "chemicals": "Materials",
+        "textiles": "Cyclicals",
+        "forest materials": "Materials",
+        "diversified": "Diversified",
+    }
+    if text in exact:
+        return exact[text]
+    rules = [
+        (("bank", "financial", "nbfc", "insurance", "capital market"), "Financial Services"),
+        (("information technology", "software", "it "), "Information Technology"),
+        (("pharma", "healthcare", "hospital", "drug"), "Healthcare"),
+        (("auto", "tyre", "automobile"), "Automobile and Auto Components"),
+        (("oil", "gas", "petroleum", "refinery"), "Oil Gas & Consumable Fuels"),
+        (("metal", "steel", "mining", "aluminium", "copper"), "Metals & Mining"),
+        (("fmcg", "fast moving", "beverage", "food"), "Fast Moving Consumer Goods"),
+        (("consumer durable",), "Consumer Durables"),
+        (("consumer service", "retail", "hotel"), "Consumer Services"),
+        (("realty", "real estate"), "Realty"),
+        (("construction material", "cement"), "Construction Materials"),
+        (("construction", "building"), "Construction"),
+        (("power", "utility", "electric"), "Power"),
+        (("telecom", "media"), "Media & Telecom"),
+        (("chemical", "fertilizer"), "Chemicals"),
+        (("capital good", "industrial"), "Capital Goods"),
+        (("service",), "Services"),
+    ]
+    for keys, macro in rules:
+        if any(k in text for k in keys):
+            return macro
+    return "Diversified"
 
 
 def pit_sectors_from_snapshots(snapshots_dir: Path) -> pd.DataFrame:

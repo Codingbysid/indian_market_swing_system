@@ -30,6 +30,9 @@ class RegimeConfig:
     random_state: int = 42
     block_bear_entries: bool = True
     max_bear_prob_for_entry: float = 0.65
+    # Soft gate: scale new-entry size instead of hard-blocking (0 disables soft mode)
+    soft_bear_scale: float = 0.0
+    soft_bear_prob_threshold: float = 0.65
 
 
 def build_macro_features(
@@ -144,11 +147,31 @@ def compute_rolling_hmm_regimes(
     return pd.DataFrame(records)
 
 
+def label_regime_from_probs(
+    prob_bull: float,
+    prob_sideways: float,
+    prob_bear: float,
+) -> str:
+    """Exact argmax over the three HMM posteriors (never a binary BULL/SIDEWAYS ternary)."""
+    probs = {
+        "BULL": float(prob_bull),
+        "SIDEWAYS": float(prob_sideways),
+        "BEAR_HIGH_VOL": float(prob_bear),
+    }
+    return max(probs, key=probs.get)
+
+
 def entries_blocked_by_regime(
     regime_row: dict,
     cfg: RegimeConfig = RegimeConfig(),
 ) -> bool:
-    """True when the HMM gate should block new long entries."""
+    """True when the HMM gate should hard-block new long entries.
+
+    Soft mode (``soft_bear_scale > 0``) never hard-blocks; use
+    ``entry_size_scale_for_regime`` instead.
+    """
+    if cfg.soft_bear_scale and cfg.soft_bear_scale > 0:
+        return False
     if not cfg.block_bear_entries:
         return False
     if regime_row.get("regime") == "UNFILTERED":
@@ -157,3 +180,17 @@ def entries_blocked_by_regime(
         regime_row.get("regime") == "BEAR_HIGH_VOL"
         or float(regime_row.get("prob_bear", 0.0)) >= cfg.max_bear_prob_for_entry
     )
+
+
+def entry_size_scale_for_regime(
+    regime_row: dict,
+    cfg: RegimeConfig = RegimeConfig(),
+) -> float:
+    """Return 0.5x (or configured soft scale) when bear prob is elevated, else 1.0."""
+    if not cfg.soft_bear_scale or cfg.soft_bear_scale <= 0:
+        return 1.0
+    if regime_row.get("regime") == "UNFILTERED":
+        return 1.0
+    if float(regime_row.get("prob_bear", 0.0)) >= cfg.soft_bear_prob_threshold:
+        return float(cfg.soft_bear_scale)
+    return 1.0

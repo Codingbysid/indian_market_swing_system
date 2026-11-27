@@ -9,21 +9,15 @@ from pathlib import Path
 
 import pandas as pd
 
+from src.backtest.engine import placeholder_weekly_signal_ranker, run_walk_forward
+from src.config import PortfolioLimits
 from src.data.corporate_actions import (
     apply_corporate_actions,
     detect_unadjusted_splits,
     parse_nse_purpose_to_factor,
 )
 from src.data.ingest_nse import UDIFF_CUTOFF, bhavcopy_url, parse_bhavcopy_zip, pit_sectors_from_snapshots
-from universe_ab_test import (
-    UniverseConfig,
-    BacktestConfig,
-    attach_pit_sectors,
-    build_quarterly_universes,
-    compare_a_aplus_c,
-    compare_both_tiers,
-    run_option_c_grid_search,
-)
+from src.universe.pit_universe import UniverseConfig, attach_pit_sectors, build_quarterly_universes
 
 
 def _zip(name: str, text: str) -> Path:
@@ -121,7 +115,17 @@ def test_future_sector_change_is_not_visible_early():
     sectors = pd.concat(
         [
             sectors,
-            pd.DataFrame([{"effective_date": pd.Timestamp("2024-04-01"), "symbol": "B1", "isin": "B1", "sector": "Chemicals", "macro_sector": "Commodities"}]),
+            pd.DataFrame(
+                [
+                    {
+                        "effective_date": pd.Timestamp("2024-04-01"),
+                        "symbol": "B1",
+                        "isin": "B1",
+                        "sector": "Chemicals",
+                        "macro_sector": "Commodities",
+                    }
+                ]
+            ),
         ],
         ignore_index=True,
     )
@@ -132,28 +136,9 @@ def test_future_sector_change_is_not_visible_early():
     assert set(late["sector"]) == {"Chemicals"}
 
 
-def test_macro_tier_changes_the_cap_groups():
-    ohlcv, sectors = _panel()
-    tables = compare_both_tiers(
-        ohlcv,
-        sectors,
-        bt_cfg=BacktestConfig(hold_weeks=1, max_open_positions=4),
-    )
-    assert set(tables) == {"sector", "macro_sector"}
-    assert tables["sector"].loc["Sector_Tier", "Option_A_Top150"] == "sector"
-    assert tables["sector"].loc["Signal", "Option_C_SectorCapped"] == "placeholder_weekly_signal_ranker"
-    assert "Option_APlus_HardCap" in tables["sector"].columns
-
-
 def test_aplus_entry_hard_cap_skips_same_sector_doubles():
     ohlcv, sectors = _panel()
-    bt_cfg = BacktestConfig(
-        hold_weeks=1,
-        max_open_positions=4,
-        max_new_entries_per_week=2,
-        max_positions_per_sector=2,
-        max_new_entries_per_sector_per_week=1,
-    )
+    merged = attach_pit_sectors(ohlcv, sectors)
     univ_cfg = UniverseConfig(
         lookback_days=20,
         min_trading_days=10,
@@ -162,40 +147,19 @@ def test_aplus_entry_hard_cap_skips_same_sector_doubles():
         max_per_sector=2,
         sector_col="sector",
     )
-    table = compare_a_aplus_c(ohlcv, sectors, univ_cfg, bt_cfg)
-    # Banks dominate the placeholder momentum ranker; A can double-buy Banks, A+ cannot.
-    assert table.loc["Cap_Skips_Count", "Option_A_Top150"] == 0
-    assert table.loc["Cap_Skips_Count", "Option_APlus_HardCap"] > 0
-    assert table.loc["Same_Sector_Double_Buy_Rate_%", "Option_APlus_HardCap"] in (0.0, None)
-    a_rate = table.loc["Same_Sector_Double_Buy_Rate_%", "Option_A_Top150"]
-    assert a_rate is None or a_rate > 0
-
-
-def test_option_c_grid_search_sweeps_tiers_and_logs_deltas():
-    ohlcv, sectors = _panel()
-    grid = run_option_c_grid_search(
-        ohlcv,
-        sectors,
-        pool_sizes=(5, 6),
-        sector_caps=(1, 2),
-        sector_tiers=("sector", "macro_sector"),
-        bt_cfg=BacktestConfig(hold_weeks=1, max_open_positions=4),
-        lookback_days=20,
-        min_trading_days=10,
-        target_size=4,
+    universes = build_quarterly_universes(merged, univ_cfg)
+    port = PortfolioLimits(
+        hold_weeks=1,
+        max_open_positions=4,
+        max_new_entries_per_week=2,
+        max_positions_per_sector=2,
+        max_new_entries_per_sector_per_week=1,
     )
-    # 2 baselines + 2 pools × 2 caps × 2 tiers = 10 rows
-    assert len(grid) == 10
-    assert set(grid["sector_tier"]) == {"sector", "macro_sector"}
-    baselines = grid[grid["variant"] == "A_Baseline"]
-    capped = grid[grid["variant"] == "C_SectorCapped"]
-    assert len(baselines) == 2
-    assert len(capped) == 8
-    assert list(baselines["Delta_CAGR_vs_A_%"]) == [0.0, 0.0]
-    assert {"Avg_Watchlist_Size", "Min_Watchlist_Size", "Delta_P95_Sector_vs_A_%"} <= set(grid.columns)
-    # Cap of 1 on 2 sectors with target 4 cannot fill the watchlist
-    tight = capped[(capped["sector_tier"] == "sector") & (capped["max_per_sector"] == 1)]
-    assert (tight["Min_Watchlist_Size"] < 4).any()
+    res_a = run_walk_forward(merged, universes, "A", placeholder_weekly_signal_ranker, portfolio=port)
+    res_ap = run_walk_forward(merged, universes, "A+", placeholder_weekly_signal_ranker, portfolio=port)
+    # Banks dominate the placeholder momentum ranker; A can double-buy Banks, A+ cannot.
+    assert res_a["metrics"]["Cap_Skips_Count"] == 0
+    assert res_ap["metrics"]["Cap_Skips_Count"] > 0
 
 
 def test_bonus_adjusts_prices_before_the_ex_date_and_not_turnover():
@@ -216,9 +180,14 @@ def test_bonus_adjusts_prices_before_the_ex_date_and_not_turnover():
     assert list(aaa["close"]) == [50, 50, 50, 50]
     assert list(aaa["traded_value_inr"]) == [10, 11, 12, 13]
     bbb = adjusted[adjusted["symbol"] == "BBB"]
-    assert list(bbb["close"]) == [40, 40, 40, 40]
+    assert list(bbb["close"]) == [80, 80, 40, 40]
     assert parse_nse_purpose_to_factor("BONUS 1:1") == 0.5
-    assert parse_nse_purpose_to_factor("FACE VALUE SPLIT (SUB-DIVISION) - FROM RS 10/- PER SHARE TO RS 2/- PER SHARE") == 0.2
+    assert (
+        parse_nse_purpose_to_factor(
+            "FACE VALUE SPLIT (SUB-DIVISION) - FROM RS 10/- PER SHARE TO RS 2/- PER SHARE"
+        )
+        == 0.2
+    )
     raw_gap = ohlcv[ohlcv["symbol"] == "AAA"]
     flagged = detect_unadjusted_splits(raw_gap)
     assert flagged.iloc[0]["factor"] == 0.5

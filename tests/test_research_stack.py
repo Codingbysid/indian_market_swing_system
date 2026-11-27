@@ -1,32 +1,26 @@
-"""Research-only HMM / GBDT / RL sizing smoke tests. Never touches live risk."""
+"""Research-only HMM / GBDT smoke tests. Never touches live risk."""
 
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
+from src.backtest.engine import placeholder_weekly_signal_ranker, run_walk_forward
+from src.config import PortfolioLimits
 from src.models.gbdt_ranker import RankerConfig, engineer_cross_sectional_features, run_walk_forward_ranker
 from src.models.hmm_regime import (
     RegimeConfig,
     build_macro_features,
     compute_rolling_hmm_regimes,
     entries_blocked_by_regime,
+    label_regime_from_probs,
 )
-from src.models.rl_sizing_env import DecisionStep, NseSwingSizingEnv, SizingEnvConfig
-from universe_ab_test import (
-    BacktestConfig,
-    UniverseConfig,
-    attach_pit_sectors,
-    build_quarterly_universes,
-    placeholder_weekly_signal_ranker,
-    run_single_backtest,
-)
+from src.universe.pit_universe import UniverseConfig, attach_pit_sectors, build_quarterly_universes
 
 
 def _macro_series(n: int = 650, seed: int = 7) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     dates = pd.bdate_range("2020-01-02", periods=n)
-    # Three rough regimes: calm up, sideways, volatile down
     rets = np.concatenate(
         [
             rng.normal(0.0008, 0.006, n // 3),
@@ -102,6 +96,11 @@ def test_rolling_hmm_emits_semantic_labels_and_probs():
     assert ((probs > 0.99) & (probs < 1.01)).all()
 
 
+def test_label_regime_from_probs_is_argmax():
+    assert label_regime_from_probs(0.0, 0.0, 1.0) == "BEAR_HIGH_VOL"
+    assert label_regime_from_probs(0.6, 0.3, 0.1) == "BULL"
+
+
 def test_hmm_gate_blocks_bear_entries_in_backtest():
     ohlcv, sectors = _panel()
     merged = attach_pit_sectors(ohlcv, sectors)
@@ -119,60 +118,23 @@ def test_hmm_gate_blocks_bear_entries_in_backtest():
             "prob_bear": 0.8,
         }
     )
-    bt = BacktestConfig(hold_weeks=1, max_open_positions=4)
-    blocked = run_single_backtest(
+    port = PortfolioLimits(hold_weeks=1, max_open_positions=4)
+    blocked = run_walk_forward(
         merged,
         universes,
         "A",
         placeholder_weekly_signal_ranker,
-        bt,
+        portfolio=port,
         regime_df=regimes,
         regime_cfg=RegimeConfig(block_bear_entries=True, max_bear_prob_for_entry=0.65),
     )
-    open_run = run_single_backtest(merged, universes, "A", placeholder_weekly_signal_ranker, bt)
-    assert blocked["Regime_Blocked_Weeks"] > 0
-    assert open_run["Regime_Blocked_Weeks"] == 0
+    open_run = run_walk_forward(merged, universes, "A", placeholder_weekly_signal_ranker, portfolio=port)
+    assert blocked["metrics"]["Regime_Blocked_Weeks"] > 0
+    assert open_run["metrics"]["Regime_Blocked_Weeks"] == 0
     assert entries_blocked_by_regime({"regime": "BEAR_HIGH_VOL", "prob_bear": 0.2})
 
 
-def test_rl_env_equal_weight_smoke_and_bear_block():
-    steps = [
-        DecisionStep(
-            date=pd.Timestamp("2025-01-03") + pd.Timedelta(days=7 * i),
-            prob_bull=0.1 if i == 0 else 0.7,
-            prob_sideways=0.1,
-            prob_bear=0.8 if i == 0 else 0.2,
-            nifty_mom_20d=0.01,
-            vix_zscore=0.0,
-            candidates=[
-                {
-                    "symbol": f"S{j}",
-                    "sector": "Banks" if j % 2 == 0 else "IT",
-                    "gbdt_score": 1.0 - 0.1 * j,
-                    "gbdt_rank_pct": 0.9 - 0.1 * j,
-                    "mom_20d": 0.02,
-                    "atr_pct": 0.02,
-                    "price": 100.0 + j,
-                }
-                for j in range(5)
-            ],
-            next_prices={f"S{j}": 101.0 + j for j in range(5)},
-        )
-        for i in range(6)
-    ]
-    env = NseSwingSizingEnv(steps, SizingEnvConfig(hold_steps=2, max_new_entries_per_step=2))
-    obs, _ = env.reset()
-    assert obs.shape == env.observation_space.shape
-    action = np.ones(env.action_space.shape, dtype=np.float32)
-    obs, reward, term, trunc, info = env.step(action)
-    assert info["regime_blocked"] is True
-    assert info["open_positions"] == 0
-    assert isinstance(reward, float)
-    assert not term and not trunc
-
-
 def test_gbdt_feature_engineering_and_tiny_walk_forward():
-    # Longer panel so momentum / vol windows populate.
     dates = pd.bdate_range("2022-01-03", periods=320)
     rows = []
     rng = np.random.default_rng(0)

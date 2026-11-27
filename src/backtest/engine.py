@@ -10,7 +10,11 @@ import pandas as pd
 
 from src.backtest.costs import RoundTripCostBps, cost_on_notional, resolve_rt_cost
 from src.config import IndiaDeliveryCostConfig, PortfolioLimits
-from src.models.hmm_regime import RegimeConfig, entries_blocked_by_regime
+from src.models.hmm_regime import (
+    RegimeConfig,
+    entries_blocked_by_regime,
+    entry_size_scale_for_regime,
+)
 
 Variant = Literal["A", "A+", "C"]
 SignalFn = Callable[[pd.Timestamp, pd.DataFrame, list[str]], pd.DataFrame]
@@ -31,6 +35,7 @@ class TradeRecord:
     gross_bps: float
     cost_bps: float
     net_bps: float
+    exit_reason: str = "unknown"
 
 
 def _weekly_decision_dates(dates: pd.Series, first: pd.Timestamp) -> pd.Series:
@@ -102,20 +107,35 @@ def run_walk_forward(
         .pivot(index="date", columns="symbol", values="close")
         .sort_index()
     )
+    atr_pct = None
+    if "atr_pct_14d" in df.columns:
+        atr_pct = (
+            df.drop_duplicates(["date", "symbol"], keep="last")
+            .pivot(index="date", columns="symbol", values="atr_pct_14d")
+            .sort_index()
+        )
 
-    equity = float(portfolio.initial_capital)
-    peak = equity
+    # Dual books share the same share path. `book_*` holds cost-basis capital
+    # (original semantics); NAV = book + unrealized MTM. Net pays delivery costs;
+    # Gross is identical trades at 0 bps.
+    book_net = float(portfolio.initial_capital)
+    book_gross = float(portfolio.initial_capital)
+    peak = book_net
     positions: dict[str, dict] = {}
-    curve: list[tuple[pd.Timestamp, float]] = []
+    curve_net: list[tuple[pd.Timestamp, float]] = []
+    curve_gross: list[tuple[pd.Timestamp, float]] = []
     trades: list[TradeRecord] = []
     same_sector_weeks = 0
     two_entry_weeks = 0
     cap_skips = 0
     regime_blocked_weeks = 0
     max_sector_share: list[float] = []
+    exposure_rows: list[dict] = []
     active = None
     rebalance_index = 0
-    traded_notional_abs = 0.0
+    buy_notional = 0.0
+    sell_notional = 0.0
+    equity_samples: list[float] = []
 
     for week_date in weekly_dates:
         week = pd.Timestamp(week_date)
@@ -127,18 +147,62 @@ def run_walk_forward(
         today = prices.loc[week]
         sym_to_sector = dict(zip(active["symbol"], active["sector_label"].astype(str)))
 
+        # Rank the full active watchlist once (needed for rank-buffer exits and entries)
+        full_watch = active["symbol"].tolist()
+        ranked = signal_fn(week, df[df["date"] <= week], full_watch)
+        rank_pos = {sym: i + 1 for i, sym in enumerate(ranked["symbol"].tolist())}
+
         closing = []
         for symbol, position in positions.items():
             position["weeks_held"] += 1
-            if position["weeks_held"] >= portfolio.hold_weeks and pd.notna(today.get(symbol)):
-                exit_price = float(today[symbol])
+            mark = today.get(symbol)
+            if pd.isna(mark):
+                continue
+            mark_f = float(mark)
+            position["peak_price"] = max(float(position.get("peak_price", position["entry_price"])), mark_f)
+            should_exit = False
+            exit_reason = "unknown"
+            if portfolio.exit_mode == "fixed_weeks":
+                should_exit = position["weeks_held"] >= portfolio.hold_weeks
+                exit_reason = "fixed_weeks"
+            else:
+                atr_mult = float(getattr(portfolio, "trailing_stop_atr_mult", 0.0) or 0.0)
+                if atr_mult > 0 and atr_pct is not None and week in atr_pct.index and symbol in atr_pct.columns:
+                    atr_val = atr_pct.loc[week, symbol]
+                    stop_pct = atr_mult * float(atr_val) if pd.notna(atr_val) and float(atr_val) > 0 else portfolio.trailing_stop_pct
+                else:
+                    stop_pct = portfolio.trailing_stop_pct
+                trail_hit = mark_f <= position["peak_price"] * (1.0 - stop_pct)
+                # Missing from watchlist ranks as very weak; otherwise use cross-sectional rank.
+                rank_now = rank_pos.get(symbol, 10_000)
+                outside_buffer = rank_now > portfolio.rank_buffer_top_n
+                confirm = int(getattr(portfolio, "rank_exit_confirm_weeks", 1) or 1)
+                if outside_buffer:
+                    position["weeks_outside_buffer"] = int(position.get("weeks_outside_buffer", 0)) + 1
+                else:
+                    position["weeks_outside_buffer"] = 0
+                rank_hit = position["weeks_outside_buffer"] >= confirm
+                max_hit = position["weeks_held"] >= portfolio.max_hold_weeks
+                # Min hold of 2 weeks before rank/trail exits to kill weekly churn
+                min_hold_ok = position["weeks_held"] >= 2
+                # Priority for attribution: trailing_stop > rank_drop > max_hold
+                if min_hold_ok and trail_hit:
+                    should_exit, exit_reason = True, "trailing_stop"
+                elif min_hold_ok and rank_hit:
+                    should_exit, exit_reason = True, "rank_drop"
+                elif max_hit:
+                    should_exit, exit_reason = True, "max_hold_12w" if portfolio.max_hold_weeks <= 12 else f"max_hold_{portfolio.max_hold_weeks}w"
+            if should_exit:
+                exit_price = mark_f
                 notional = exit_price * position["shares"]
                 gross = (exit_price - position["entry_price"]) * position["shares"]
                 exit_cost = cost_on_notional(notional, rt, half=True)
                 entry_cost = position["entry_cost"]
                 total_cost = entry_cost + exit_cost
-                equity += gross - exit_cost
-                traded_notional_abs += notional
+                # Realize MTM PnL into book; net pays exit leg, gross pays 0.
+                book_net += gross - exit_cost
+                book_gross += gross
+                sell_notional += notional
                 entry_notional = position["entry_price"] * position["shares"]
                 denom = max(entry_notional, 1e-8)
                 trades.append(
@@ -156,27 +220,39 @@ def run_walk_forward(
                         gross_bps=10000.0 * gross / denom,
                         cost_bps=10000.0 * total_cost / denom,
                         net_bps=10000.0 * (gross - total_cost) / denom,
+                        exit_reason=exit_reason,
                     )
                 )
                 closing.append(symbol)
         for symbol in closing:
             del positions[symbol]
 
+        # NAV for sizing (book + unrealized on remaining positions)
+        unrealized_pre = 0.0
+        for symbol, position in positions.items():
+            mark = today.get(symbol, position["entry_price"])
+            mark = position["entry_price"] if pd.isna(mark) else float(mark)
+            unrealized_pre += (mark - position["entry_price"]) * position["shares"]
+        nav_net_pre = book_net + unrealized_pre
+
         slots = min(portfolio.max_new_entries_per_week, portfolio.max_open_positions - len(positions))
         reg_info = _get_regime_on_date(regime_df, week)
-        if slots > 0 and regime_df is not None and entries_blocked_by_regime(reg_info, regime_cfg):
-            regime_blocked_weeks += 1
-            slots = 0
+        regime_scale = 1.0
+        if slots > 0 and regime_df is not None:
+            if entries_blocked_by_regime(reg_info, regime_cfg):
+                regime_blocked_weeks += 1
+                slots = 0
+            else:
+                regime_scale = entry_size_scale_for_regime(reg_info, regime_cfg)
 
         picked_sectors: list[str] = []
         if slots > 0:
-            watch = [s for s in active["symbol"].tolist() if s not in positions]
-            candidates = signal_fn(week, df[df["date"] <= week], watch)
+            candidates = ranked[~ranked["symbol"].isin(positions)].copy()
             open_sector_counts: dict[str, int] = {}
             for position in positions.values():
                 open_sector_counts[position["sector"]] = open_sector_counts.get(position["sector"], 0) + 1
             weekly_sector_picks: dict[str, int] = {}
-            base_alloc = equity / portfolio.max_open_positions
+            base_alloc = nav_net_pre / portfolio.max_open_positions
             weights = weight_fn(week, candidates["symbol"].tolist()) if weight_fn is not None else None
 
             for row in candidates.itertuples(index=False):
@@ -196,15 +272,17 @@ def run_walk_forward(
                 w = 1.0 if weights is None else float(weights.get(row.symbol, 0.0))
                 if w <= 0.05 and weights is not None:
                     continue
-                allocation = base_alloc * (1.0 if weights is None else w)
-                allocation = min(allocation, equity)
+                allocation = base_alloc * (1.0 if weights is None else w) * regime_scale
+                allocation = min(allocation, nav_net_pre)
                 if allocation <= 1.0:
                     continue
                 entry_cost = cost_on_notional(allocation, rt, half=True)
-                equity -= entry_cost
-                traded_notional_abs += allocation
+                book_net -= entry_cost
+                # gross book: no entry cost
+                buy_notional += allocation
                 positions[row.symbol] = {
                     "entry_price": float(price),
+                    "peak_price": float(price),
                     "shares": allocation / float(price),
                     "weeks_held": 0,
                     "sector": sector,
@@ -232,29 +310,71 @@ def run_walk_forward(
             invested += value
         if invested > 0:
             max_sector_share.append(max(by_sector.values()) / invested)
-        nav = equity + unrealized
-        peak = max(peak, nav)
-        curve.append((week, nav))
+        nav_net = book_net + unrealized
+        nav_gross = book_gross + unrealized
+        peak = max(peak, nav_net)
+        curve_net.append((week, nav_net))
+        curve_gross.append((week, nav_gross))
+        equity_samples.append(nav_net)
+        invested_pct = invested / max(nav_net, 1e-8)
+        exposure_rows.append(
+            {
+                "date": week,
+                "equity": nav_net,
+                "invested": invested,
+                "invested_pct": invested_pct,
+                "open_positions": len(positions),
+                "cash_pct": 1.0 - invested_pct,
+            }
+        )
 
-    equity_frame = pd.DataFrame(curve, columns=["date", "equity"]).set_index("date")
+    equity_frame = pd.DataFrame(curve_net, columns=["date", "equity"]).set_index("date")
+    gross_frame = pd.DataFrame(curve_gross, columns=["date", "equity"]).set_index("date")
     trade_df = pd.DataFrame([t.__dict__ for t in trades])
+    exposure_df = pd.DataFrame(exposure_rows)
+    mean_equity = float(np.mean(equity_samples)) if equity_samples else float(portfolio.initial_capital)
     metrics = compute_performance_metrics(
         equity_frame,
         trade_df,
         initial_capital=portfolio.initial_capital,
         rt=rt,
-        traded_notional_abs=traded_notional_abs,
+        buy_notional=buy_notional,
+        sell_notional=sell_notional,
+        mean_equity=mean_equity,
         same_sector_weeks=same_sector_weeks,
         two_entry_weeks=two_entry_weeks,
         max_sector_share=max_sector_share,
         cap_skips=cap_skips,
         regime_blocked_weeks=regime_blocked_weeks,
         nifty_curve=None,
+        gross_equity_frame=gross_frame,
     )
+    if not exposure_df.empty:
+        metrics["avg_invested_pct"] = round(float(exposure_df["invested_pct"].mean() * 100), 2)
+        metrics["median_open_positions"] = float(exposure_df["open_positions"].median())
+        metrics["pct_weeks_under_70pct_invested"] = round(
+            float((exposure_df["invested_pct"] < 0.70).mean() * 100), 2
+        )
+        # Idle-cash LiquidBees credit (path-independent add-on on recorded cash %)
+        yield_ann = float(getattr(portfolio, "idle_cash_yield_annual", 0.0) or 0.0)
+        if yield_ann > 0:
+            weekly_y = (1.0 + yield_ann) ** (1.0 / 52.0) - 1.0
+            cash_boost = float((exposure_df["cash_pct"] * weekly_y).sum())
+            # Approximate terminal with compounded idle yield on average cash path
+            years = max((equity_frame.index[-1] - equity_frame.index[0]).days / 365.25, 1e-6)
+            net_term = float(equity_frame["equity"].iloc[-1])
+            boosted_term = net_term * (1.0 + cash_boost)
+            metrics["Net_CAGR_with_LiquidCash_%"] = round(
+                ((boosted_term / portfolio.initial_capital) ** (1.0 / years) - 1.0) * 100, 2
+            )
+        else:
+            metrics["Net_CAGR_with_LiquidCash_%"] = metrics.get("Net_CAGR_%")
     return {
         "metrics": metrics,
         "trades": trade_df,
         "equity_curve": equity_frame.reset_index(),
+        "gross_equity_curve": gross_frame.reset_index(),
+        "exposure": exposure_df,
         "cost_model": rt,
     }
 
@@ -293,13 +413,17 @@ def compute_performance_metrics(
     *,
     initial_capital: float,
     rt: RoundTripCostBps,
-    traded_notional_abs: float,
+    buy_notional: float = 0.0,
+    sell_notional: float = 0.0,
+    mean_equity: float | None = None,
+    traded_notional_abs: float | None = None,  # legacy two-way sum; prefer buy/sell
     same_sector_weeks: int,
     two_entry_weeks: int,
     max_sector_share: list[float],
     cap_skips: int,
     regime_blocked_weeks: int,
     nifty_curve: pd.Series | None,
+    gross_equity_frame: pd.DataFrame | None = None,
 ) -> dict:
     if equity_frame is None or len(equity_frame) < 2:
         return _empty_metrics(rt)
@@ -308,10 +432,13 @@ def compute_performance_metrics(
     years = max((equity_frame.index[-1] - equity_frame.index[0]).days / 365.25, 1e-6)
     net_cagr = (equity_frame["equity"].iloc[-1] / initial_capital) ** (1.0 / years) - 1.0
 
-    # Approximate gross equity by adding back cumulative trade costs
-    total_cost_cash = float(trade_df["cost_cash"].sum()) if not trade_df.empty else 0.0
-    gross_terminal = equity_frame["equity"].iloc[-1] + total_cost_cash
-    gross_cagr = (gross_terminal / initial_capital) ** (1.0 / years) - 1.0
+    if gross_equity_frame is not None and len(gross_equity_frame) >= 2:
+        gross_cagr = (gross_equity_frame["equity"].iloc[-1] / initial_capital) ** (1.0 / years) - 1.0
+    else:
+        # Fallback only — prefer dual-book gross_equity_frame
+        total_cost_cash = float(trade_df["cost_cash"].sum()) if not trade_df.empty else 0.0
+        gross_terminal = equity_frame["equity"].iloc[-1] + total_cost_cash
+        gross_cagr = (gross_terminal / initial_capital) ** (1.0 / years) - 1.0
 
     sharpe = float(returns.mean() / returns.std() * np.sqrt(52)) if returns.std() > 0 else 0.0
     downside = returns[returns < 0]
@@ -333,7 +460,15 @@ def compute_performance_metrics(
         profit_factor = float(wins / losses) if losses > 0 else None
         n_trades = int(len(trade_df))
 
-    ann_turnover = (traded_notional_abs / initial_capital) / years * 100.0
+    denom_eq = float(mean_equity) if mean_equity and mean_equity > 0 else float(initial_capital)
+    if traded_notional_abs is not None and buy_notional == 0.0 and sell_notional == 0.0:
+        # Legacy callers passed two-way sum; convert to one-way.
+        one_way = 0.5 * float(traded_notional_abs)
+    else:
+        one_way = 0.5 * (float(buy_notional) + float(sell_notional))
+    # One-way annualized turnover (% of mean equity)
+    ann_turnover = (one_way / denom_eq) / years * 100.0
+    # Each unit of one-way turnover pays a full RT once (buy leg + sell leg).
     ann_cost_drag_bps = ann_turnover / 100.0 * rt.total_bps
 
     alpha_pct = excess_bps = None
@@ -360,6 +495,7 @@ def compute_performance_metrics(
         "Total_Execution_Cost_per_Trade_BPS": round(rt.total_bps, 2),
         "Net_Return_per_Trade_BPS": None if net_bps is None else round(net_bps, 1),
         "Ann_Turnover_%": round(ann_turnover, 1),
+        "Ann_Turnover_OneWay_%": round(ann_turnover, 1),
         "Ann_Cost_Drag_BPS_yr": round(ann_cost_drag_bps, 1),
         "Sharpe": round(sharpe, 2),
         "Sortino": round(sortino, 2),

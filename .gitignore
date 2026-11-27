@@ -1,23 +1,47 @@
+# Secrets / credentials (never commit)
+.env
+.env.*
+*.pem
+*.key
+*credentials*
+*secrets*
+
+# Python / local tooling
 venv/
 .venv/
 __pycache__/
-*.pyc
-.env
-.DS_Store
+*.py[cod]
 *.egg-info/
 .pytest_cache/
 .benchmarks/
 .aws-sam/
 .lambda_layer_build/
+dist/
+.DS_Store
+
+# Legacy zip-layer packaging residue
 swing-deps-layer.zip
 core
-dist/
-data/*.csv
-data/clean/
-data/results/
+
+# Local data (regenerable / oversized; keep untracked)
 data/raw/
+data/clean/*.parquet
+data/clean/*.csv
+data/clean/*.json
+data/*.csv
+data/portfolio_state.json
+data/results/
 execution_log.txt
 *.sqlite
 *.sqlite-journal
+
+# Research artifacts & experiment clutter
 artifacts/
+logs/
 reports/slot_dry_runs/
+reports/docker_slot_verify/
+reports/winner_upgrade*
+reports/winner_step1*
+reports/universe_train_ab*
+reports/ppo_diagnostics.json
+reports/option_c_sensitivity_grid.csv

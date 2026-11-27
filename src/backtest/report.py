@@ -83,7 +83,9 @@ def write_summary(
         "- **Net After-Cost CAGR** is the promotion metric; Gross CAGR ignores delivery costs.",
         "- **Ann_CAPM_Alpha_BPS_yr** is weekly OLS alpha annualized vs Nifty when a benchmark series is supplied.",
         "- **Total_Execution_Cost_per_Trade_BPS** = statutory (~22.3) + slippage RT (default 10.0 → ~32.3 RT).",
-        "- **Ann_Cost_Drag_BPS_yr** ≈ annualized turnover × RT cost (bps).",
+        "- **Ann_Turnover_%** is ONE-WAY: `0.5*(buys+sells)/mean_equity/years`.",
+        "- **Ann_Cost_Drag_BPS_yr** ≈ one-way turnover × RT cost (bps).",
+        "- **Gross_CAGR** uses a parallel 0 bps book; **Net_CAGR** uses the delivery RT schedule.",
         "- Promote RL only if `Full_Stack_GBDT_HMM_RL` improves OOS Sharpe or MaxDD vs equal-weight HMM stack.",
         "",
     ]

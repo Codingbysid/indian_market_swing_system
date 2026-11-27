@@ -113,3 +113,35 @@ def build_quarterly_universes(
             "quarter_end": pd.Timestamp(quarter_end),
         }
     return universes
+
+
+def assert_option_c_differs_from_a(
+    universes: dict[pd.Timestamp, dict[str, pd.DataFrame]],
+    *,
+    min_differing_quarters: int = 1,
+) -> dict[str, float]:
+    """Fail fast when Option C collapses to Option A (e.g. tiny synthetic panels)."""
+    if not universes:
+        raise AssertionError("No quarterly universes built — cannot validate A vs C")
+    differing = 0
+    jaccards: list[float] = []
+    for payload in universes.values():
+        a = set(payload["A"]["symbol"].tolist())
+        c = set(payload["C"]["symbol"].tolist())
+        if not a and not c:
+            continue
+        inter = len(a & c)
+        union = len(a | c) or 1
+        jaccards.append(inter / union)
+        if a != c:
+            differing += 1
+    if differing < min_differing_quarters:
+        raise AssertionError(
+            f"Option C watchlists match Option A in all quarters "
+            f"(differing={differing}). Increase pool depth / stock count."
+        )
+    return {
+        "quarters": float(len(jaccards)),
+        "differing_quarters": float(differing),
+        "mean_jaccard": float(np.mean(jaccards)) if jaccards else 1.0,
+    }

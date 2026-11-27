@@ -1,4 +1,4 @@
-"""Central dataclasses for S3 paths, NSE delivery costs, universe, HMM, GBDT, and RL."""
+"""Central dataclasses for S3 paths, NSE delivery costs, universe, HMM, and GBDT."""
 
 from __future__ import annotations
 
@@ -19,7 +19,8 @@ class S3Paths:
     ohlcv_adj_prefix: str = "v2/clean/ohlcv_adj_partitioned"
     regime_key: str = "v2/state/regime_latest.parquet"
     oof_scores_key: str = "v2/models/gbdt_oof_latest.parquet"
-    ppo_model_key: str = "v2/models/ppo_sizer.zip"
+    models_prefix: str = "v2/models/latest/"
+    features_key: str = "v2/state/latest_features.json"
 
 
 @dataclass(frozen=True)
@@ -67,7 +68,17 @@ class PortfolioLimits:
     max_new_entries_per_week: int = 2
     max_positions_per_sector: int = 2
     max_new_entries_per_sector_per_week: int = 1
-    hold_weeks: int = 4
+    hold_weeks: int = 4  # used when exit_mode == "fixed_weeks"
+    # Rank-buffer / trailing-stop exit (lower turnover)
+    exit_mode: Literal["fixed_weeks", "rank_buffer"] = "fixed_weeks"
+    rank_buffer_top_n: int = 60
+    trailing_stop_pct: float = 0.12
+    # If > 0, trailing stop distance = atr_mult * atr_pct_14d (overrides fixed %)
+    trailing_stop_atr_mult: float = 0.0
+    max_hold_weeks: int = 12
+    rank_exit_confirm_weeks: int = 2  # require N consecutive weeks outside buffer
+    # Post-hoc idle-cash credit (LiquidBees-style); does not change trade path
+    idle_cash_yield_annual: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -103,13 +114,15 @@ class RlParams:
     top_k_candidates: int = 5
     hold_steps: int = 4
     drawdown_tolerance: float = 0.06
-    lambda_drawdown: float = 2.0
-    lambda_turnover: float = 0.25
-    lambda_concentration: float = 0.15
-    total_timesteps: int = 50_000
+    lambda_drawdown: float = 0.25
+    lambda_turnover: float = 0.02
+    lambda_concentration: float = 0.02
+    cash_opportunity_cost: float = 1.5  # penalize idle cash when Nifty rises
+    total_timesteps: int = 150_000
     learning_rate: float = 3e-4
     n_steps: int = 512
     batch_size: int = 64
+    ent_coef: float = 0.02
     seed: int = 42
 
 

@@ -1,0 +1,52 @@
+{
+  "audit": {
+    "sector_mode": "STATIC_SECTOR_FALLBACK",
+    "n_symbols_mapped": 747,
+    "start": "2016-01-01",
+    "end": "2026-11-26",
+    "ohlcv_rows": 4668829,
+    "unique_symbols": 3792,
+    "unique_isins": 3874,
+    "splits_applied": 996,
+    "remaining_split_suspects": 28,
+    "n_sectors": 23,
+    "n_macro_sectors": 13,
+    "ca_method": "OFFICIAL_NSE_SPLIT_BONUS_ONLY",
+    "top150_unknown": 76
+  },
+  "unknown": [
+    {
+      "variant": "Winner_APlus_HardCap_rankBuffer",
+      "n_trades": 370,
+      "pct_trades_unknown": 3.78,
+      "pct_notional_unknown": 3.35
+    },
+    {
+      "top150_unknown_symbols_sample": [
+        "GUJGASLTD",
+        "L&TFH",
+        "LIQUIDBEES",
+        "LIQUIDCASE",
+        "LTI",
+        "LTIM",
+        "MCDOWELL-N",
+        "MINDTREE",
+        "PEL",
+        "PVR",
+        "RAJESHEXPO",
+        "RIIL",
+        "RNAM",
+        "SILVERBEES",
+        "SILVERIETF",
+        "SRTRANSFIN",
+        "SWANENERGY",
+        "TATAMTRDVR",
+        "TATSILV",
+        "VAKRANGEE",
+        "VENKEYS",
+        "ZOMATO"
+      ],
+      "n_unknown": 22
+    }
+  ]
+}

@@ -56,6 +56,10 @@ FEATURE_COLS: list[str] = [
     "prob_bull",
     "prob_sideways",
     "prob_bear",
+    # V3 regime-resilient features (orthogonal quality / low-beta momentum)
+    "rs_nifty_60d",
+    "downside_vol_60d",
+    "trend_consistency_60d",
     "sector",
 ]
 
@@ -66,6 +70,7 @@ def engineer_cross_sectional_features(
     regime_df: pd.DataFrame | None = None,
     sector_col: str = "sector",
     horizon_days: int = 20,
+    macro_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Causal stock features, CS z-scores, and forward excess-return targets."""
     df = ohlcv_df.sort_values(["symbol", "date"]).copy()
@@ -125,6 +130,30 @@ def engineer_cross_sectional_features(
         tr_proxy.groupby(df["symbol"]).transform(lambda s: s.rolling(14).mean()) / df["close"]
     )
 
+    # --- V3: regime-resilient quality / relative-strength features ---
+    stock_log_60 = log_close.groupby(df["symbol"]).diff(60)
+    if macro_df is not None and not macro_df.empty and "nifty_close" in macro_df.columns:
+        macro = macro_df[["date", "nifty_close"]].copy()
+        macro["date"] = pd.to_datetime(macro["date"])
+        macro = macro.drop_duplicates("date").sort_values("date")
+        macro["nifty_log_60"] = np.log(macro["nifty_close"]).diff(60)
+        df = df.merge(macro[["date", "nifty_log_60"]], on="date", how="left")
+        df["rs_nifty_60d"] = stock_log_60 - df["nifty_log_60"]
+        df = df.drop(columns=["nifty_log_60"])
+    else:
+        # Fall back to cross-sectional demeaning when Nifty series is absent
+        df["rs_nifty_60d"] = stock_log_60 - stock_log_60.groupby(df["date"]).transform("median")
+
+    neg_ret = df["ret_1d"].clip(upper=0.0)
+    df["downside_vol_60d"] = (
+        neg_ret.groupby(df["symbol"]).transform(lambda s: s.rolling(60, min_periods=30).std())
+        * np.sqrt(252)
+    )
+    pos_5d = (df["ret_5d"] > 0).astype(float)
+    df["trend_consistency_60d"] = pos_5d.groupby(df["symbol"]).transform(
+        lambda s: s.rolling(12, min_periods=6).mean()  # ~60 trading days / 5
+    )
+
     med_val_5 = g["traded_value_inr"].transform(lambda s: s.rolling(5).median())
     med_val_126 = g["traded_value_inr"].transform(
         lambda s: s.rolling(126, min_periods=60).median()
@@ -174,14 +203,77 @@ def _model_matrix(frame: pd.DataFrame) -> pd.DataFrame:
     return x
 
 
+def build_daily_top_n_mask(
+    ohlcv_df: pd.DataFrame,
+    *,
+    top_n: int = 300,
+    lookback_days: int = 126,
+    min_periods: int = 60,
+) -> pd.DataFrame:
+    """Point-in-time Top-N liquid names by rolling median traded_value (zero lookahead).
+
+    Returns columns: date, symbol, med_adtv, in_top_n (bool).
+    """
+    df = ohlcv_df[["date", "symbol", "traded_value_inr"]].copy()
+    df["date"] = pd.to_datetime(df["date"])
+    df = df.sort_values(["symbol", "date"])
+    df["med_adtv"] = (
+        df.groupby("symbol", group_keys=False)["traded_value_inr"]
+        .transform(lambda s: s.rolling(lookback_days, min_periods=min_periods).median())
+    )
+    df["rank_liq"] = df.groupby("date")["med_adtv"].rank(ascending=False, method="first")
+    df["in_top_n"] = df["rank_liq"] <= float(top_n)
+    return df[["date", "symbol", "med_adtv", "in_top_n"]]
+
+
+def restrict_features_to_liquidity_pool(
+    feat_df: pd.DataFrame,
+    pool_mask: pd.DataFrame,
+    *,
+    cs_cols: list[str] | None = None,
+) -> pd.DataFrame:
+    """Keep only Top-N pool rows and recompute cross-sectional z-scores + rank target inside the pool."""
+    mask = pool_mask.copy()
+    mask["date"] = pd.to_datetime(mask["date"])
+    frame = feat_df.copy()
+    frame["date"] = pd.to_datetime(frame["date"])
+    merged = frame.merge(mask[["date", "symbol", "in_top_n"]], on=["date", "symbol"], how="inner")
+    merged = merged[merged["in_top_n"]].copy()
+    cs_cols = cs_cols or ["ret_20d", "mom_12m_skip1m", "vol_20d", "turnover_ratio_5d_126d"]
+    for col in cs_cols:
+        if col not in merged.columns:
+            continue
+        dt_grp = merged.groupby("date")[col]
+        mean_d = dt_grp.transform("mean")
+        std_d = dt_grp.transform("std").replace(0, np.nan)
+        merged[f"{col}_cs_z"] = (merged[col] - mean_d) / std_d
+    if "fwd_excess_ret" in merged.columns:
+        # Re-center excess vs pool median, then rank within pool
+        pool_med = merged.groupby("date")["fwd_excess_ret"].transform("median")
+        # fwd_excess_ret was vs all-stock median; rebuild from close if available would be ideal,
+        # but re-ranking the existing excess within the pool is the matched-universe target.
+        merged["cs_rank_target"] = merged.groupby("date")["fwd_excess_ret"].rank(pct=True) - 0.5
+        del pool_med
+    return merged.drop(columns=["in_top_n"]).sort_values(["date", "symbol"]).reset_index(drop=True)
+
+
 def run_walk_forward_ranker(
     feat_df: pd.DataFrame,
     cfg: RankerConfig = RankerConfig(),
-) -> pd.DataFrame:
-    """Train LightGBM with embargoed walk-forward folds; return OOF scores."""
+    *,
+    return_importances: bool = False,
+) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+    """Train LightGBM with embargoed walk-forward folds; return OOF scores.
+
+    When ``return_importances`` is True, also return a DataFrame of mean
+    gain importances across folds (top features for diagnostics).
+    """
     unique_dates = np.sort(feat_df["date"].unique())
     oof_chunks: list[pd.DataFrame] = []
+    importance_rows: list[dict] = []
     start_idx = cfg.train_min_days + cfg.embargo_days
+    # Only require columns that exist (allows older feature matrices)
+    feat_cols = [c for c in FEATURE_COLS if c in feat_df.columns]
 
     for test_start_idx in range(start_idx, len(unique_dates), cfg.step_days):
         test_end_idx = min(test_start_idx + cfg.step_days, len(unique_dates))
@@ -193,14 +285,17 @@ def run_walk_forward_ranker(
         test_dates = set(unique_dates[test_start_idx:test_end_idx])
 
         train_df = feat_df[feat_df["date"].isin(train_dates)].dropna(
-            subset=FEATURE_COLS + ["fwd_excess_ret", "cs_rank_target"]
+            subset=feat_cols + ["fwd_excess_ret", "cs_rank_target"]
         )
-        test_df = feat_df[feat_df["date"].isin(test_dates)].dropna(subset=FEATURE_COLS)
+        test_df = feat_df[feat_df["date"].isin(test_dates)].dropna(subset=feat_cols)
         if train_df.empty or test_df.empty:
             continue
 
-        x_train = _model_matrix(train_df)
-        x_test = _model_matrix(test_df)
+        x_train = train_df[feat_cols].copy()
+        x_test = test_df[feat_cols].copy()
+        if "sector" in x_train.columns:
+            x_train["sector"] = x_train["sector"].astype("category")
+            x_test["sector"] = x_test["sector"].astype("category")
         cat_features = ["sector"] if "sector" in x_train.columns else "auto"
 
         if cfg.objective == "lambdarank":
@@ -244,16 +339,33 @@ def run_walk_forward_ranker(
         out = test_df[["date", "symbol"]].copy()
         out["gbdt_score"] = scores
         out["gbdt_rank_pct"] = out.groupby("date")["gbdt_score"].rank(pct=True)
+        if "fwd_excess_ret" in test_df.columns:
+            out["fwd_excess_ret"] = test_df["fwd_excess_ret"].to_numpy()
         oof_chunks.append(out)
 
-    if not oof_chunks:
-        return pd.DataFrame(columns=["date", "symbol", "gbdt_score", "gbdt_rank_pct"])
+        gain = model.booster_.feature_importance(importance_type="gain")
+        for name, val in zip(feat_cols, gain):
+            importance_rows.append({"feature": name, "gain": float(val), "fold_start": str(unique_dates[test_start_idx])[:10]})
 
-    return (
+    if not oof_chunks:
+        empty = pd.DataFrame(columns=["date", "symbol", "gbdt_score", "gbdt_rank_pct"])
+        return (empty, pd.DataFrame()) if return_importances else empty
+
+    oof = (
         pd.concat(oof_chunks, ignore_index=True)
         .sort_values(["date", "symbol"])
         .reset_index(drop=True)
     )
+    if not return_importances:
+        return oof
+    imp = (
+        pd.DataFrame(importance_rows)
+        .groupby("feature", as_index=False)["gain"]
+        .mean()
+        .sort_values("gain", ascending=False)
+        .reset_index(drop=True)
+    )
+    return oof, imp
 
 
 def make_oof_signal_fn(

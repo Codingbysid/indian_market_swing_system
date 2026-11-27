@@ -1,4 +1,0 @@
-pool_size_c,max_per_sector,Gross_CAGR_%,Net_CAGR_%,Ann_CAPM_Alpha_%,Ann_CAPM_Alpha_BPS_yr,Ann_Excess_vs_Nifty_BPS_yr,Gross_Return_per_Trade_BPS,Statutory_Cost_BPS,Slippage_Cost_BPS,Total_Execution_Cost_per_Trade_BPS,Net_Return_per_Trade_BPS,Ann_Turnover_%,Ann_Cost_Drag_BPS_yr,Sharpe,Sortino,Max_Drawdown_%,Calmar,Win_Rate_%,Profit_Factor,Same_Sector_Double_Buy_Rate_%,P95_Max_Sector_Share_%,Cap_Skips_Count,Regime_Blocked_Weeks,N_Trades
-40,10,4.14,1.57,,,,53.7,22.3,10.0,32.3,21.3,1919.3,619.9,0.27,0.45,-11.63,0.14,49.5,1.07,11.28,39.02,0,0,666
-40,15,4.14,1.57,,,,53.7,22.3,10.0,32.3,21.3,1919.3,619.9,0.27,0.45,-11.63,0.14,49.5,1.07,11.28,39.02,0,0,666
-40,20,4.14,1.57,,,,53.7,22.3,10.0,32.3,21.3,1919.3,619.9,0.27,0.45,-11.63,0.14,49.5,1.07,11.28,39.02,0,0,666
